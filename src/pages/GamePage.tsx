@@ -16,7 +16,11 @@ const GAME_SCENE_MAP: Record<string, string> = {
     asteroid: 'AsteroidGameScene',
 };
 
-export function GamePage() {
+interface GamePageProps {
+    setElapsedMs?: (ms: number | null) => void;
+}
+
+export function GamePage({ setElapsedMs }: GamePageProps) {
     const location = useLocation();
     const navigate = useNavigate();
     const { gameId } = useParams();
@@ -53,16 +57,21 @@ export function GamePage() {
             EventBus.emit(startEvent, settings);
         };
 
+        const handleTick = (ms: number) => { setElapsedMs?.(ms); };
+
         EventBus.on('game-complete', handleComplete);
         EventBus.on('game-exit', handleExit);
         EventBus.on('safety-timer-warning', handleWarning);
         EventBus.on('current-scene-ready', handleReady);
+        EventBus.on('timer-tick', handleTick);
 
         return () => {
             EventBus.removeListener('game-complete', handleComplete);
             EventBus.removeListener('game-exit', handleExit);
             EventBus.removeListener('safety-timer-warning', handleWarning);
             EventBus.removeListener('current-scene-ready', handleReady);
+            EventBus.removeListener('timer-tick', handleTick);
+            setElapsedMs?.(null);
         };
     }, [settings, navigate, gameId]);
 

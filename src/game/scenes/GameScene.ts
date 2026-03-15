@@ -133,6 +133,16 @@ export default class GameScene extends Phaser.Scene {
     });
     this.safetyTimer.start();
 
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        if (this.safetyTimer) {
+          EventBus.emit('timer-tick', this.safetyTimer.getElapsedMs());
+        }
+      },
+      loop: true,
+    });
+
     // Pause state
     this.isPaused = false;
     this.pauseOverlay = null;
