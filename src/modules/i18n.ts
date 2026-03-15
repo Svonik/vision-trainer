@@ -71,6 +71,14 @@ const strings = {
   'gameSelect.flappy.description': 'Летите через трубы. Птица видна одному глазу, трубы — другому.',
   'gameSelect.asteroid.title': 'Астероиды',
   'gameSelect.asteroid.description': 'Уничтожайте астероиды. Ваш корабль виден одному глазу, астероиды — другому.',
+  'calibration.hint': 'Оба квадрата должны быть одинаково видны',
+  'gameSelect.difficulty.beginner': 'Начальный',
+  'gameSelect.difficulty.medium': 'Средний',
+  'stats.improvement': 'улучшение',
+  'stats.decline': 'снижение',
+  'layout.recalibrate': 'Перекалибровать',
+  'settings.leftEyeRed': 'Левый глаз (красный)',
+  'settings.rightEyeCyan': 'Правый глаз (циановый)',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
