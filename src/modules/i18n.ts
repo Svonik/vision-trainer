@@ -62,6 +62,9 @@ const strings = {
   'tetris.nextPiece': 'Следующая',
   'gameSelect.invaders.title': 'Космические захватчики',
   'gameSelect.invaders.description': 'Стреляйте по врагам. Ваш корабль виден одному глазу, враги — другому.',
+  'gameSelect.pong.title': 'Понг',
+  'gameSelect.pong.description': 'Каждая ракетка видна своему глазу. Мяч виден обоим. Игра против компьютера.',
+  'pong.serveHint': 'Подача…',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
