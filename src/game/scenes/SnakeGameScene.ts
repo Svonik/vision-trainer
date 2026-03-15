@@ -4,6 +4,8 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
@@ -22,6 +24,8 @@ export default class SnakeGameScene extends Phaser.Scene {
   }
 
   create() {
+    SynthSounds.resume();
+
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
@@ -237,6 +241,8 @@ export default class SnakeGameScene extends Phaser.Scene {
       newHead.y < 0 || newHead.y >= GRID_ROWS
     ) {
       this.isGameOver = true;
+      SynthSounds.gameOver();
+      GameVFX.screenShake(this, 5, 200);
       this.endGame();
       return;
     }
@@ -245,6 +251,8 @@ export default class SnakeGameScene extends Phaser.Scene {
     for (const seg of this.snake) {
       if (seg.x === newHead.x && seg.y === newHead.y) {
         this.isGameOver = true;
+        SynthSounds.gameOver();
+        GameVFX.screenShake(this, 5, 200);
         this.endGame();
         return;
       }
@@ -256,6 +264,10 @@ export default class SnakeGameScene extends Phaser.Scene {
       ate = true;
       this.score++;
       this.scoreText.setText(`${t('game.score')}: ${this.score}`);
+      const { x: foodPx, y: foodPy } = this.cellToPixel(this.food.x, this.food.y);
+      SynthSounds.score();
+      GameVFX.particleBurst(this, foodPx, foodPy, this.ballColor);
+      GameVFX.scorePopup(this, foodPx, foodPy);
     }
 
     const newSnake = ate

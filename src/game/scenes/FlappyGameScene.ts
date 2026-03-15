@@ -4,6 +4,8 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 const SCROLL_SPEEDS = { slow: 100, normal: 150, fast: 200, pro: 260 };
 const GRAVITY = 400;          // px/s²
@@ -17,6 +19,8 @@ export default class FlappyGameScene extends Phaser.Scene {
   }
 
   create() {
+    SynthSounds.resume();
+
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
@@ -198,6 +202,8 @@ export default class FlappyGameScene extends Phaser.Scene {
         this.pipes[i] = { ...updatedPipe, scored: true };
         this.score++;
         this.scoreText.setText(String(this.score));
+        SynthSounds.score();
+        GameVFX.scorePopup(this, this.bird.x, this.bird.y);
       }
 
       // Collision detection (AABB vs circle)
@@ -233,6 +239,7 @@ export default class FlappyGameScene extends Phaser.Scene {
   flap() {
     if (!this.bird) return;
     this.bird = { ...this.bird, vy: FLAP_IMPULSE };
+    SynthSounds.launch();
   }
 
   spawnPipe() {
@@ -304,6 +311,8 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.gameOver = true;
     // Brief red flash on bird
     this.birdGfx.setFillStyle(COLORS.WHITE);
+    SynthSounds.gameOver();
+    GameVFX.screenShake(this);
     this.time.delayedCall(300, () => {
       this.endGame();
     });

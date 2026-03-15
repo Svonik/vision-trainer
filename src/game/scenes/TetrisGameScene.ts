@@ -4,6 +4,8 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 // Fall intervals in ms per speed level
 const FALL_INTERVALS = { slow: 1000, normal: 600, fast: 400, pro: 250 };
@@ -29,6 +31,8 @@ export default class TetrisGameScene extends Phaser.Scene {
   }
 
   create() {
+    SynthSounds.resume();
+
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
@@ -220,6 +224,7 @@ export default class TetrisGameScene extends Phaser.Scene {
       }
     }
     this.piecesPlaced++;
+    SynthSounds.tick();
     this.activePiece = null;
     this.checkLines();
   }
@@ -261,6 +266,10 @@ export default class TetrisGameScene extends Phaser.Scene {
     const bonus = count === 4 ? 4 : 0;
     this.linesCleared += count + bonus;
     this.scoreText.setText(this.scoreLabel());
+    SynthSounds.score();
+    if (count === 4) {
+      GameVFX.screenShake(this, 4, 150);
+    }
   }
 
   // Draw everything
@@ -532,6 +541,7 @@ export default class TetrisGameScene extends Phaser.Scene {
   endGame() {
     if (this.gameOver) return;
     this.gameOver = true;
+    SynthSounds.gameOver();
     if (this.safetyTimer) this.safetyTimer.stop();
 
     const result = {

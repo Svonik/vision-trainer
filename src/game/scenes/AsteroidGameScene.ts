@@ -4,6 +4,8 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 const MAX_LIVES = 3;
 const INITIAL_ASTEROID_COUNT = 5;
@@ -34,6 +36,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
   }
 
   create() {
+    SynthSounds.resume();
+
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
@@ -159,17 +163,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
       if (!this.isPaused) this.togglePause();
     });
 
-    // Audio (graceful degradation)
-    this.catchSound = null;
-    this.missSound = null;
-    this.completeSound = null;
-    try {
-      if (this.cache.audio.exists('catch')) this.catchSound = this.sound.add('catch');
-      if (this.cache.audio.exists('miss')) this.missSound = this.sound.add('miss');
-      if (this.cache.audio.exists('complete')) this.completeSound = this.sound.add('complete');
-    } catch (e) {
-      console.warn('Audio not available:', e);
-    }
+    this.trailFrameCounter = 0;
   }
 
   shutdown() {
@@ -281,6 +275,16 @@ export default class AsteroidGameScene extends Phaser.Scene {
       }
     }
     this.bullets = aliveBullets;
+
+    // Bullet trail every 3rd frame
+    this.trailFrameCounter = (this.trailFrameCounter || 0) + 1;
+    if (this.trailFrameCounter % 3 === 0) {
+      for (const b of this.bullets) {
+        if (b.age < BULLET_LIFETIME_MS) {
+          GameVFX.addTrailDot(this, b.x, b.y, this.platformColor, 2);
+        }
+      }
+    }
 
     // Move asteroids
     for (const a of this.asteroids) {
@@ -418,6 +422,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (now - this.lastFireMs < FIRE_COOLDOWN_MS) return;
     this.lastFireMs = now;
 
+    SynthSounds.launch();
+
     const rad = ((this.shipAngleDeg - 90) * Math.PI) / 180;
     const bullet = {
       x: this.shipX + Math.cos(rad) * 18,
@@ -434,7 +440,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.asteroidsDestroyed++;
     this.scoreText.setText(String(this.asteroidsDestroyed));
 
-    if (this.catchSound) this.catchSound.play();
+    SynthSounds.hit();
+    GameVFX.particleBurst(this, asteroid.x, asteroid.y, this.ballColor, 10);
+    GameVFX.scorePopup(this, asteroid.x, asteroid.y);
 
     // Flash effect at asteroid position
     this.spawnFlash(asteroid.x, asteroid.y, asteroid.radius);
@@ -467,7 +475,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (this.lives >= 0 && this.lives < this.livesIcons.length) {
       this.livesIcons[this.lives].setFillStyle(0x333333);
     }
-    if (this.missSound) this.missSound.play();
+    SynthSounds.miss();
+    GameVFX.screenShake(this, 4, 150);
 
     // Reset ship to center with brief invulnerability
     this.shipX = this.field.x + this.field.w / 2;
@@ -528,7 +537,11 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (this.gameOver) return;
     this.gameOver = true;
     this.safetyTimer.stop();
-    if (this.completeSound) this.completeSound.play();
+    if (won) {
+      SynthSounds.victory();
+    } else {
+      SynthSounds.gameOver();
+    }
 
     const result = {
       game: 'asteroid',

@@ -4,6 +4,8 @@ import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 const BALL_SPEEDS = { slow: 180, normal: 260, fast: 360, pro: 460 };
 const AI_TRACKING = { slow: 0.40, normal: 0.60, fast: 0.80, pro: 0.95 };
@@ -21,6 +23,8 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   create() {
+    SynthSounds.resume();
+
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
@@ -87,17 +91,7 @@ export default class PongGameScene extends Phaser.Scene {
       if (!this.isPaused) this.togglePause();
     });
 
-    // Audio (graceful degradation)
-    this.catchSound = null;
-    this.missSound = null;
-    this.completeSound = null;
-    try {
-      if (this.cache.audio.exists('catch')) this.catchSound = this.sound.add('catch');
-      if (this.cache.audio.exists('miss')) this.missSound = this.sound.add('miss');
-      if (this.cache.audio.exists('complete')) this.completeSound = this.sound.add('complete');
-    } catch (e) {
-      console.warn('Audio not available:', e);
-    }
+    this.trailFrameCounter = 0;
 
     // Launch the ball after a short delay
     this.time.delayedCall(800, () => { this.serveBall(); });
@@ -243,7 +237,7 @@ export default class PongGameScene extends Phaser.Scene {
       Math.abs(Math.cos(rad) * currentSpeed),
       Math.sin(rad) * currentSpeed,
     );
-    if (this.catchSound) this.catchSound.play();
+    SynthSounds.tick();
   }
 
   onBallHitAI(ball, paddle) {
@@ -256,7 +250,7 @@ export default class PongGameScene extends Phaser.Scene {
       -Math.abs(Math.cos(rad) * currentSpeed),
       Math.sin(rad) * currentSpeed,
     );
-    if (this.catchSound) this.catchSound.play();
+    SynthSounds.tick();
   }
 
   updateAI(delta) {
@@ -287,7 +281,7 @@ export default class PongGameScene extends Phaser.Scene {
     if (this.ball.x - r <= fx) {
       this.ballActive = false;
       this.aiScore++;
-      if (this.missSound) this.missSound.play();
+      SynthSounds.miss();
       this.aiScoreText.setText(String(this.aiScore));
       this.checkWinCondition();
       return;
@@ -297,7 +291,7 @@ export default class PongGameScene extends Phaser.Scene {
     if (this.ball.x + r >= fx + fw) {
       this.ballActive = false;
       this.playerScore++;
-      if (this.catchSound) this.catchSound.play();
+      SynthSounds.score();
       this.playerScoreText.setText(String(this.playerScore));
       this.checkWinCondition();
     }
@@ -383,6 +377,14 @@ export default class PongGameScene extends Phaser.Scene {
     // Ball boundary checks (walls + scoring)
     this.checkBallOutOfBounds();
 
+    // Ball trail every 3rd frame
+    if (this.ball && this.ballActive) {
+      this.trailFrameCounter = (this.trailFrameCounter || 0) + 1;
+      if (this.trailFrameCounter % 3 === 0) {
+        GameVFX.addTrailDot(this, this.ball.x, this.ball.y, COLORS.WHITE, 2);
+      }
+    }
+
     // Timer display
     if (this.safetyTimer) {
       const elapsed = this.safetyTimer.getElapsedMs();
@@ -394,7 +396,11 @@ export default class PongGameScene extends Phaser.Scene {
 
   endGame() {
     this.safetyTimer.stop();
-    if (this.completeSound) this.completeSound.play();
+    if (this.playerScore >= WINNING_SCORE) {
+      SynthSounds.victory();
+    } else {
+      SynthSounds.gameOver();
+    }
 
     const total = this.playerScore + this.aiScore;
     const result = {

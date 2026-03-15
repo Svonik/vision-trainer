@@ -4,6 +4,8 @@ import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 const ALIEN_COLS = 8;
 const ALIEN_ROWS = 5;
@@ -36,6 +38,8 @@ export default class InvadersGameScene extends Phaser.Scene {
   }
 
   create() {
+    SynthSounds.resume();
+
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
@@ -183,17 +187,6 @@ export default class InvadersGameScene extends Phaser.Scene {
       if (!this.isPaused) this.togglePause();
     });
 
-    // Audio (graceful degradation)
-    this.catchSound = null;
-    this.missSound = null;
-    this.completeSound = null;
-    try {
-      if (this.cache.audio.exists('catch')) this.catchSound = this.sound.add('catch');
-      if (this.cache.audio.exists('miss')) this.missSound = this.sound.add('miss');
-      if (this.cache.audio.exists('complete')) this.completeSound = this.sound.add('complete');
-    } catch (e) {
-      console.warn('Audio not available:', e);
-    }
   }
 
   shutdown() {
@@ -347,6 +340,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     if (now - this.lastPlayerFireMs < FIRE_COOLDOWN_MS) return;
     this.lastPlayerFireMs = now;
 
+    SynthSounds.launch();
+
     const bullet = this.add.rectangle(
       this.ship.x,
       this.ship.y - this.ship.height / 2 - BULLET_H / 2,
@@ -398,9 +393,12 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.enemiesDestroyed++;
     this.scoreText.setText(`${this.enemiesDestroyed} / ${TOTAL_ALIENS}`);
 
-    if (this.catchSound) this.catchSound.play();
+    SynthSounds.hit();
+    GameVFX.particleBurst(this, alien.x, alien.y, this.alienColor);
+    GameVFX.scorePopup(this, alien.x, alien.y);
 
     if (this.enemiesDestroyed >= TOTAL_ALIENS) {
+      SynthSounds.victory();
       this.endGame(true);
     }
   }
@@ -410,7 +408,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     if (this.lives >= 0 && this.lives < this.livesIcons.length) {
       this.livesIcons[this.lives].setFillStyle(0x333333);
     }
-    if (this.missSound) this.missSound.play();
+    SynthSounds.miss();
+    GameVFX.screenShake(this, 5, 150);
 
     if (this.lives <= 0) {
       this.endGame(false);
@@ -473,7 +472,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     if (this.gameOver) return;
     this.gameOver = true;
     this.safetyTimer.stop();
-    if (this.completeSound) this.completeSound.play();
+    if (!won) SynthSounds.gameOver();
 
     const result = {
       game: 'invaders',

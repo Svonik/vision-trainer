@@ -4,6 +4,8 @@ import { COLORS, GAME, SPEEDS, PLATFORM_KEYBOARD_SPEED } from '../../modules/con
 import { createGameSettings, createSessionResult } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -25,6 +27,8 @@ export default class GameScene extends Phaser.Scene {
         if (this.spawnTimer) this.spawnTimer.paused = false;
       }
     };
+
+    SynthSounds.resume();
 
     // Register EventBus listeners
     EventBus.on('start-game', this.startGameHandler);
@@ -138,18 +142,6 @@ export default class GameScene extends Phaser.Scene {
       if (!this.isPaused) this.togglePause();
     });
 
-    // Audio (graceful degradation)
-    this.catchSound = null;
-    this.missSound = null;
-    this.completeSound = null;
-    try {
-      if (this.cache.audio.exists('catch')) this.catchSound = this.sound.add('catch');
-      if (this.cache.audio.exists('miss')) this.missSound = this.sound.add('miss');
-      if (this.cache.audio.exists('complete')) this.completeSound = this.sound.add('complete');
-    } catch (e) {
-      console.warn('Audio not available:', e);
-    }
-
     // Spawn first target
     this.spawnTarget();
   }
@@ -250,10 +242,13 @@ export default class GameScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     });
 
-    if (this.catchSound) this.catchSound.play();
+    SynthSounds.hit();
+    GameVFX.particleBurst(this, target.x, target.y, this.targetColor);
+    GameVFX.scorePopup(this, target.x, target.y);
     this.checkDynamicDifficulty();
 
     if (this.caught >= GAME.TARGET_CATCHES) {
+      SynthSounds.victory();
       this.endGame();
     }
   }
@@ -263,7 +258,7 @@ export default class GameScene extends Phaser.Scene {
     target.destroy();
     this.consecutiveMisses++;
     this.consecutiveHits = 0;
-    if (this.missSound) this.missSound.play();
+    SynthSounds.miss();
     this.checkDynamicDifficulty();
   }
 
@@ -335,7 +330,6 @@ export default class GameScene extends Phaser.Scene {
   endGame() {
     this.safetyTimer.stop();
     if (this.spawnTimer) this.spawnTimer.remove();
-    if (this.completeSound) this.completeSound.play();
 
     const result = createSessionResult({
       settings: this.settings,
