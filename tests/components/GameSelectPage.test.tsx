@@ -9,13 +9,14 @@ describe('GameSelectPage', () => {
         expect(screen.getByText(/бинокулярный захват/i)).toBeInTheDocument();
     });
 
-    it('has play button', () => {
+    it('has play buttons', () => {
         render(<MemoryRouter><GameSelectPage /></MemoryRouter>);
-        expect(screen.getByText(/играть/i)).toBeInTheDocument();
+        const playButtons = screen.getAllByText(/играть/i);
+        expect(playButtons.length).toBeGreaterThan(0);
     });
 
-    it('has recalibrate button', () => {
+    it('renders difficulty badge', () => {
         render(<MemoryRouter><GameSelectPage /></MemoryRouter>);
-        expect(screen.getByText(/перекалибровать/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/начальный/i).length).toBeGreaterThan(0);
     });
 });
