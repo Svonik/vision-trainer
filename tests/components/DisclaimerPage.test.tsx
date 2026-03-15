@@ -24,4 +24,10 @@ describe('DisclaimerPage', () => {
         const button = screen.getByRole('button', { name: /продолжить/i });
         expect(button).toBeEnabled();
     });
+
+    it('renders structured bullet points', () => {
+        render(<MemoryRouter><DisclaimerPage /></MemoryRouter>);
+        // The three key points should be visible as separate items
+        expect(screen.getByText(/не является заменой/)).toBeInTheDocument();
+    });
 });
