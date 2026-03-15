@@ -56,8 +56,24 @@ export function CalibrationPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        {/* Live preview squares */}
+                        <div className="flex justify-center gap-8 mb-4">
+                            <div
+                                className="w-24 h-24 rounded-sm"
+                                style={{ backgroundColor: '#FF0000', opacity: redBrightness / 100 }}
+                                aria-label="red square"
+                            />
+                            <div
+                                className="w-24 h-24 rounded-sm"
+                                style={{ backgroundColor: '#00FFFF', opacity: cyanBrightness / 100 }}
+                                aria-label="cyan square"
+                            />
+                        </div>
+                        <p className="text-center text-sm text-gray-400">{t('calibration.hint')}</p>
+                        <p className="text-xs text-gray-500 text-center">{`Попытка ${attempts} из ${CALIBRATION.MAX_ATTEMPTS}`}</p>
+
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-300">
+                            <label className="text-sm" style={{ color: '#ff6666' }}>
                                 {t('calibration.red')}: {redBrightness}
                             </label>
                             <Slider
@@ -70,7 +86,7 @@ export function CalibrationPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-300">
+                            <label className="text-sm" style={{ color: '#00e5e5' }}>
                                 {t('calibration.cyan')}: {cyanBrightness}
                             </label>
                             <Slider
