@@ -36,4 +36,13 @@ describe('SettingsPage', () => {
         );
         expect(screen.getByText(/начать игру/i)).toBeInTheDocument();
     });
+
+    it('renders contrast hint text', () => {
+        render(
+            <MemoryRouter initialEntries={['/games/catcher/settings']}>
+                <Routes><Route path="/games/:gameId/settings" element={<SettingsPage />} /></Routes>
+            </MemoryRouter>
+        );
+        expect(screen.getByText(/снизьте яркость/i)).toBeInTheDocument();
+    });
 });

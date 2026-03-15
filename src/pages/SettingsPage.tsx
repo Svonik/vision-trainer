@@ -30,10 +30,33 @@ export function SettingsPage() {
                     <div className="space-y-4">
                         <p className="text-sm font-medium">{t('settings.contrastBalance')}</p>
 
+                        {/* Hint box */}
+                        <div className="rounded border border-cyan-700 bg-cyan-950/40 px-3 py-2 text-sm text-cyan-300">
+                            {t('settings.contrastHint')}
+                        </div>
+
+                        {/* Preview circles */}
+                        <div className="flex justify-center gap-8">
+                            <div className="text-center">
+                                <div
+                                    className="w-12 h-12 rounded-full mx-auto mb-1"
+                                    style={{ backgroundColor: `rgba(255, 0, 0, ${settings.contrastLeft / 100})` }}
+                                />
+                                <span className="text-xs text-gray-400">Л: {settings.contrastLeft}%</span>
+                            </div>
+                            <div className="text-center">
+                                <div
+                                    className="w-12 h-12 rounded-full mx-auto mb-1"
+                                    style={{ backgroundColor: `rgba(0, 255, 255, ${settings.contrastRight / 100})` }}
+                                />
+                                <span className="text-xs text-gray-400">П: {settings.contrastRight}%</span>
+                            </div>
+                        </div>
+
                         <div className="space-y-3">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span>{t('settings.leftEye')}</span>
+                                    <span style={{ color: '#ff6666' }}>{t('settings.leftEyeRed')}</span>
                                     <span className="text-gray-400">{settings.contrastLeft}%</span>
                                 </div>
                                 <Slider
@@ -48,7 +71,7 @@ export function SettingsPage() {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span>{t('settings.rightEye')}</span>
+                                    <span style={{ color: '#00e5e5' }}>{t('settings.rightEyeCyan')}</span>
                                     <span className="text-gray-400">{settings.contrastRight}%</span>
                                 </div>
                                 <Slider
