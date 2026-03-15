@@ -3,6 +3,9 @@ import BootScene from './src/scenes/BootScene.js';
 import DisclaimerScene from './src/scenes/DisclaimerScene.js';
 import CalibrationScene from './src/scenes/CalibrationScene.js';
 import GameSelectScene from './src/scenes/GameSelectScene.js';
+import SettingsScene from './src/scenes/SettingsScene.js';
+import GameScene from './src/scenes/GameScene.js';
+import StatsScene from './src/scenes/StatsScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -21,7 +24,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [BootScene, DisclaimerScene, CalibrationScene, GameSelectScene],
+  scene: [BootScene, DisclaimerScene, CalibrationScene, GameSelectScene, SettingsScene, GameScene, StatsScene],
 };
 
 const game = new Phaser.Game(config);
