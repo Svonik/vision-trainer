@@ -28,7 +28,7 @@ export default class BootScene extends Phaser.Scene {
     initStorage();
 
     if (isDisclaimerAccepted()) {
-      this.scene.start('CalibrationScene');
+      this.scene.start('GameSelectScene');
     } else {
       this.scene.start('DisclaimerScene');
     }

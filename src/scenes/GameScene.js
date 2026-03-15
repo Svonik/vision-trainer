@@ -151,8 +151,8 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    // Update timer
-    const elapsed = Date.now() - this.sessionStartTime;
+    // Update timer — use safetyTimer to exclude paused time
+    const elapsed = this.safetyTimer.getElapsedMs();
     const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
     const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
     this.timerText.setText(`${mins}:${secs}`);
@@ -234,28 +234,21 @@ export default class GameScene extends Phaser.Scene {
   }
 
   checkDynamicDifficulty() {
-    // Weak eye = layer with HIGHER alpha (more stimulation)
-    const isWeakEyeTarget = this.targetAlpha >= this.platformAlpha;
+    // Therapeutic design: targets are always shown to the weak eye.
+    // The game forces the weak eye to track falling objects — that IS the therapy.
+    // Dynamic difficulty adjusts the TARGET layer (weak eye) alpha.
 
     if (this.consecutiveHits >= 5) {
-      if (isWeakEyeTarget) {
-        this.targetAlpha = Math.max(this.targetAlpha - 0.05, 0.5);
-        this.targets.getChildren().forEach((t) => { if (t.active) t.setAlpha(this.targetAlpha); });
-      } else {
-        this.platformAlpha = Math.max(this.platformAlpha - 0.05, 0.5);
-        this.platform.setAlpha(this.platformAlpha);
-      }
+      // Player succeeding → reduce weak eye stimulation (make targets dimmer)
+      this.targetAlpha = Math.max(this.targetAlpha - 0.05, 0.5);
+      this.targets.getChildren().forEach((t) => { if (t.active) t.setAlpha(this.targetAlpha); });
       this.consecutiveHits = 0;
     }
 
     if (this.consecutiveMisses >= 3) {
-      if (isWeakEyeTarget) {
-        this.targetAlpha = Math.min(this.targetAlpha + 0.05, 1.0);
-        this.targets.getChildren().forEach((t) => { if (t.active) t.setAlpha(this.targetAlpha); });
-      } else {
-        this.platformAlpha = Math.min(this.platformAlpha + 0.05, 1.0);
-        this.platform.setAlpha(this.platformAlpha);
-      }
+      // Player struggling → increase weak eye stimulation (make targets brighter)
+      this.targetAlpha = Math.min(this.targetAlpha + 0.05, 1.0);
+      this.targets.getChildren().forEach((t) => { if (t.active) t.setAlpha(this.targetAlpha); });
       this.consecutiveMisses = 0;
     }
   }
@@ -373,7 +366,7 @@ export default class GameScene extends Phaser.Scene {
       settings: this.settings,
       caught: this.caught,
       totalSpawned: this.totalSpawned,
-      durationMs: Date.now() - this.sessionStartTime,
+      durationMs: this.safetyTimer.getElapsedMs(),
     });
 
     addSession(result);

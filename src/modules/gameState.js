@@ -1,11 +1,11 @@
 import { CONTRAST, SPEEDS } from '../config/constants.js';
 
 export const createGameSettings = (overrides = {}) => ({
+  ...overrides,
   contrastLeft: overrides.contrastLeft ?? CONTRAST.DEFAULT,
   contrastRight: overrides.contrastRight ?? CONTRAST.DEFAULT,
   speed: overrides.speed ?? 'slow',
   eyeConfig: overrides.eyeConfig ?? 'platform_left',
-  ...overrides,
 });
 
 export const createSessionResult = ({
