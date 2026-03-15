@@ -9,8 +9,8 @@ import { GameSelectPage } from './pages/GameSelectPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { GamePage } from './pages/GamePage';
 import { StatsPage } from './pages/StatsPage';
-
-const Placeholder = ({ name }: { name: string }) => <div><h1>{name}</h1></div>;
+import { DashboardPage } from './pages/DashboardPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 function App() {
     return (
@@ -33,8 +33,8 @@ function App() {
                     <DisclaimerGuard><CalibrationGuard><GameSettingsGuard><GamePage /></GameSettingsGuard></CalibrationGuard></DisclaimerGuard>
                 } />
                 <Route path="/games/:gameId/stats" element={<StatsPage />} />
-                <Route path="/profile" element={<Placeholder name="Profile" />} />
-                <Route path="/dashboard" element={<Placeholder name="Dashboard" />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
             </Routes>
         </BrowserRouter>
     );
