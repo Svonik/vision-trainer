@@ -1,4 +1,5 @@
 import { AUTO, Game } from 'phaser';
+import GameScene from './scenes/GameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -10,7 +11,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 } }
     },
-    scene: []
+    scene: [GameScene]
 };
 
 const StartGame = (parent: string) => {
