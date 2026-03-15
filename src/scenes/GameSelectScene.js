@@ -1,5 +1,8 @@
 import { t } from '../modules/i18n.js';
-import { COLORS } from '../config/constants.js';
+import {
+  THEME, applySceneBackground, createTitle, createLabel,
+  createStyledButton, createCard,
+} from '../modules/uiTheme.js';
 
 export default class GameSelectScene extends Phaser.Scene {
   constructor() {
@@ -7,50 +10,41 @@ export default class GameSelectScene extends Phaser.Scene {
   }
 
   create() {
-    const centerX = this.cameras.main.centerX;
+    applySceneBackground(this);
+    const cx = this.cameras.main.centerX;
 
-    this.add.text(centerX, 50, t('gameSelect.title'), {
-      fontSize: '28px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    createTitle(this, cx, 50, t('gameSelect.title'), { delay: 0 });
 
-    const recalBtn = this.add.text(700, 30, t('calibration.recalibrate'), {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+    // Recalibrate link (top right)
+    const recalBtn = this.add.text(710, 30, '\u2699 ' + t('calibration.recalibrate'), {
+      fontSize: '13px', color: THEME.textSecondary, fontFamily: THEME.font,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     recalBtn.on('pointerup', () => this.scene.start('CalibrationScene'));
-    recalBtn.on('pointerover', () => recalBtn.setColor(COLORS.WHITE_HEX));
-    recalBtn.on('pointerout', () => recalBtn.setColor(COLORS.GRAY_HEX));
+    recalBtn.on('pointerover', () => recalBtn.setColor('#00DDFF'));
+    recalBtn.on('pointerout', () => recalBtn.setColor(THEME.textSecondary));
 
-    this.createGameCard(
-      centerX, 280,
-      t('gameSelect.catcher.title'),
-      t('gameSelect.catcher.description'),
-      () => this.scene.start('SettingsScene'),
-    );
-  }
+    // Game card
+    createCard(this, cx, 280, 520, 220, { delay: 100 });
 
-  createGameCard(x, y, title, description, onPlay) {
-    this.add.rectangle(x, y, 500, 200, COLORS.GRAY, 0.1)
-      .setStrokeStyle(2, COLORS.GRAY);
+    // Eye icon
+    this.add.text(cx, 200, '\uD83D\uDC41', {
+      fontSize: '32px',
+    }).setOrigin(0.5).setAlpha(0);
+    this.tweens.add({
+      targets: this.children.last,
+      alpha: 0.8, duration: 400, delay: 200,
+    });
 
-    this.add.text(x, y - 50, title, {
-      fontSize: '24px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
+    this.add.text(cx, 245, t('gameSelect.catcher.title'), {
+      fontSize: '22px', color: THEME.textPrimary, fontFamily: THEME.font,
     }).setOrigin(0.5);
 
-    this.add.text(x, y + 10, description, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-      wordWrap: { width: 440 }, align: 'center',
-    }).setOrigin(0.5);
+    createLabel(this, cx, 285, t('gameSelect.catcher.description'), {
+      fontSize: '13px', wordWrap: { width: 440 },
+    });
 
-    const btn = this.add.rectangle(x, y + 70, 160, 40, COLORS.WHITE, 0.15)
-      .setStrokeStyle(1, COLORS.WHITE)
-      .setInteractive({ useHandCursor: true });
-
-    this.add.text(x, y + 70, t('gameSelect.play'), {
-      fontSize: '18px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-
-    btn.on('pointerup', onPlay);
-    btn.on('pointerover', () => btn.setFillStyle(COLORS.WHITE, 0.3));
-    btn.on('pointerout', () => btn.setFillStyle(COLORS.WHITE, 0.15));
+    createStyledButton(this, cx, 350, 180, 44, t('gameSelect.play'), () => {
+      this.scene.start('SettingsScene');
+    }, { delay: 300, fontSize: '18px' });
   }
 }

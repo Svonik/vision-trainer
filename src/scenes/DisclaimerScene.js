@@ -1,6 +1,9 @@
 import { acceptDisclaimer } from '../modules/storage.js';
 import { t } from '../modules/i18n.js';
-import { COLORS } from '../config/constants.js';
+import {
+  THEME, applySceneBackground, createTitle, createLabel,
+  createStyledButton, createCard, drawRoundedRect,
+} from '../modules/uiTheme.js';
 
 export default class DisclaimerScene extends Phaser.Scene {
   constructor() {
@@ -8,55 +11,71 @@ export default class DisclaimerScene extends Phaser.Scene {
   }
 
   create() {
-    const centerX = this.cameras.main.centerX;
-    const centerY = this.cameras.main.centerY;
+    applySceneBackground(this);
+    const cx = this.cameras.main.centerX;
+    const cy = this.cameras.main.centerY;
 
-    this.add.text(centerX, 80, 'Важная информация', {
-      fontSize: '28px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    // Card background
+    createCard(this, cx, cy, 640, 420, { delay: 0 });
 
-    this.add.text(centerX, centerY - 60, t('disclaimer.text'), {
-      fontSize: '16px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-      wordWrap: { width: 600 }, align: 'center', lineSpacing: 8,
-    }).setOrigin(0.5);
+    // Icon
+    const icon = this.add.text(cx, cy - 150, '\u2695', {
+      fontSize: '40px', color: THEME.warningHex,
+    }).setOrigin(0.5).setAlpha(0);
+    this.tweens.add({ targets: icon, alpha: 1, duration: 500, delay: 100 });
 
+    // Title
+    createTitle(this, cx, cy - 100, 'Важная информация', { delay: 150 });
+
+    // Body text
+    const body = createLabel(this, cx, cy - 10, t('disclaimer.text'), {
+      fontSize: '15px',
+      color: THEME.textSecondary,
+      wordWrap: { width: 540 },
+    });
+    body.setAlpha(0);
+    this.tweens.add({ targets: body, alpha: 1, duration: 400, delay: 250 });
+
+    // Checkbox
     let accepted = false;
-
-    const checkboxBg = this.add.rectangle(centerX - 140, centerY + 80, 24, 24, COLORS.GRAY)
-      .setInteractive({ useHandCursor: true })
-      .setStrokeStyle(2, COLORS.WHITE);
-
-    const checkmark = this.add.text(centerX - 140, centerY + 80, '✓', {
-      fontSize: '18px', color: COLORS.WHITE_HEX,
+    const checkBg = drawRoundedRect(this, cx - 150, cy + 90, 22, 22, 4, THEME.border, 0.4, THEME.accent, 0.3);
+    const checkmark = this.add.text(cx - 150, cy + 90, '\u2713', {
+      fontSize: '16px', color: '#00DDFF',
     }).setOrigin(0.5).setVisible(false);
 
-    this.add.text(centerX - 115, centerY + 80, t('disclaimer.accept'), {
-      fontSize: '16px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0, 0.5);
-
-    const btnBg = this.add.rectangle(centerX, centerY + 160, 220, 50, COLORS.GRAY, 0.3)
-      .setStrokeStyle(2, COLORS.GRAY);
-
-    const btnText = this.add.text(centerX, centerY + 160, t('disclaimer.continue'), {
-      fontSize: '20px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-
-    checkboxBg.on('pointerup', () => {
-      accepted = !accepted;
-      checkmark.setVisible(accepted);
-      btnBg.setFillStyle(accepted ? COLORS.WHITE : COLORS.GRAY, accepted ? 0.2 : 0.3);
-      btnText.setColor(accepted ? COLORS.WHITE_HEX : COLORS.GRAY_HEX);
-      if (accepted) {
-        btnBg.setInteractive({ useHandCursor: true });
-      } else {
-        btnBg.disableInteractive();
-      }
+    const checkLabel = createLabel(this, cx - 130, cy + 90, t('disclaimer.accept'), {
+      fontSize: '15px', color: THEME.textSecondary, align: 0,
     });
 
-    btnBg.on('pointerup', () => {
+    const checkHit = this.add.rectangle(cx - 60, cy + 90, 220, 30, 0x000000, 0)
+      .setInteractive({ useHandCursor: true });
+
+    // Continue button (starts disabled)
+    const btnContainer = createStyledButton(this, cx, cy + 155, 240, 48, t('disclaimer.continue'), () => {
       if (accepted) {
         acceptDisclaimer();
         this.scene.start('CalibrationScene');
+      }
+    }, { delay: 400 });
+    btnContainer.setAlpha(0.3);
+
+    checkHit.on('pointerup', () => {
+      accepted = !accepted;
+      checkmark.setVisible(accepted);
+      if (accepted) {
+        checkBg.clear();
+        checkBg.fillStyle(THEME.accent, 0.15);
+        checkBg.lineStyle(1.5, THEME.accent, 0.8);
+        checkBg.fillRoundedRect(cx - 150 - 11, cy + 90 - 11, 22, 22, 4);
+        checkBg.strokeRoundedRect(cx - 150 - 11, cy + 90 - 11, 22, 22, 4);
+        this.tweens.add({ targets: btnContainer, alpha: 1, duration: 200 });
+      } else {
+        checkBg.clear();
+        checkBg.fillStyle(THEME.border, 0.4);
+        checkBg.lineStyle(1.5, THEME.accent, 0.3);
+        checkBg.fillRoundedRect(cx - 150 - 11, cy + 90 - 11, 22, 22, 4);
+        checkBg.strokeRoundedRect(cx - 150 - 11, cy + 90 - 11, 22, 22, 4);
+        this.tweens.add({ targets: btnContainer, alpha: 0.3, duration: 200 });
       }
     });
   }

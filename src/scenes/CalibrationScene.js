@@ -1,6 +1,10 @@
 import { getCalibration, saveCalibration } from '../modules/storage.js';
 import { t } from '../modules/i18n.js';
 import { COLORS, CALIBRATION } from '../config/constants.js';
+import {
+  THEME, applySceneBackground, createTitle, createLabel,
+  createStyledButton, createStyledSlider, createCard,
+} from '../modules/uiTheme.js';
 
 export default class CalibrationScene extends Phaser.Scene {
   constructor() {
@@ -8,6 +12,7 @@ export default class CalibrationScene extends Phaser.Scene {
   }
 
   create() {
+    applySceneBackground(this);
     this.attempts = 0;
     const cal = getCalibration();
     this.redBrightness = cal.red_brightness;
@@ -17,102 +22,108 @@ export default class CalibrationScene extends Phaser.Scene {
 
   showSuppressionTest() {
     this.children.removeAll();
-    const centerX = this.cameras.main.centerX;
-    const centerY = this.cameras.main.centerY;
+    const cx = this.cameras.main.centerX;
+    const cy = this.cameras.main.centerY;
 
-    this.add.text(centerX, 60, t('calibration.instruction'), {
-      fontSize: '18px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-      wordWrap: { width: 600 }, align: 'center',
-    }).setOrigin(0.5);
+    createCard(this, cx, cy - 20, 660, 460, { delay: 0 });
 
-    this.add.rectangle(centerX - 120, centerY - 40, 150, 150, COLORS.RED)
-      .setAlpha(this.redBrightness / 100);
-    this.add.text(centerX - 120, centerY + 50, 'L', {
-      fontSize: '20px', color: COLORS.GRAY_HEX,
-    }).setOrigin(0.5);
+    createTitle(this, cx, 70, t('calibration.instruction'), { fontSize: '18px', delay: 100 });
 
-    this.add.rectangle(centerX + 120, centerY - 40, 150, 150, COLORS.CYAN)
-      .setAlpha(this.cyanBrightness / 100);
-    this.add.text(centerX + 120, centerY + 50, 'R', {
-      fontSize: '20px', color: COLORS.GRAY_HEX,
-    }).setOrigin(0.5);
+    // Red square (left eye)
+    this.add.graphics()
+      .fillStyle(COLORS.RED, this.redBrightness / 100)
+      .fillRoundedRect(cx - 200, cy - 100, 150, 150, 8);
+    createLabel(this, cx - 125, cy + 70, 'L — левый глаз', { fontSize: '12px' });
 
-    this.createButton(centerX - 120, centerY + 140, t('calibration.seeBoth'), () => {
+    // Cyan square (right eye)
+    this.add.graphics()
+      .fillStyle(COLORS.CYAN, this.cyanBrightness / 100)
+      .fillRoundedRect(cx + 50, cy - 100, 150, 150, 8);
+    createLabel(this, cx + 125, cy + 70, 'R — правый глаз', { fontSize: '12px' });
+
+    createStyledButton(this, cx - 130, cy + 140, 230, 46, t('calibration.seeBoth'), () => {
       this.onSuppressionPassed();
-    });
+    }, { color: THEME.success, delay: 200 });
 
-    this.createButton(centerX + 120, centerY + 140, t('calibration.seeOne'), () => {
+    createStyledButton(this, cx + 130, cy + 140, 230, 46, t('calibration.seeOne'), () => {
       this.attempts += 1;
       if (this.attempts >= CALIBRATION.MAX_ATTEMPTS) {
         this.showDoctorWarning();
       } else {
         this.showSliders();
       }
-    });
+    }, { color: THEME.accentRed, delay: 300 });
   }
 
   showSliders() {
     this.children.removeAll();
-    const centerX = this.cameras.main.centerX;
+    const cx = this.cameras.main.centerX;
 
-    this.add.text(centerX, 40, t('calibration.adjustBrightness'), {
-      fontSize: '18px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    applySceneBackground(this);
+    createCard(this, cx, 300, 600, 500, { delay: 0 });
+
+    createTitle(this, cx, 70, t('calibration.adjustBrightness'), { fontSize: '20px' });
 
     // Red channel
-    this.add.text(centerX, 100, `${t('calibration.red')}:`, {
-      fontSize: '16px', color: COLORS.RED_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-
-    const redLabel = this.add.text(centerX + 170, 100, `${this.redBrightness}%`, {
-      fontSize: '16px', color: COLORS.RED_HEX, fontFamily: 'Arial, sans-serif',
+    createLabel(this, cx - 120, 140, t('calibration.red'), { color: '#FF6677' });
+    this.redLabel = this.add.text(cx + 150, 140, `${this.redBrightness}%`, {
+      fontSize: '16px', color: '#FF6677', fontFamily: THEME.font,
     }).setOrigin(0, 0.5);
 
-    // Preview squares — created BEFORE sliders so callbacks can reference them
-    const redPreview = this.add.rectangle(centerX - 80, 380, 100, 100, COLORS.RED)
-      .setAlpha(this.redBrightness / 100);
-    const cyanPreview = this.add.rectangle(centerX + 80, 380, 100, 100, COLORS.CYAN)
-      .setAlpha(this.cyanBrightness / 100);
+    const redPreview = this.add.graphics();
+    redPreview.fillStyle(COLORS.RED, this.redBrightness / 100);
+    redPreview.fillRoundedRect(cx - 50, 240, 80, 80, 6);
 
-    this.createSlider(centerX, 140, this.redBrightness, (val) => {
+    createStyledSlider(this, cx, 180, 280, this.redBrightness, 1, (val) => {
       this.redBrightness = val;
-      redLabel.setText(`${val}%`);
-      redPreview.setAlpha(val / 100);
-    });
+      this.redLabel.setText(`${val}%`);
+      redPreview.clear();
+      redPreview.fillStyle(COLORS.RED, val / 100);
+      redPreview.fillRoundedRect(cx - 50, 240, 80, 80, 6);
+    }, { fillColor: COLORS.RED });
 
     // Cyan channel
-    this.add.text(centerX, 220, `${t('calibration.cyan')}:`, {
-      fontSize: '16px', color: COLORS.CYAN_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-
-    const cyanLabel = this.add.text(centerX + 170, 220, `${this.cyanBrightness}%`, {
-      fontSize: '16px', color: COLORS.CYAN_HEX, fontFamily: 'Arial, sans-serif',
+    createLabel(this, cx - 120, 350, t('calibration.cyan'), { color: '#00DDFF' });
+    this.cyanLabel = this.add.text(cx + 150, 350, `${this.cyanBrightness}%`, {
+      fontSize: '16px', color: '#00DDFF', fontFamily: THEME.font,
     }).setOrigin(0, 0.5);
 
-    this.createSlider(centerX, 260, this.cyanBrightness, (val) => {
-      this.cyanBrightness = val;
-      cyanLabel.setText(`${val}%`);
-      cyanPreview.setAlpha(val / 100);
-    });
+    const cyanPreview = this.add.graphics();
+    cyanPreview.fillStyle(COLORS.CYAN, this.cyanBrightness / 100);
+    cyanPreview.fillRoundedRect(cx + 50 - 80, 240, 80, 80, 6);
 
-    this.createButton(centerX, 480, t('calibration.retry'), () => {
+    createStyledSlider(this, cx, 390, 280, this.cyanBrightness, 1, (val) => {
+      this.cyanBrightness = val;
+      this.cyanLabel.setText(`${val}%`);
+      cyanPreview.clear();
+      cyanPreview.fillStyle(COLORS.CYAN, val / 100);
+      cyanPreview.fillRoundedRect(cx + 50 - 80, 240, 80, 80, 6);
+    }, { fillColor: COLORS.CYAN });
+
+    createStyledButton(this, cx, 480, 220, 44, t('calibration.retry'), () => {
       this.showSuppressionTest();
-    });
+    }, { delay: 200 });
   }
 
   showDoctorWarning() {
     this.children.removeAll();
-    const centerX = this.cameras.main.centerX;
-    const centerY = this.cameras.main.centerY;
+    const cx = this.cameras.main.centerX;
+    const cy = this.cameras.main.centerY;
 
-    this.add.text(centerX, centerY - 60, t('calibration.doctorWarning'), {
-      fontSize: '20px', color: '#FFAA00', fontFamily: 'Arial, sans-serif',
-      wordWrap: { width: 500 }, align: 'center',
+    applySceneBackground(this);
+    createCard(this, cx, cy, 500, 250);
+
+    this.add.text(cx, cy - 60, '\u26A0', {
+      fontSize: '36px', color: THEME.warningHex,
     }).setOrigin(0.5);
 
-    this.createButton(centerX, centerY + 40, t('calibration.continueAnyway'), () => {
-      this.onSuppressionPassed();
+    createLabel(this, cx, cy - 10, t('calibration.doctorWarning'), {
+      fontSize: '16px', color: THEME.warningHex, wordWrap: { width: 420 },
     });
+
+    createStyledButton(this, cx, cy + 70, 260, 44, t('calibration.continueAnyway'), () => {
+      this.onSuppressionPassed();
+    }, { color: THEME.warning });
   }
 
   onSuppressionPassed() {
@@ -123,36 +134,5 @@ export default class CalibrationScene extends Phaser.Scene {
       last_calibrated: new Date().toISOString(),
     });
     this.scene.start('GameSelectScene');
-  }
-
-  createButton(x, y, label, callback) {
-    const bg = this.add.rectangle(x, y, 240, 44, COLORS.GRAY, 0.2)
-      .setStrokeStyle(1, COLORS.GRAY)
-      .setInteractive({ useHandCursor: true });
-    this.add.text(x, y, label, {
-      fontSize: '16px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-    bg.on('pointerup', callback);
-    bg.on('pointerover', () => bg.setFillStyle(COLORS.GRAY, 0.4));
-    bg.on('pointerout', () => bg.setFillStyle(COLORS.GRAY, 0.2));
-    return bg;
-  }
-
-  createSlider(x, y, value, onChange) {
-    const width = 300;
-    const left = x - width / 2;
-    this.add.rectangle(x, y, width, 6, COLORS.GRAY, 0.3);
-
-    const thumbX = left + (value / 100) * width;
-    const thumb = this.add.circle(thumbX, y, 12, COLORS.WHITE)
-      .setInteractive({ useHandCursor: true, draggable: true });
-
-    this.input.setDraggable(thumb);
-    thumb.on('drag', (_pointer, dragX) => {
-      const clamped = Phaser.Math.Clamp(dragX, left, left + width);
-      thumb.x = clamped;
-      const newVal = Math.round(((clamped - left) / width) * 100);
-      onChange(newVal);
-    });
   }
 }

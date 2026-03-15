@@ -1,6 +1,10 @@
 import { t } from '../modules/i18n.js';
 import { COLORS, CONTRAST, SPEEDS } from '../config/constants.js';
 import { createGameSettings } from '../modules/gameState.js';
+import {
+  THEME, applySceneBackground, createTitle, createLabel,
+  createStyledButton, createStyledSlider, createCard,
+} from '../modules/uiTheme.js';
 
 export default class SettingsScene extends Phaser.Scene {
   constructor() {
@@ -13,127 +17,114 @@ export default class SettingsScene extends Phaser.Scene {
 
   create() {
     this.children.removeAll();
+    applySceneBackground(this);
     const cx = this.cameras.main.centerX;
 
-    this.add.text(cx, 30, t('settings.contrastBalance'), {
-      fontSize: '22px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    createTitle(this, cx, 30, t('settings.contrastBalance'), { fontSize: '22px' });
+    createLabel(this, cx, 58, t('settings.contrastHint'), { fontSize: '11px' });
 
-    this.add.text(cx, 55, t('settings.contrastHint'), {
-      fontSize: '12px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    // Contrast card
+    createCard(this, cx, 145, 560, 170);
 
-    // Left eye
-    this.add.text(cx - 60, 90, t('settings.leftEye'), {
-      fontSize: '14px', color: COLORS.RED_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0.5);
-    this.leftLabel = this.add.text(cx + 170, 90, `${this.settings.contrastLeft}%`, {
-      fontSize: '14px', color: COLORS.RED_HEX, fontFamily: 'Arial, sans-serif',
+    // Left eye slider
+    createLabel(this, cx - 170, 90, t('settings.leftEye'), { color: '#FF6677', align: 1 });
+    this.leftLabel = this.add.text(cx + 160, 90, `${this.settings.contrastLeft}%`, {
+      fontSize: '14px', color: '#FF6677', fontFamily: THEME.font,
     }).setOrigin(0, 0.5);
-    this.createSlider(cx + 50, 90, 200, this.settings.contrastLeft, CONTRAST.STEP, (v) => {
-      this.settings = createGameSettings({ ...this.settings, contrastLeft: v });
-      this.leftLabel.setText(`${v}%`);
-      this.updatePreview();
-    });
 
-    // Right eye
-    this.add.text(cx - 60, 130, t('settings.rightEye'), {
-      fontSize: '14px', color: COLORS.CYAN_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0.5);
-    this.rightLabel = this.add.text(cx + 170, 130, `${this.settings.contrastRight}%`, {
-      fontSize: '14px', color: COLORS.CYAN_HEX, fontFamily: 'Arial, sans-serif',
+    // Right eye slider
+    createLabel(this, cx - 170, 135, t('settings.rightEye'), { color: '#00DDFF', align: 1 });
+    this.rightLabel = this.add.text(cx + 160, 135, `${this.settings.contrastRight}%`, {
+      fontSize: '14px', color: '#00DDFF', fontFamily: THEME.font,
     }).setOrigin(0, 0.5);
-    this.createSlider(cx + 50, 130, 200, this.settings.contrastRight, CONTRAST.STEP, (v) => {
-      this.settings = createGameSettings({ ...this.settings, contrastRight: v });
-      this.rightLabel.setText(`${v}%`);
-      this.updatePreview();
-    });
 
     // Preview
-    this.redPreview = this.add.rectangle(cx - 40, 200, 60, 60, COLORS.RED)
-      .setAlpha(this.settings.contrastLeft / 100);
-    this.cyanPreview = this.add.rectangle(cx + 40, 200, 60, 60, COLORS.CYAN)
-      .setAlpha(this.settings.contrastRight / 100);
+    this.redPreview = this.add.graphics();
+    this.redPreview.fillStyle(COLORS.RED, this.settings.contrastLeft / 100);
+    this.redPreview.fillRoundedRect(cx - 35, 165, 30, 30, 4);
 
-    // Speed
-    this.add.text(cx, 270, t('settings.speed'), {
-      fontSize: '18px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    this.cyanPreview = this.add.graphics();
+    this.cyanPreview.fillStyle(COLORS.CYAN, this.settings.contrastRight / 100);
+    this.cyanPreview.fillRoundedRect(cx + 5, 165, 30, 30, 4);
+
+    createStyledSlider(this, cx, 90, 220, this.settings.contrastLeft, CONTRAST.STEP, (v) => {
+      this.settings = createGameSettings({ ...this.settings, contrastLeft: v });
+      this.leftLabel.setText(`${v}%`);
+      this.redPreview.clear();
+      this.redPreview.fillStyle(COLORS.RED, v / 100);
+      this.redPreview.fillRoundedRect(cx - 35, 165, 30, 30, 4);
+    }, { fillColor: COLORS.RED });
+
+    createStyledSlider(this, cx, 135, 220, this.settings.contrastRight, CONTRAST.STEP, (v) => {
+      this.settings = createGameSettings({ ...this.settings, contrastRight: v });
+      this.rightLabel.setText(`${v}%`);
+      this.cyanPreview.clear();
+      this.cyanPreview.fillStyle(COLORS.CYAN, v / 100);
+      this.cyanPreview.fillRoundedRect(cx + 5, 165, 30, 30, 4);
+    }, { fillColor: COLORS.CYAN });
+
+    // Speed section
+    createCard(this, cx, 290, 560, 90);
+    createLabel(this, cx, 260, t('settings.speed'), { color: THEME.textPrimary, fontSize: '16px' });
 
     const speedKeys = Object.keys(SPEEDS);
     speedKeys.forEach((key, i) => {
-      const bx = 160 + i * 140;
+      const bx = cx - 195 + i * 130;
       const isActive = this.settings.speed === key;
-      const bg = this.add.rectangle(bx, 310, 120, 36, COLORS.GRAY, isActive ? 0.4 : 0.1)
-        .setStrokeStyle(1, isActive ? COLORS.WHITE : COLORS.GRAY)
-        .setInteractive({ useHandCursor: true });
-      this.add.text(bx, 310, SPEEDS[key].label, {
-        fontSize: '14px', color: isActive ? COLORS.WHITE_HEX : COLORS.GRAY_HEX,
-        fontFamily: 'Arial, sans-serif',
+
+      const btnG = this.add.graphics();
+      btnG.fillStyle(isActive ? THEME.accent : THEME.border, isActive ? 0.2 : 0.15);
+      btnG.lineStyle(1, isActive ? THEME.accent : THEME.border, isActive ? 0.7 : 0.3);
+      btnG.fillRoundedRect(bx - 55, 290, 110, 34, 8);
+      btnG.strokeRoundedRect(bx - 55, 290, 110, 34, 8);
+
+      const btnText = this.add.text(bx, 307, SPEEDS[key].label, {
+        fontSize: '13px',
+        color: isActive ? '#00DDFF' : THEME.textSecondary,
+        fontFamily: THEME.font,
       }).setOrigin(0.5);
-      bg.on('pointerup', () => {
+
+      const hit = this.add.rectangle(bx, 307, 110, 34, 0, 0).setInteractive({ useHandCursor: true });
+      hit.on('pointerup', () => {
         this.settings = createGameSettings({ ...this.settings, speed: key });
         this.create();
       });
     });
 
-    // Eye select
-    this.add.text(cx, 370, t('settings.eyeSelect'), {
-      fontSize: '18px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
+    // Eye selection
+    createCard(this, cx, 390, 560, 80);
+    createLabel(this, cx, 365, t('settings.eyeSelect'), { color: THEME.textPrimary, fontSize: '16px' });
 
-    const eyeOptions = [
+    const eyeOpts = [
       { key: 'platform_left', label: t('settings.eyeLeft') },
       { key: 'platform_right', label: t('settings.eyeRight') },
     ];
-    eyeOptions.forEach((opt, i) => {
-      const bx = cx - 100 + i * 200;
+    eyeOpts.forEach((opt, i) => {
+      const bx = cx - 95 + i * 190;
       const isActive = this.settings.eyeConfig === opt.key;
-      const bg = this.add.rectangle(bx, 410, 170, 36, COLORS.GRAY, isActive ? 0.4 : 0.1)
-        .setStrokeStyle(1, isActive ? COLORS.WHITE : COLORS.GRAY)
-        .setInteractive({ useHandCursor: true });
-      this.add.text(bx, 410, opt.label, {
-        fontSize: '14px', color: isActive ? COLORS.WHITE_HEX : COLORS.GRAY_HEX,
-        fontFamily: 'Arial, sans-serif',
+
+      const g = this.add.graphics();
+      g.fillStyle(isActive ? THEME.accent : THEME.border, isActive ? 0.2 : 0.15);
+      g.lineStyle(1, isActive ? THEME.accent : THEME.border, isActive ? 0.7 : 0.3);
+      g.fillRoundedRect(bx - 80, 390, 160, 34, 8);
+      g.strokeRoundedRect(bx - 80, 390, 160, 34, 8);
+
+      this.add.text(bx, 407, opt.label, {
+        fontSize: '13px',
+        color: isActive ? '#00DDFF' : THEME.textSecondary,
+        fontFamily: THEME.font,
       }).setOrigin(0.5);
-      bg.on('pointerup', () => {
-        this.settings = createGameSettings({ ...this.settings, eyeConfig: opt.key });
-        this.create();
-      });
+
+      this.add.rectangle(bx, 407, 160, 34, 0, 0).setInteractive({ useHandCursor: true })
+        .on('pointerup', () => {
+          this.settings = createGameSettings({ ...this.settings, eyeConfig: opt.key });
+          this.create();
+        });
     });
 
     // Start button
-    const startBtn = this.add.rectangle(cx, 510, 240, 50, COLORS.WHITE, 0.15)
-      .setStrokeStyle(2, COLORS.WHITE)
-      .setInteractive({ useHandCursor: true });
-    this.add.text(cx, 510, t('settings.startGame'), {
-      fontSize: '20px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-    startBtn.on('pointerup', () => {
+    createStyledButton(this, cx, 500, 260, 54, t('settings.startGame'), () => {
       this.scene.start('GameScene', { settings: this.settings });
-    });
-    startBtn.on('pointerover', () => startBtn.setFillStyle(COLORS.WHITE, 0.3));
-    startBtn.on('pointerout', () => startBtn.setFillStyle(COLORS.WHITE, 0.15));
-  }
-
-  updatePreview() {
-    this.redPreview.setAlpha(this.settings.contrastLeft / 100);
-    this.cyanPreview.setAlpha(this.settings.contrastRight / 100);
-  }
-
-  createSlider(x, y, width, value, step, onChange) {
-    const left = x - width / 2;
-    this.add.rectangle(x, y, width, 4, COLORS.GRAY, 0.3);
-    const thumbX = left + (value / 100) * width;
-    const thumb = this.add.circle(thumbX, y, 10, COLORS.WHITE)
-      .setInteractive({ useHandCursor: true, draggable: true });
-    this.input.setDraggable(thumb);
-    thumb.on('drag', (_pointer, dragX) => {
-      const clamped = Phaser.Math.Clamp(dragX, left, left + width);
-      thumb.x = clamped;
-      const raw = ((clamped - left) / width) * 100;
-      const snapped = Math.round(raw / step) * step;
-      onChange(Phaser.Math.Clamp(snapped, 0, 100));
-    });
+    }, { fontSize: '20px', delay: 200 });
   }
 }
