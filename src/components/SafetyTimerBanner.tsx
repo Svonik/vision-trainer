@@ -10,7 +10,8 @@ interface SafetyTimerBannerProps {
 export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBannerProps) {
     if (type === 'warning') {
         return (
-            <div className="absolute top-0 left-0 right-0 bg-amber-500 text-black text-center py-3 px-4 font-semibold z-10">
+            <div className="absolute top-0 left-0 right-0 bg-amber-500 text-black text-center py-3 px-4 font-semibold z-10 animate-pulse"
+                 style={{ animation: 'slideDown 0.3s ease-out' }}>
                 {t('safety.breakWarning')}
             </div>
         );
@@ -18,7 +19,8 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
 
     if (type === 'break') {
         return (
-            <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center z-20">
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-20"
+                 style={{ animation: 'fadeIn 0.3s ease-out' }}>
                 <div className="bg-gray-900 border border-gray-600 rounded-lg p-8 max-w-sm w-full text-center space-y-4">
                     <h2 className="text-2xl font-bold text-amber-400">
                         {t('safety.breakTime')}
@@ -29,14 +31,14 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
                     <div className="flex flex-col gap-3 pt-2">
                         <Button
                             onClick={onExtend}
-                            variant="outline"
-                            className="w-full border-gray-500 text-white hover:bg-gray-800"
+                            className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
                         >
                             {t('safety.extend')}
                         </Button>
                         <Button
                             onClick={onFinish}
-                            className="w-full bg-white text-black hover:bg-gray-200"
+                            variant="outline"
+                            className="w-full border-gray-500 text-gray-300 hover:bg-gray-800"
                         >
                             {t('safety.finish')}
                         </Button>
