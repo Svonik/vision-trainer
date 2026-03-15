@@ -12,6 +12,7 @@ const GAME_SCENE_MAP: Record<string, string> = {
     invaders: 'InvadersGameScene',
     pong: 'PongGameScene',
     snake: 'SnakeGameScene',
+    flappy: 'FlappyGameScene',
 };
 
 export function GamePage() {
@@ -31,6 +32,7 @@ export function GamePage() {
             invaders: 'start-invaders-game',
             pong: 'start-pong-game',
             snake: 'start-snake-game',
+            flappy: 'start-flappy-game',
         };
         const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 

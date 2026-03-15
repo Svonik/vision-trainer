@@ -67,6 +67,8 @@ const strings = {
   'pong.serveHint': 'Подача…',
   'gameSelect.snake.title': 'Змейка',
   'gameSelect.snake.description': 'Управляйте змейкой и собирайте еду. Змейка видна одному глазу, еда — другому.',
+  'gameSelect.flappy.title': 'Летящая птица',
+  'gameSelect.flappy.description': 'Летите через трубы. Птица видна одному глазу, трубы — другому.',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
