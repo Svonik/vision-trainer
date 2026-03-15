@@ -6,6 +6,7 @@ import InvadersGameScene from './scenes/InvadersGameScene';
 import PongGameScene from './scenes/PongGameScene';
 import SnakeGameScene from './scenes/SnakeGameScene';
 import FlappyGameScene from './scenes/FlappyGameScene';
+import AsteroidGameScene from './scenes/AsteroidGameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -17,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 } }
     },
-    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene]
+    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene]
 };
 
 const StartGame = (parent: string) => {

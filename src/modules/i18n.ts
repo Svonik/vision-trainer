@@ -69,6 +69,8 @@ const strings = {
   'gameSelect.snake.description': 'Управляйте змейкой и собирайте еду. Змейка видна одному глазу, еда — другому.',
   'gameSelect.flappy.title': 'Летящая птица',
   'gameSelect.flappy.description': 'Летите через трубы. Птица видна одному глазу, трубы — другому.',
+  'gameSelect.asteroid.title': 'Астероиды',
+  'gameSelect.asteroid.description': 'Уничтожайте астероиды. Ваш корабль виден одному глазу, астероиды — другому.',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
