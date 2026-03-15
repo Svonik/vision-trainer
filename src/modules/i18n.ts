@@ -65,6 +65,8 @@ const strings = {
   'gameSelect.pong.title': 'Понг',
   'gameSelect.pong.description': 'Каждая ракетка видна своему глазу. Мяч виден обоим. Игра против компьютера.',
   'pong.serveHint': 'Подача…',
+  'gameSelect.snake.title': 'Змейка',
+  'gameSelect.snake.description': 'Управляйте змейкой и собирайте еду. Змейка видна одному глазу, еда — другому.',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

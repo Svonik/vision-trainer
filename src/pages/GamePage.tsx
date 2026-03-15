@@ -11,6 +11,7 @@ const GAME_SCENE_MAP: Record<string, string> = {
     tetris: 'TetrisGameScene',
     invaders: 'InvadersGameScene',
     pong: 'PongGameScene',
+    snake: 'SnakeGameScene',
 };
 
 export function GamePage() {
@@ -29,6 +30,7 @@ export function GamePage() {
             tetris: 'start-tetris-game',
             invaders: 'start-invaders-game',
             pong: 'start-pong-game',
+            snake: 'start-snake-game',
         };
         const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 
