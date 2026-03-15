@@ -1,6 +1,7 @@
 import { AUTO, Game } from 'phaser';
 import GameScene from './scenes/GameScene';
 import BreakoutGameScene from './scenes/BreakoutGameScene';
+import TetrisGameScene from './scenes/TetrisGameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -12,7 +13,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 } }
     },
-    scene: [GameScene, BreakoutGameScene]
+    scene: [GameScene, BreakoutGameScene, TetrisGameScene]
 };
 
 const StartGame = (parent: string) => {

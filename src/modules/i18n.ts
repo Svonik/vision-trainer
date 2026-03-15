@@ -56,6 +56,10 @@ const strings = {
   'gameSelect.breakout.description': 'Отбивайте мяч платформой и уничтожайте кирпичи. Платформа видна одному глазу, мяч — другому.',
   'breakout.ballSpeed': 'Скорость мяча',
   'breakout.launchHint': 'Клик / Пробел — запуск',
+  'gameSelect.tetris.title': 'Тетрис',
+  'gameSelect.tetris.description': 'Классический тетрис. Падающая фигура видна одному глазу, уложенные — другому.',
+  'tetris.linesCleared': 'Линий убрано',
+  'tetris.nextPiece': 'Следующая',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

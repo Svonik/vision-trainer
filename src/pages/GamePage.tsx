@@ -8,6 +8,7 @@ import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 const GAME_SCENE_MAP: Record<string, string> = {
     catcher: 'GameScene',
     breakout: 'BreakoutGameScene',
+    tetris: 'TetrisGameScene',
 };
 
 export function GamePage() {
@@ -20,7 +21,12 @@ export function GamePage() {
 
     useEffect(() => {
         const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
-        const startEvent = gameId === 'breakout' ? 'start-breakout-game' : 'start-game';
+        const START_EVENT_MAP: Record<string, string> = {
+            catcher: 'start-game',
+            breakout: 'start-breakout-game',
+            tetris: 'start-tetris-game',
+        };
+        const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 
         const handleComplete = ({ result, settings: s }: any) => {
             addSession(result);
