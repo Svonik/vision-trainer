@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { HashRouter, Routes, Route, Navigate } from 'react-router';
 import { isDisclaimerAccepted } from './modules/storage';
 import { DisclaimerGuard } from './guards/DisclaimerGuard';
 import { CalibrationGuard } from './guards/CalibrationGuard';
@@ -14,7 +14,7 @@ import { ProfilePage } from './pages/ProfilePage';
 
 function App() {
     return (
-        <BrowserRouter>
+        <HashRouter>
             <Routes>
                 <Route path="/" element={
                     <Navigate to={isDisclaimerAccepted() ? '/games' : '/disclaimer'} replace />
@@ -36,7 +36,7 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
             </Routes>
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 

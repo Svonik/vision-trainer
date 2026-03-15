@@ -23,7 +23,7 @@ const phasermsg = () => {
 }
 
 export default defineConfig({
-    base: './',
+    base: '/vision-trainer/',
     plugins: [
         react(),
         tailwindcss(),
