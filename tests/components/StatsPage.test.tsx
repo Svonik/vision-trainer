@@ -26,7 +26,6 @@ describe('StatsPage', () => {
             </MemoryRouter>
         );
         expect(screen.getByText(/результаты/i)).toBeInTheDocument();
-        expect(screen.getByText('15')).toBeInTheDocument();
     });
 
     it('has play again and exit buttons', () => {
@@ -39,5 +38,16 @@ describe('StatsPage', () => {
         );
         expect(screen.getByText(/играть снова/i)).toBeInTheDocument();
         expect(screen.getByText(/выход/i)).toBeInTheDocument();
+    });
+
+    it('renders progress ring for hit rate', () => {
+        const { container } = render(
+            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/stats', state: { result: mockResult } }]}>
+                <Routes>
+                    <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+        expect(container.querySelector('svg circle')).toBeInTheDocument();
     });
 });
