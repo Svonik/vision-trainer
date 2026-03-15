@@ -3,6 +3,9 @@ import { isDisclaimerAccepted } from './modules/storage';
 import { DisclaimerGuard } from './guards/DisclaimerGuard';
 import { CalibrationGuard } from './guards/CalibrationGuard';
 import { GameSettingsGuard } from './guards/GameSettingsGuard';
+import { DisclaimerPage } from './pages/DisclaimerPage';
+import { CalibrationPage } from './pages/CalibrationPage';
+import { GameSelectPage } from './pages/GameSelectPage';
 
 const Placeholder = ({ name }: { name: string }) => <div><h1>{name}</h1></div>;
 
@@ -13,12 +16,12 @@ function App() {
                 <Route path="/" element={
                     <Navigate to={isDisclaimerAccepted() ? '/games' : '/disclaimer'} replace />
                 } />
-                <Route path="/disclaimer" element={<Placeholder name="Disclaimer" />} />
+                <Route path="/disclaimer" element={<DisclaimerPage />} />
                 <Route path="/calibration" element={
-                    <DisclaimerGuard><Placeholder name="Calibration" /></DisclaimerGuard>
+                    <DisclaimerGuard><CalibrationPage /></DisclaimerGuard>
                 } />
                 <Route path="/games" element={
-                    <DisclaimerGuard><CalibrationGuard><Placeholder name="Game Select" /></CalibrationGuard></DisclaimerGuard>
+                    <DisclaimerGuard><CalibrationGuard><GameSelectPage /></CalibrationGuard></DisclaimerGuard>
                 } />
                 <Route path="/games/:gameId/settings" element={
                     <DisclaimerGuard><CalibrationGuard><Placeholder name="Settings" /></CalibrationGuard></DisclaimerGuard>
