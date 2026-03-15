@@ -181,9 +181,10 @@ export default class GameScene extends Phaser.Scene {
       .setAlpha(this.targetAlpha);
 
     this.physics.add.existing(target);
-    target.body.setVelocityY(this.fallSpeed);
     target.body.setCircle(objDiameter / 2);
     this.targets.add(target);
+    // Set velocity AFTER adding to group (group.add resets velocity)
+    target.body.setVelocityY(this.fallSpeed);
     this.totalSpawned++;
   }
 
