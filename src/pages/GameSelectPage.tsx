@@ -11,6 +11,7 @@ export function GameSelectPage() {
             <h1 className="text-2xl font-bold text-white">
                 {t('gameSelect.title')}
             </h1>
+
             <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
                 <CardHeader>
                     <CardTitle className="text-lg text-white">
@@ -29,6 +30,26 @@ export function GameSelectPage() {
                     </Button>
                 </CardContent>
             </Card>
+
+            <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
+                <CardHeader>
+                    <CardTitle className="text-lg text-white">
+                        {t('gameSelect.breakout.title')}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-gray-300 text-sm">
+                        {t('gameSelect.breakout.description')}
+                    </p>
+                    <Button
+                        onClick={() => navigate('/games/breakout/settings')}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+                    >
+                        {t('gameSelect.play')}
+                    </Button>
+                </CardContent>
+            </Card>
+
             <Button
                 onClick={() => navigate('/calibration')}
                 variant="outline"

@@ -52,6 +52,10 @@ const strings = {
   'safety.extend': 'Продолжить ещё 5 минут',
   'storage.unavailable': 'Данные сессии не будут сохранены (приватный режим браузера)',
   'fps.low': 'Низкая производительность. Попробуйте снизить скорость падения.',
+  'gameSelect.breakout.title': 'Арканоид',
+  'gameSelect.breakout.description': 'Отбивайте мяч платформой и уничтожайте кирпичи. Платформа видна одному глазу, мяч — другому.',
+  'breakout.ballSpeed': 'Скорость мяча',
+  'breakout.launchHint': 'Клик / Пробел — запуск',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
