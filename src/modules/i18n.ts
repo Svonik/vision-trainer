@@ -60,6 +60,8 @@ const strings = {
   'gameSelect.tetris.description': 'Классический тетрис. Падающая фигура видна одному глазу, уложенные — другому.',
   'tetris.linesCleared': 'Линий убрано',
   'tetris.nextPiece': 'Следующая',
+  'gameSelect.invaders.title': 'Космические захватчики',
+  'gameSelect.invaders.description': 'Стреляйте по врагам. Ваш корабль виден одному глазу, враги — другому.',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

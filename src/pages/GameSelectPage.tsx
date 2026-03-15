@@ -69,6 +69,25 @@ export function GameSelectPage() {
                 </CardContent>
             </Card>
 
+            <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
+                <CardHeader>
+                    <CardTitle className="text-lg text-white">
+                        {t('gameSelect.invaders.title')}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-gray-300 text-sm">
+                        {t('gameSelect.invaders.description')}
+                    </p>
+                    <Button
+                        onClick={() => navigate('/games/invaders/settings')}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+                    >
+                        {t('gameSelect.play')}
+                    </Button>
+                </CardContent>
+            </Card>
+
             <Button
                 onClick={() => navigate('/calibration')}
                 variant="outline"
