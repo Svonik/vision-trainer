@@ -6,6 +6,9 @@ import { GameSettingsGuard } from './guards/GameSettingsGuard';
 import { DisclaimerPage } from './pages/DisclaimerPage';
 import { CalibrationPage } from './pages/CalibrationPage';
 import { GameSelectPage } from './pages/GameSelectPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { GamePage } from './pages/GamePage';
+import { StatsPage } from './pages/StatsPage';
 
 const Placeholder = ({ name }: { name: string }) => <div><h1>{name}</h1></div>;
 
@@ -24,12 +27,12 @@ function App() {
                     <DisclaimerGuard><CalibrationGuard><GameSelectPage /></CalibrationGuard></DisclaimerGuard>
                 } />
                 <Route path="/games/:gameId/settings" element={
-                    <DisclaimerGuard><CalibrationGuard><Placeholder name="Settings" /></CalibrationGuard></DisclaimerGuard>
+                    <DisclaimerGuard><CalibrationGuard><SettingsPage /></CalibrationGuard></DisclaimerGuard>
                 } />
                 <Route path="/games/:gameId/play" element={
-                    <DisclaimerGuard><CalibrationGuard><GameSettingsGuard><Placeholder name="Game" /></GameSettingsGuard></CalibrationGuard></DisclaimerGuard>
+                    <DisclaimerGuard><CalibrationGuard><GameSettingsGuard><GamePage /></GameSettingsGuard></CalibrationGuard></DisclaimerGuard>
                 } />
-                <Route path="/games/:gameId/stats" element={<Placeholder name="Stats" />} />
+                <Route path="/games/:gameId/stats" element={<StatsPage />} />
                 <Route path="/profile" element={<Placeholder name="Profile" />} />
                 <Route path="/dashboard" element={<Placeholder name="Dashboard" />} />
             </Routes>
