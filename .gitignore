@@ -1,5 +1,26 @@
 node_modules/
 dist/
-.playwright-mcp/
 .DS_Store
 *.log
+
+# Local docs (specs, plans)
+docs/
+
+# Playwright CLI snapshots
+.playwright-cli/
+.playwright-mcp/
+
+# Superpowers brainstorm artifacts
+.superpowers/
+
+# Test results
+test-results/
+
+# Audit screenshots
+audit-*.png
+
+# Debug scripts
+log.js
+
+# PDR
+PDR.md
