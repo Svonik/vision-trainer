@@ -86,6 +86,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.ball = this.add.circle(ccx, ballStartY, ballRadius, this.ballColor, 0);
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballRadius);
+    this.ball.body.setBounce(1, 1);
     this.ball.body.setCollideWorldBounds(false);
     this.ballVisual = GameVisuals.glowCircle(this, ccx, ballStartY, ballRadius, this.ballColor, this.ballAlpha);
     this.ballSpeed = BALL_SPEEDS[this.settings.speed] || 200;
