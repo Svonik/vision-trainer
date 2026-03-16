@@ -18,7 +18,7 @@ export function TopBar({ variant }: TopBarProps) {
         >
             {variant === 'tab' ? (
                 <button
-                    onClick={() => navigate('/games')}
+                    onClick={() => navigate('/mode-select')}
                     className="text-[var(--accent)] font-semibold text-sm hover:opacity-80 transition-opacity"
                 >
                     Vision Trainer

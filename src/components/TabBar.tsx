@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router';
-import { Gamepad2, TrendingUp, Settings } from 'lucide-react';
+import { Target, Gamepad2, TrendingUp, Settings } from 'lucide-react';
 import { t } from '../modules/i18n';
 
 interface Tab {
@@ -9,6 +9,7 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+    { route: '/mode-select', labelKey: 'tabs.training', icon: Target },
     { route: '/games', labelKey: 'tabs.games', icon: Gamepad2 },
     { route: '/progress', labelKey: 'tabs.progress', icon: TrendingUp },
     { route: '/settings', labelKey: 'tabs.settings', icon: Settings },
@@ -19,6 +20,9 @@ export function TabBar() {
     const navigate = useNavigate();
 
     const isActive = (route: string): boolean => {
+        if (route === '/mode-select') {
+            return location.pathname === '/mode-select' || location.pathname.startsWith('/training');
+        }
         if (route === '/games') {
             return location.pathname.startsWith('/games');
         }
@@ -43,8 +47,8 @@ export function TabBar() {
                         className={`flex-1 flex flex-col items-center justify-center gap-1 btn-press ${colorClass}`}
                         aria-current={active ? 'page' : undefined}
                     >
-                        <Icon size={24} />
-                        <span className="text-[12px] leading-none">{t(labelKey)}</span>
+                        <Icon size={22} />
+                        <span className="text-[11px] leading-none">{t(labelKey)}</span>
                     </button>
                 );
             })}

@@ -99,6 +99,7 @@ const strings = {
   'nav.toGames': 'К играм',
   'nav.back': 'Назад',
   'stats.startGame': 'Начать игру!',
+  'tabs.training': 'Тренировка',
   'tabs.games': 'Игры',
   'tabs.progress': 'Прогресс',
   'tabs.settings': 'Настройки',
