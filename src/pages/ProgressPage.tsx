@@ -76,7 +76,7 @@ export function ProgressPage() {
                     <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.avgHitRate')}</p>
                 </div>
                 <div className="text-center">
-                    <p className="font-[var(--font-display)] text-2xl text-[var(--text)]">{formatTotalTime(totalTime)}</p>
+                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)]">{formatTotalTime(totalTime)}</p>
                     <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.totalTime')}</p>
                 </div>
             </div>
