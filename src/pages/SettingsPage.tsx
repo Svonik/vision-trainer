@@ -6,7 +6,7 @@ import { useGameSettings } from '../hooks/useGameSettings';
 import { SPEEDS, CONTRAST } from '../modules/constants';
 import { t } from '../modules/i18n';
 import { getEyeColors } from '../modules/glassesColors';
-import { getCalibration } from '../modules/storage';
+import { getCalibration, getDefaultSettings } from '../modules/storage';
 import { getGameById } from '../config/games';
 
 const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
@@ -18,7 +18,14 @@ export function SettingsPage() {
 
     useEffect(() => {
         const calibration = getCalibration();
-        updateSettings({ glassesType: calibration.glasses_type ?? 'red-cyan' });
+        const defaults = getDefaultSettings();
+        updateSettings({
+            glassesType: calibration.glasses_type ?? 'red-cyan',
+            contrastLeft: defaults.contrastLeft ?? CONTRAST.DEFAULT,
+            contrastRight: defaults.contrastRight ?? CONTRAST.DEFAULT,
+            speed: defaults.speed ?? 'slow',
+            eyeConfig: defaults.eyeConfig ?? 'platform_left',
+        });
     }, []);
 
     const game = getGameById(gameId ?? '');
