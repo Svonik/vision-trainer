@@ -51,10 +51,10 @@ export function SettingsPage() {
 
                     {/* Contrast section */}
                     <div className="space-y-4">
-                        <p className="text-sm font-medium text-[var(--text)]">{t('settings.contrastBalance')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.contrastBalance')}</p>
 
                         {/* Hint box */}
-                        <div className="rounded-xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-sm text-[var(--accent)]">
+                        <div className="rounded-xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-base text-[var(--accent)]">
                             {t('settings.contrastHint')}
                         </div>
 
@@ -68,7 +68,7 @@ export function SettingsPage() {
                                         boxShadow: '0 0 12px rgba(255,107,138,0.4)',
                                     }}
                                 />
-                                <span className="text-xs text-[var(--text-secondary)]">Л: {settings.contrastLeft}%</span>
+                                <span className="text-sm text-[var(--text-secondary)]">Л: {settings.contrastLeft}%</span>
                             </div>
                             <div className="text-center">
                                 <div
@@ -78,13 +78,13 @@ export function SettingsPage() {
                                         boxShadow: '0 0 12px rgba(107,223,255,0.4)',
                                     }}
                                 />
-                                <span className="text-xs text-[var(--text-secondary)]">П: {settings.contrastRight}%</span>
+                                <span className="text-sm text-[var(--text-secondary)]">П: {settings.contrastRight}%</span>
                             </div>
                         </div>
 
                         <div className="space-y-3">
                             <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-base">
                                     <span style={{ color: eyeColors.leftHex }}>{`Левый глаз (${eyeColors.leftLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastLeft}%</span>
                                 </div>
@@ -99,7 +99,7 @@ export function SettingsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-base">
                                     <span style={{ color: eyeColors.rightHex }}>{`Правый глаз (${eyeColors.rightLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastRight}%</span>
                                 </div>
@@ -117,13 +117,13 @@ export function SettingsPage() {
 
                     {/* Speed section */}
                     <div className="space-y-3">
-                        <p className="text-sm font-medium text-[var(--text)]">{t('settings.speed')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.speed')}</p>
                         <div className="grid grid-cols-2 gap-2">
                             {SPEED_KEYS.map((key) => (
                                 <button
                                     key={key}
                                     onClick={() => updateSettings({ speed: key })}
-                                    className={`py-2 px-4 rounded-full border text-sm transition-colors btn-press ${
+                                    className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                         settings.speed === key
                                             ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                             : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -137,11 +137,11 @@ export function SettingsPage() {
 
                     {/* Eye config section */}
                     <div className="space-y-3">
-                        <p className="text-sm font-medium text-[var(--text)]">{t('settings.eyeSelect')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.eyeSelect')}</p>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => updateSettings({ eyeConfig: 'platform_left' })}
-                                className={`py-2 px-4 rounded-full border text-sm transition-colors btn-press ${
+                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     settings.eyeConfig === 'platform_left'
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                         : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -151,7 +151,7 @@ export function SettingsPage() {
                             </button>
                             <button
                                 onClick={() => updateSettings({ eyeConfig: 'platform_right' })}
-                                className={`py-2 px-4 rounded-full border text-sm transition-colors btn-press ${
+                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     settings.eyeConfig === 'platform_right'
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                         : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'

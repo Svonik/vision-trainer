@@ -119,14 +119,14 @@ export function TrainingSummaryPage() {
                                         className="flex items-center justify-between rounded-xl bg-[var(--bg)]/50 border border-[var(--border)]/40 px-4 py-3"
                                     >
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <span className="w-6 h-6 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] text-xs flex items-center justify-center font-bold flex-shrink-0">
+                                            <span className="w-6 h-6 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] text-sm flex items-center justify-center font-bold flex-shrink-0">
                                                 {i + 1}
                                             </span>
                                             <span className="text-sm text-[var(--text)] truncate">
                                                 {t(GAME_TITLE_KEYS[gameKey] ?? 'app.title')}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)] flex-shrink-0">
+                                        <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] flex-shrink-0">
                                             <span>{hitPercent}%</span>
                                             <span>{formatDuration(result.duration_s ?? 0)}</span>
                                         </div>
@@ -144,7 +144,7 @@ export function TrainingSummaryPage() {
                             ? 'bg-[var(--warning)]/10 border-[var(--warning)] text-[var(--warning)]'
                             : 'bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]'
                     }`}>
-                        <p className="font-medium text-xs uppercase tracking-wide mb-1 opacity-70">
+                        <p className="font-medium text-sm uppercase tracking-wide mb-1 opacity-70">
                             {t('training.contrastSuggestion')}
                         </p>
                         <p>
@@ -155,7 +155,7 @@ export function TrainingSummaryPage() {
                                 : t('training.suggestKeep')}
                         </p>
                         {recommendation.suggestion !== 'keep' && (
-                            <p className="text-xs opacity-60 mt-1">
+                            <p className="text-sm opacity-60 mt-1">
                                 Л: {recommendation.left}% / П: {recommendation.right}%
                             </p>
                         )}
@@ -164,7 +164,7 @@ export function TrainingSummaryPage() {
                     {/* Overall score: count of games with hit_rate > 0.5 */}
                     <div className="text-center border-t border-[var(--border)]/40 pt-4">
                         <CountUp target={avgHitRate} />
-                        <p className="text-[var(--text-secondary)] text-xs mt-1">
+                        <p className="text-[var(--text-secondary)] text-sm mt-1">
                             {t('training.averageHitRate')}
                         </p>
                     </div>

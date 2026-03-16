@@ -45,17 +45,17 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                 />
             </div>
 
-            <p className="text-center text-sm text-[var(--text-secondary)]">
+            <p className="text-center text-base text-[var(--text-secondary)]">
                 {t('calibration.hint')}
             </p>
-            <p className="text-xs text-[var(--text-secondary)] text-center">
+            <p className="text-sm text-[var(--text-secondary)] text-center">
                 {`Попытка ${attempts} из ${maxAttempts}`}
             </p>
 
             <div className="w-full max-w-sm space-y-4">
                 {/* Red channel slider */}
                 <div className="space-y-2">
-                    <label className="text-sm" style={{ color: '#ff6666' }}>
+                    <label className="text-base" style={{ color: '#ff6666' }}>
                         {t('calibration.red')}: {redBrightness}
                     </label>
                     <div className="flex items-center gap-3">
@@ -84,7 +84,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
                 {/* Cyan channel slider */}
                 <div className="space-y-2">
-                    <label className="text-sm" style={{ color: '#00e5e5' }}>
+                    <label className="text-base" style={{ color: '#00e5e5' }}>
                         {t('calibration.cyan')}: {cyanBrightness}
                     </label>
                     <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
             {maxAttemptsReached ? (
                 <div className="w-full max-w-sm space-y-3">
-                    <p className="text-[var(--warning)] text-sm text-center">
+                    <p className="text-[var(--warning)] text-base text-center">
                         {t('calibration.doctorWarning')}
                     </p>
                     <div className="flex gap-2">

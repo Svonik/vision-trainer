@@ -28,7 +28,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
             style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
         >
             <div className="w-full max-w-lg">
-                <p className="text-sm text-[var(--text-secondary)] mb-2 text-center">
+                <p className="text-base text-[var(--text-secondary)] mb-2 text-center">
                     {t('disclaimer.parentGate')}
                 </p>
                 <Card
@@ -65,7 +65,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
                                 onChange={(e) => setAccepted(e.target.checked)}
                                 className="mt-1 w-5 h-5 accent-[#c9a0dc] flex-shrink-0"
                             />
-                            <span className="text-[var(--text)] text-sm">
+                            <span className="text-[var(--text)] text-base">
                                 {t('disclaimer.accept')}
                             </span>
                         </label>

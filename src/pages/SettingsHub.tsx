@@ -69,7 +69,7 @@ export function SettingsHub() {
             <div className="p-4 max-w-lg mx-auto">
                 <button
                     onClick={() => setCalibMode('view')}
-                    className="text-[var(--text-secondary)] text-sm mb-4 btn-press hover:text-[var(--accent)]"
+                    className="text-[var(--text-secondary)] text-base mb-4 btn-press hover:text-[var(--accent)]"
                 >
                     ← {t('nav.back')}
                 </button>
@@ -83,7 +83,7 @@ export function SettingsHub() {
             <div className="p-4 max-w-lg mx-auto">
                 <button
                     onClick={() => setCalibMode('glasses')}
-                    className="text-[var(--text-secondary)] text-sm mb-4 btn-press hover:text-[var(--accent)]"
+                    className="text-[var(--text-secondary)] text-base mb-4 btn-press hover:text-[var(--accent)]"
                 >
                     ← {t('nav.back')}
                 </button>
@@ -101,7 +101,7 @@ export function SettingsHub() {
             <div className="p-4 max-w-lg mx-auto">
                 <button
                     onClick={() => setCalibMode('suppression')}
-                    className="text-[var(--text-secondary)] text-sm mb-4 btn-press hover:text-[var(--accent)]"
+                    className="text-[var(--text-secondary)] text-base mb-4 btn-press hover:text-[var(--accent)]"
                 >
                     ← {t('nav.back')}
                 </button>
@@ -118,7 +118,7 @@ export function SettingsHub() {
 
     return (
         <div className="p-4 space-y-4 max-w-lg mx-auto">
-            <h1 className="font-[var(--font-display)] text-xl text-[var(--text)] pt-2">
+            <h1 className="font-[var(--font-display)] text-2xl text-[var(--text)] pt-2">
                 {t('settings.title')}
             </h1>
 
@@ -127,7 +127,7 @@ export function SettingsHub() {
                 className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 space-y-4"
                 aria-label="Калибровка"
             >
-                <h2 className="text-sm font-semibold text-[var(--text)] uppercase tracking-wider">
+                <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider">
                     Калибровка
                 </h2>
                 <div className="flex items-center justify-between">
@@ -137,13 +137,13 @@ export function SettingsHub() {
                         ) : (
                             <XCircle className="w-5 h-5 text-[var(--warning)]" />
                         )}
-                        <span className="text-[var(--text)] text-sm">
+                        <span className="text-[var(--text)] text-base">
                             {passed ? t('settings.calibrationStatus') : 'Не пройдена'}
                         </span>
                     </div>
                     <button
                         onClick={() => setCalibMode('glasses')}
-                        className="text-sm bg-[var(--cta)] text-[var(--cta-text)] rounded-full px-4 py-2 btn-press font-semibold"
+                        className="text-base bg-[var(--cta)] text-[var(--cta-text)] rounded-full px-4 py-2 btn-press font-semibold"
                     >
                         {t('settings.recalibrate')}
                     </button>
@@ -155,7 +155,7 @@ export function SettingsHub() {
                 className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 space-y-4"
                 aria-label="Тип очков"
             >
-                <h2 className="text-sm font-semibold text-[var(--text)] uppercase tracking-wider">
+                <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider">
                     {t('settings.glassesSection')}
                 </h2>
                 <div className="flex gap-2">
@@ -193,14 +193,14 @@ export function SettingsHub() {
                 className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 space-y-5"
                 aria-label="Настройки по умолчанию"
             >
-                <h2 className="text-sm font-semibold text-[var(--text)] uppercase tracking-wider">
+                <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider">
                     {t('settings.defaultsSection')}
                 </h2>
 
                 {/* Contrast sliders */}
                 <div className="space-y-3">
                     <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-base">
                             <span className="text-[var(--text-secondary)]">Контраст Л</span>
                             <span className="text-[var(--text-secondary)]">{defaultContrast.left}%</span>
                         </div>
@@ -214,7 +214,7 @@ export function SettingsHub() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-base">
                             <span className="text-[var(--text-secondary)]">Контраст П</span>
                             <span className="text-[var(--text-secondary)]">{defaultContrast.right}%</span>
                         </div>
@@ -231,13 +231,13 @@ export function SettingsHub() {
 
                 {/* Speed buttons */}
                 <div className="space-y-2">
-                    <p className="text-sm text-[var(--text-secondary)]">{t('settings.speed')}</p>
+                    <p className="text-base text-[var(--text-secondary)]">{t('settings.speed')}</p>
                     <div className="grid grid-cols-2 gap-2">
                         {SPEED_KEYS.map((key) => (
                             <button
                                 key={key}
                                 onClick={() => setDefaultSpeed(key)}
-                                className={`py-2 px-4 rounded-full border text-sm transition-colors btn-press ${
+                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     defaultSpeed === key
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                         : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -251,11 +251,11 @@ export function SettingsHub() {
 
                 {/* Eye config toggle */}
                 <div className="space-y-2">
-                    <p className="text-sm text-[var(--text-secondary)]">{t('settings.eyeSelect')}</p>
+                    <p className="text-base text-[var(--text-secondary)]">{t('settings.eyeSelect')}</p>
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => setDefaultEyeConfig('platform_left')}
-                            className={`py-2 px-4 rounded-full border text-sm transition-colors btn-press ${
+                            className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                 defaultEyeConfig === 'platform_left'
                                     ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                     : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -265,7 +265,7 @@ export function SettingsHub() {
                         </button>
                         <button
                             onClick={() => setDefaultEyeConfig('platform_right')}
-                            className={`py-2 px-4 rounded-full border text-sm transition-colors btn-press ${
+                            className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                 defaultEyeConfig === 'platform_right'
                                     ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                     : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'

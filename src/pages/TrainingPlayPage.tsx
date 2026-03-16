@@ -98,7 +98,7 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
 
                 {/* Next game info */}
                 <div className="rounded-xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-1">
-                    <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wide">
+                    <p className="text-sm text-[var(--text-secondary)] uppercase tracking-wide">
                         {t('training.next')}
                     </p>
                     <p className="font-[var(--font-display)] text-lg text-[var(--text)]">
@@ -274,10 +274,10 @@ export function TrainingPlayPage() {
                     ← {t('nav.back')}
                 </button>
                 <div className="flex items-center gap-3">
-                    <span className="text-[var(--text-secondary)] text-xs">
+                    <span className="text-[var(--text-secondary)] text-sm">
                         {t('training.gameOf').replace('{n}', String(currentGameIndex + 1))}
                     </span>
-                    <span className="text-[var(--text-secondary)] text-xs truncate max-w-28">
+                    <span className="text-[var(--text-secondary)] text-sm truncate max-w-28">
                         {t(GAME_TITLE_KEYS[currentGameId] ?? 'app.title')}
                     </span>
                     {elapsedMs !== null && (

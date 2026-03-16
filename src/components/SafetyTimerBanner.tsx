@@ -28,7 +28,7 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
                     <h2 className="font-[var(--font-display)] text-2xl text-[var(--warning)]">
                         {t('safety.breakTimeChild')}
                     </h2>
-                    <p className="text-[var(--text-secondary)] text-sm">
+                    <p className="text-[var(--text-secondary)] text-base">
                         {t('safety.breakMessageChild')}
                     </p>
                     <div className="flex flex-col gap-3 pt-2">

@@ -199,11 +199,11 @@ export function GameSelectPage() {
                                         {t(game.titleKey)}
                                     </h2>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-xs bg-[var(--accent)]/20 text-[var(--accent)] px-2 py-0.5 rounded-full">
+                                        <span className="text-sm bg-[var(--accent)]/20 text-[var(--accent)] px-2 py-0.5 rounded-full">
                                             {t(game.difficultyKey)}
                                         </span>
                                         {count > 0 && (
-                                            <span className="text-xs text-[var(--text-secondary)]">
+                                            <span className="text-sm text-[var(--text-secondary)]">
                                                 Сыграно: {count} раз
                                             </span>
                                         )}

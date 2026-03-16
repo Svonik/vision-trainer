@@ -48,7 +48,7 @@ export function TabBar() {
                         aria-current={active ? 'page' : undefined}
                     >
                         <Icon size={22} />
-                        <span className="text-[11px] leading-none">{t(labelKey)}</span>
+                        <span className="text-xs leading-none">{t(labelKey)}</span>
                     </button>
                 );
             })}

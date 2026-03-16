@@ -39,7 +39,7 @@ export function ProgressPage() {
                 <h2 className="font-[var(--font-display)] text-2xl text-[var(--text)]">
                     Сыграй первую игру!
                 </h2>
-                <p className="text-[var(--text-secondary)] text-sm max-w-xs">
+                <p className="text-[var(--text-secondary)] text-base max-w-xs">
                     Здесь будет твоя история тренировок и прогресс.
                 </p>
                 <button
@@ -61,7 +61,7 @@ export function ProgressPage() {
 
     return (
         <div className="p-4 space-y-4 max-w-lg mx-auto">
-            <h1 className="font-[var(--font-display)] text-xl text-[var(--text)] pt-2">
+            <h1 className="font-[var(--font-display)] text-2xl text-[var(--text)] pt-2">
                 {t('progress.title')}
             </h1>
 
@@ -69,15 +69,15 @@ export function ProgressPage() {
             <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 grid grid-cols-3 gap-4">
                 <div className="text-center">
                     <p className="font-[var(--font-display)] text-3xl text-[var(--text)]">{totalSessions}</p>
-                    <p className="text-[var(--text-secondary)] text-xs mt-1">{t('progress.totalSessions')}</p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.totalSessions')}</p>
                 </div>
                 <div className="text-center">
                     <p className="font-[var(--font-display)] text-3xl text-[var(--text)]">{avgHitRate}%</p>
-                    <p className="text-[var(--text-secondary)] text-xs mt-1">{t('progress.avgHitRate')}</p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.avgHitRate')}</p>
                 </div>
                 <div className="text-center">
                     <p className="font-[var(--font-display)] text-2xl text-[var(--text)]">{formatTotalTime(totalTime)}</p>
-                    <p className="text-[var(--text-secondary)] text-xs mt-1">{t('progress.totalTime')}</p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.totalTime')}</p>
                 </div>
             </div>
 
@@ -97,10 +97,10 @@ export function ProgressPage() {
                             className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-2xl p-4 flex items-center justify-between"
                         >
                             <div className="space-y-1">
-                                <p className="text-[var(--text)] text-sm font-medium truncate max-w-[180px]">
+                                <p className="text-[var(--text)] text-base font-medium truncate max-w-[180px]">
                                     {gameName}
                                 </p>
-                                <p className="text-[var(--text-secondary)] text-xs flex items-center gap-2">
+                                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-2">
                                     {session.timestamp ? formatDate(session.timestamp) : '—'}
                                     <span>·</span>
                                     {speedLabel}
@@ -110,7 +110,7 @@ export function ProgressPage() {
                                 <p className="font-[var(--font-display)] text-lg text-[var(--text)]">
                                     {hitPct}%
                                 </p>
-                                <p className="text-[var(--text-secondary)] text-xs flex items-center gap-1 justify-end">
+                                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-1 justify-end">
                                     <Star className="w-3 h-3 text-[var(--warning)]" />
                                     {session.caught ?? 0}
                                     <Clock className="w-3 h-3 ml-1" />
@@ -124,7 +124,7 @@ export function ProgressPage() {
 
             <div className="flex items-center justify-center gap-1 pt-2 pb-4">
                 <TrendingUp className="w-4 h-4 text-[var(--text-secondary)]" />
-                <p className="text-[var(--text-secondary)] text-xs">
+                <p className="text-[var(--text-secondary)] text-sm">
                     {totalSessions} {totalSessions === 1 ? 'тренировка' : totalSessions < 5 ? 'тренировки' : 'тренировок'}
                 </p>
             </div>

@@ -6,7 +6,7 @@ import { generateSession, GAME_TITLE_KEYS } from '../modules/sessionEngine';
 
 function GameDot({ gameId }: { gameId: string }) {
     return (
-        <span className="inline-flex items-center gap-1 bg-[var(--accent)]/20 text-[var(--accent)] text-xs px-2 py-0.5 rounded-full font-medium">
+        <span className="inline-flex items-center gap-1 bg-[var(--accent)]/20 text-[var(--accent)] text-sm px-2 py-0.5 rounded-full font-medium">
             {t(GAME_TITLE_KEYS[gameId] ?? 'app.title')}
         </span>
     );
@@ -25,7 +25,7 @@ export function ModeSelectPage() {
             <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-2 text-center">
                 {t('mode.title')}
             </h1>
-            <p className="text-[var(--text-secondary)] text-sm mb-8 text-center max-w-xs">
+            <p className="text-[var(--text-secondary)] text-base mb-8 text-center max-w-xs">
                 Vision Trainer
             </p>
 
@@ -46,19 +46,19 @@ export function ModeSelectPage() {
                                 <h2 className="font-[var(--font-display)] text-xl font-semibold text-[var(--text)]">
                                     {t('mode.training')}
                                 </h2>
-                                <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full">
+                                <span className="text-sm bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full">
                                     {t('mode.trainingRecommended')}
                                 </span>
                             </div>
                         </div>
 
-                        <p className="text-sm text-[var(--text-secondary)]">
+                        <p className="text-base text-[var(--text-secondary)]">
                             {t('mode.trainingDesc')}
                         </p>
 
                         {/* Today's session preview */}
                         <div className="rounded-xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-2">
-                            <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-wide">
+                            <p className="text-sm text-[var(--text-secondary)] font-medium uppercase tracking-wide">
                                 {t('training.todaySession')}
                             </p>
                             <div className="flex flex-wrap gap-1.5 items-center">
@@ -66,7 +66,7 @@ export function ModeSelectPage() {
                                     <span key={gameId} className="flex items-center gap-1">
                                         <GameDot gameId={gameId} />
                                         {i < todayGames.length - 1 && (
-                                            <span className="text-[var(--text-secondary)] text-xs">→</span>
+                                            <span className="text-[var(--text-secondary)] text-sm">→</span>
                                         )}
                                     </span>
                                 ))}
@@ -98,7 +98,7 @@ export function ModeSelectPage() {
                             </h2>
                         </div>
 
-                        <p className="text-sm text-[var(--text-secondary)]">
+                        <p className="text-base text-[var(--text-secondary)]">
                             {t('mode.freePlayDesc')}
                         </p>
 
