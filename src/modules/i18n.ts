@@ -99,6 +99,19 @@ const strings = {
   'nav.toGames': 'К играм',
   'nav.back': 'Назад',
   'stats.startGame': 'Начать игру!',
+  'tabs.games': 'Игры',
+  'tabs.progress': 'Прогресс',
+  'tabs.settings': 'Настройки',
+  'progress.title': 'Прогресс тренировок',
+  'progress.totalSessions': 'Всего сессий',
+  'progress.avgHitRate': 'Среднее попадание',
+  'progress.totalTime': 'Общее время',
+  'settings.title': 'Настройки',
+  'settings.calibrationStatus': 'Калибровка пройдена',
+  'settings.recalibrate': 'Перекалибровать',
+  'settings.glassesSection': 'Тип очков',
+  'settings.defaultsSection': 'Настройки по умолчанию',
+  'onboarding.step': 'Шаг {n} из {total}',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

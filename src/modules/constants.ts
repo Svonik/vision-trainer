@@ -68,6 +68,7 @@ export const STORAGE_KEYS = {
   DISCLAIMER: 'vt_disclaimer_accepted',
   CALIBRATION: 'vt_calibration',
   SESSIONS: 'vt_sessions',
+  DEFAULT_SETTINGS: 'vt_default_settings',
 };
 
 export const CURRENT_VERSION = '1.0';
