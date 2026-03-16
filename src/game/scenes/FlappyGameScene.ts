@@ -20,6 +20,10 @@ export default class FlappyGameScene extends Phaser.Scene {
     super('FlappyGameScene');
   }
 
+  preload() {
+    this.load.audio('flappy-bgm', 'audio/flappy-bgm.mp3');
+  }
+
   create() {
     SynthSounds.resume();
 
@@ -143,6 +147,15 @@ export default class FlappyGameScene extends Phaser.Scene {
       this.safetyTimer.start();
       // Seed lastPipeTime so first pipe spawns after one interval
       this.lastPipeTime = this.time.now;
+      // Background music — quiet, looped
+      try {
+        if (this.cache.audio.exists('flappy-bgm')) {
+          this.bgm = this.sound.add('flappy-bgm', { loop: true, volume: 0.12 });
+          this.bgm.play();
+        }
+      } catch (e) {
+        console.warn('BGM not available:', e);
+      }
     });
   }
 
@@ -152,6 +165,7 @@ export default class FlappyGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+    if (this.bgm) { this.bgm.stop(); this.bgm = null; }
     this.input.setDefaultCursor('default');
   }
 
@@ -343,10 +357,12 @@ export default class FlappyGameScene extends Phaser.Scene {
     if (this.isPaused) {
       this.safetyTimer.pause();
       this.input.setDefaultCursor('default');
+      if (this.bgm?.isPlaying) this.bgm.pause();
       this.showPauseMenu();
     } else {
       this.safetyTimer.resume();
       this.input.setDefaultCursor('none');
+      if (this.bgm?.isPaused) this.bgm.resume();
       if (this.pauseOverlay) {
         this.pauseOverlay.forEach((el) => el.destroy());
         this.pauseOverlay = null;
@@ -385,6 +401,9 @@ export default class FlappyGameScene extends Phaser.Scene {
     if (this.gameEnded) return;
     this.gameEnded = true;
 
+    if (this.bgm?.isPlaying) {
+      this.tweens.add({ targets: this.bgm, volume: 0, duration: 500 });
+    }
     if (this.safetyTimer) this.safetyTimer.stop();
 
     const result = {
