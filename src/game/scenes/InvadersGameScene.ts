@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const ALIEN_COLS = 8;
 const ALIEN_ROWS = 5;
@@ -95,25 +96,23 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.blinkTimer = null;
 
     // Frame (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
-    // Ship (platformColor — one eye)
+    // Ship (platformColor — one eye) — invisible physics rect + visual glow rect
     const shipW = fw * SHIP_WIDTH_RATIO;
     const shipH = fh * SHIP_HEIGHT_RATIO;
     const shipY = fy + fh - shipH / 2 - 10;
-    this.ship = this.add.rectangle(ccx, shipY, shipW, shipH, this.platformColor)
-      .setAlpha(this.platformAlpha);
+    this.ship = this.add.rectangle(ccx, shipY, shipW, shipH, this.platformColor, 0);
     this.physics.add.existing(this.ship, false);
     this.ship.body.setImmovable(false);
+    this.shipVisual = GameVisuals.glowRect(this, ccx, shipY, shipW, shipH, this.platformColor, this.platformAlpha);
 
     // Aliens grid (alienColor — other eye)
     // Each alien entry: { body: rect, notchL: rect, notchR: rect }
@@ -127,15 +126,17 @@ export default class InvadersGameScene extends Phaser.Scene {
       for (let col = 0; col < ALIEN_COLS; col++) {
         const ax = alienStartX + col * (ALIEN_W + 8);
         const ay = alienStartY + row * (ALIEN_H + 8);
-        const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor)
-          .setAlpha(this.alienAlpha);
-        // small "eye" notches stored on the alien object for cleanup
+        // Invisible physics rect
+        const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor, 0);
+        // Visual glow rect
+        const alienVisual = GameVisuals.glowRect(this, ax, ay, ALIEN_W, ALIEN_H, this.alienColor, this.alienAlpha, 3);
+        // small "eye" notches
         const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
           .setAlpha(this.alienAlpha * 0.8);
         const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
           .setAlpha(this.alienAlpha * 0.8);
         this.physics.add.existing(alien, true);
-        this.aliens.push({ body: alien, notchL, notchR });
+        this.aliens.push({ body: alien, alienVisual, notchL, notchR });
         this.alienGroup.add(alien);
       }
     }
@@ -152,14 +153,10 @@ export default class InvadersGameScene extends Phaser.Scene {
     }
 
     // Score text (GRAY — both eyes)
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `0 / ${TOTAL_ALIENS}`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${TOTAL_ALIENS}`, 1);
 
     // Timer (GRAY — both eyes)
-    this.timerText = this.add.text(ccx, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, ccx, fy + 10, '00:00', 0.5);
 
     // Pause button (GRAY)
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -226,6 +223,8 @@ export default class InvadersGameScene extends Phaser.Scene {
       this.field.x + this.ship.width / 2,
       this.field.x + this.field.w - this.ship.width / 2,
     );
+    // Sync ship visual
+    if (this.shipVisual) { this.shipVisual.x = this.ship.x; this.shipVisual.y = this.ship.y; }
 
     // Space to fire
     if (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
@@ -336,6 +335,7 @@ export default class InvadersGameScene extends Phaser.Scene {
         // Move notches with the body
         if (a.notchL) { a.notchL.x = a.body.x - 8; a.notchL.y = a.body.y - 4; }
         if (a.notchR) { a.notchR.x = a.body.x + 8; a.notchR.y = a.body.y - 4; }
+        if (a.alienVisual) { a.alienVisual.x = a.body.x; a.alienVisual.y = a.body.y; }
       }
       this.alienDirection = -this.alienDirection;
     } else {
@@ -345,6 +345,7 @@ export default class InvadersGameScene extends Phaser.Scene {
         // Move notches with the body
         if (a.notchL) { a.notchL.x = a.body.x - 8; a.notchL.y = a.body.y - 4; }
         if (a.notchR) { a.notchR.x = a.body.x + 8; a.notchR.y = a.body.y - 4; }
+        if (a.alienVisual) { a.alienVisual.x = a.body.x; a.alienVisual.y = a.body.y; }
       }
     }
 
@@ -410,9 +411,10 @@ export default class InvadersGameScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     });
 
-    // Destroy notches together with the alien body
+    // Destroy notches and visual together with the alien body
     if (alienEntry.notchL) { alienEntry.notchL.destroy(); alienEntry.notchL = null; }
     if (alienEntry.notchR) { alienEntry.notchR.destroy(); alienEntry.notchR = null; }
+    if (alienEntry.alienVisual) { alienEntry.alienVisual.destroy(); alienEntry.alienVisual = null; }
     alien.destroy();
     this.aliens[index] = { body: { active: false }, notchL: null, notchR: null };
     this.enemiesDestroyed++;
@@ -449,15 +451,15 @@ export default class InvadersGameScene extends Phaser.Scene {
       delay: BLINK_INTERVAL_MS,
       repeat: totalBlinks - 1,
       callback: () => {
-        if (this.ship) {
+        if (this.shipVisual) {
           blinkCount++;
-          this.ship.setAlpha(blinkCount % 2 === 0 ? this.platformAlpha : 0);
+          this.shipVisual.setAlpha(blinkCount % 2 === 0 ? this.platformAlpha : 0);
         }
       },
     });
     this.time.delayedCall(INVINCIBILITY_DURATION_MS, () => {
       this.invincible = false;
-      if (this.ship) this.ship.setAlpha(this.platformAlpha);
+      if (this.shipVisual) this.shipVisual.setAlpha(this.platformAlpha);
       if (this.blinkTimer) { this.blinkTimer.remove(); this.blinkTimer = null; }
     });
   }

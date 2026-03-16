@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const BALLOON_RADIUS = 25;
 const WIN_COUNT = 30;
@@ -60,28 +61,22 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.balloonLifespan = LIFESPAN_MS[this.settings.speed] || LIFESPAN_MS.normal;
 
     // Frame (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Score text
     this.popped = 0;
     this.totalBalloons = 0;
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `0 / ${WIN_COUNT}`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${WIN_COUNT}`, 1);
 
     // Timer text
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -161,8 +156,10 @@ export default class BalloonPopGameScene extends Phaser.Scene {
       this.field.y + this.field.h - margin - 30,
     );
 
-    // Balloon circle
-    const circle = this.add.circle(bx, by, BALLOON_RADIUS, this.balloonColor, this.balloonAlpha);
+    // Balloon — glow circle container (replaces plain circle)
+    const circle = GameVisuals.glowCircle(this, bx, by, BALLOON_RADIUS, this.balloonColor, this.balloonAlpha);
+    // Attach pulse — slight breathing effect
+    GameVisuals.pulse(this, circle, 0.92, 1.08, 900 + Math.random() * 400);
 
     // Balloon string (gray, both eyes)
     const string = this.add.line(

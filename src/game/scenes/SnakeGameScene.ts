@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
@@ -82,27 +83,20 @@ export default class SnakeGameScene extends Phaser.Scene {
     }
 
     // Field border (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Score (both eyes — gray)
     this.score = 0;
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `${t('game.score')}: 0`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `${t('game.score')}: 0`, 1);
 
     // Timer (both eyes — gray)
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -341,12 +335,23 @@ export default class SnakeGameScene extends Phaser.Scene {
     this.snake.forEach((seg, index) => {
       const { x: px, y: py } = this.cellToPixel(seg.x, seg.y);
       if (index === 0) {
-        // Head — slightly brighter
+        // Head — outer glow layer
+        this.snakeGraphics.fillStyle(this.platformColor, this.platformAlpha * 0.15);
+        this.snakeGraphics.fillRect(px - w / 2 - 3, py - h / 2 - 3, w + 6, h + 6);
+        // Head — core (brighter)
         this.snakeGraphics.fillStyle(this.platformColor, Math.min(1, this.platformAlpha * 1.3));
+        this.snakeGraphics.fillRect(px - w / 2, py - h / 2, w, h);
+        // Head highlight strip
+        this.snakeGraphics.fillStyle(this.platformColor, Math.min(1, this.platformAlpha * 1.5));
+        this.snakeGraphics.fillRect(px - w / 2 + 2, py - h / 2 + 2, w - 4, 2);
       } else {
+        // Body — subtle outer glow
+        this.snakeGraphics.fillStyle(this.platformColor, this.platformAlpha * 0.08);
+        this.snakeGraphics.fillRect(px - w / 2 - 2, py - h / 2 - 2, w + 4, h + 4);
+        // Body fill
         this.snakeGraphics.fillStyle(this.platformColor, this.platformAlpha);
+        this.snakeGraphics.fillRect(px - w / 2, py - h / 2, w, h);
       }
-      this.snakeGraphics.fillRect(px - w / 2, py - h / 2, w, h);
     });
   }
 
@@ -357,8 +362,19 @@ export default class SnakeGameScene extends Phaser.Scene {
     const { x: px, y: py } = this.cellToPixel(this.food.x, this.food.y);
     const radius = (Math.min(this.cellW, this.cellH) / 2 - 2) * this.foodPulseScale;
 
+    // Outer glow layers
+    this.foodGraphics.fillStyle(this.ballColor, this.ballAlpha * 0.06);
+    this.foodGraphics.fillCircle(px, py, radius * 2.0);
+    this.foodGraphics.fillStyle(this.ballColor, this.ballAlpha * 0.10);
+    this.foodGraphics.fillCircle(px, py, radius * 1.5);
+    this.foodGraphics.fillStyle(this.ballColor, this.ballAlpha * 0.14);
+    this.foodGraphics.fillCircle(px, py, radius * 1.2);
+    // Core
     this.foodGraphics.fillStyle(this.ballColor, this.ballAlpha);
     this.foodGraphics.fillCircle(px, py, radius);
+    // Inner highlight
+    this.foodGraphics.fillStyle(this.ballColor, Math.min(this.ballAlpha * 1.3, 1));
+    this.foodGraphics.fillCircle(px, py, radius * 0.4);
   }
 
   togglePause() {

@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const TILE_SIZE = 60;
 const TILE_GAP = 10;
@@ -77,24 +78,17 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     this.totalPairs = (this.cols * this.rows) / 2;
 
     // Frame
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Score / moves
     this.pairsMatched = 0;
     this.moves = 0;
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `0 / ${this.totalPairs}`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
-    this.movesText = this.add.text(fx + 10, fy + 10, 'Ходы: 0', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${this.totalPairs}`, 1);
+    this.movesText = GameVisuals.scoreText(this, fx + 10, fy + 10, 'Ходы: 0', 0);
 
     // Timer
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -211,7 +205,12 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
   }
 
   createTileObject(tx, ty, index) {
-    // Back face (gray, both eyes) — always visible when face-down
+    // Subtle glow backdrop for each tile slot (drawn below back face)
+    const tileGlow = this.add.graphics();
+    tileGlow.fillStyle(COLORS.GRAY, 0.04);
+    tileGlow.fillRoundedRect(tx - TILE_SIZE / 2 - 4, ty - TILE_SIZE / 2 - 4, TILE_SIZE + 8, TILE_SIZE + 8, 8);
+
+    // Back face (gray, both eyes) — plain rect for setVisible/setStrokeStyle compatibility
     const back = this.add.rectangle(tx, ty, TILE_SIZE - 4, TILE_SIZE - 4, COLORS.GRAY, 0.3)
       .setStrokeStyle(1, COLORS.GRAY);
 

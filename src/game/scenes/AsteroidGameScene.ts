@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const MAX_LIVES = 3;
 const INITIAL_ASTEROID_COUNT = 5;
@@ -102,16 +103,14 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.asteroidsGraphics = this.add.graphics();
 
     // Field frame (both eyes — gray)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Lives display (GRAY — both eyes)
     this.livesIcons = [];
@@ -121,14 +120,10 @@ export default class AsteroidGameScene extends Phaser.Scene {
     }
 
     // Score text (GRAY — both eyes)
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, '0', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '0', 1);
 
     // Timer (GRAY — both eyes)
-    this.timerText = this.add.text(ccx, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, ccx, fy + 10, '00:00', 0.5);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -379,6 +374,24 @@ export default class AsteroidGameScene extends Phaser.Scene {
     const rightX = this.shipX + Math.cos(rad - Math.PI * 5 / 6) * size;
     const rightY = this.shipY + Math.sin(rad - Math.PI * 5 / 6) * size;
 
+    // Glow halo around ship
+    g.lineStyle(6, this.platformColor, this.platformAlpha * 0.06);
+    g.beginPath();
+    g.moveTo(tipX, tipY);
+    g.lineTo(leftX, leftY);
+    g.lineTo(rightX, rightY);
+    g.closePath();
+    g.strokePath();
+
+    g.lineStyle(3, this.platformColor, this.platformAlpha * 0.15);
+    g.beginPath();
+    g.moveTo(tipX, tipY);
+    g.lineTo(leftX, leftY);
+    g.lineTo(rightX, rightY);
+    g.closePath();
+    g.strokePath();
+
+    // Core ship outline
     g.lineStyle(2, this.platformColor, this.platformAlpha);
     g.beginPath();
     g.moveTo(tipX, tipY);
@@ -391,9 +404,15 @@ export default class AsteroidGameScene extends Phaser.Scene {
   renderBullets() {
     const g = this.bulletsGraphics;
     g.clear();
-    g.fillStyle(this.platformColor, this.platformAlpha);
     for (const b of this.bullets) {
       if (b.age < BULLET_LIFETIME_MS) {
+        // Glow around bullet
+        g.fillStyle(this.platformColor, this.platformAlpha * 0.15);
+        g.fillCircle(b.x, b.y, 6);
+        g.fillStyle(this.platformColor, this.platformAlpha * 0.3);
+        g.fillCircle(b.x, b.y, 4);
+        // Core bullet
+        g.fillStyle(this.platformColor, this.platformAlpha);
         g.fillCircle(b.x, b.y, 3);
       }
     }
@@ -404,11 +423,40 @@ export default class AsteroidGameScene extends Phaser.Scene {
     g.clear();
     for (const a of this.asteroids) {
       if (!a.active) continue;
+
+      const numPoints = 10;
+
+      // Outer glow layer
+      g.fillStyle(this.ballColor, this.ballAlpha * 0.06);
+      g.beginPath();
+      for (let i = 0; i <= numPoints; i++) {
+        const theta = (i / numPoints) * Math.PI * 2;
+        const wobble = 0.85 + 0.15 * Math.sin(theta * 3 + a.rotOffset);
+        const px = a.x + Math.cos(theta) * a.radius * a.scaleX * wobble * 1.5;
+        const py = a.y + Math.sin(theta) * a.radius * a.scaleY * wobble * 1.5;
+        if (i === 0) g.moveTo(px, py);
+        else g.lineTo(px, py);
+      }
+      g.closePath();
+      g.fillPath();
+
+      // Mid glow layer
+      g.fillStyle(this.ballColor, this.ballAlpha * 0.12);
+      g.beginPath();
+      for (let i = 0; i <= numPoints; i++) {
+        const theta = (i / numPoints) * Math.PI * 2;
+        const wobble = 0.85 + 0.15 * Math.sin(theta * 3 + a.rotOffset);
+        const px = a.x + Math.cos(theta) * a.radius * a.scaleX * wobble * 1.2;
+        const py = a.y + Math.sin(theta) * a.radius * a.scaleY * wobble * 1.2;
+        if (i === 0) g.moveTo(px, py);
+        else g.lineTo(px, py);
+      }
+      g.closePath();
+      g.fillPath();
+
+      // Core fill
       g.fillStyle(this.ballColor, this.ballAlpha);
       g.lineStyle(1.5, this.ballColor, this.ballAlpha);
-
-      // Draw irregular polygon approximating an ellipse with slight distortion
-      const numPoints = 10;
       g.beginPath();
       for (let i = 0; i <= numPoints; i++) {
         const theta = (i / numPoints) * Math.PI * 2;

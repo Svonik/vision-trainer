@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 // Fall intervals in ms per speed level
 const FALL_INTERVALS = { slow: 1000, normal: 600, fast: 400, pro: 250 };
@@ -101,20 +102,15 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.pauseOverlay = null;
     this.flashingRows = null;
 
-    // Frame
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    // Frame (both eyes)
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Score text
-    this.scoreText = this.add.text(this.gridOriginX, fy + 10, this.scoreLabel(), {
-      fontSize: '13px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0, 0);
+    this.scoreText = GameVisuals.scoreText(this, this.gridOriginX, fy + 10, this.scoreLabel(), 0);
 
     // Timer text
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '13px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Next piece label + preview area
     const previewX = this.gridOriginX + this.cellSize * COLS + 12;
@@ -306,7 +302,7 @@ export default class TetrisGameScene extends Phaser.Scene {
   drawGrid() {
     const g = this.gridGraphics;
     g.clear();
-    g.lineStyle(0.5, COLORS.GRAY, 0.4);
+    g.lineStyle(0.5, COLORS.GRAY, 0.15);
     const ox = this.gridOriginX;
     const oy = this.gridOriginY;
     const cs = this.cellSize;
@@ -322,8 +318,8 @@ export default class TetrisGameScene extends Phaser.Scene {
     }
     g.strokePath();
 
-    // Grid border
-    g.lineStyle(2, COLORS.GRAY, 1);
+    // Grid border (styled corners via styledBorder-like accents)
+    g.lineStyle(1.5, COLORS.GRAY, 0.4);
     g.strokeRect(ox, oy, COLS * cs, ROWS * cs);
   }
 
@@ -375,10 +371,25 @@ export default class TetrisGameScene extends Phaser.Scene {
     const oy = this.gridOriginY;
     const cs = this.cellSize;
 
+    // Subtle outer glow for active piece
+    g.fillStyle(this.activeColor, this.activeAlpha * 0.12);
+    for (const [c, r] of this.activePiece.cells) {
+      if (r >= 0) {
+        g.fillRect(ox + c * cs - 2, oy + r * cs - 2, cs + 2, cs + 2);
+      }
+    }
+    // Core fill
     g.fillStyle(this.activeColor, this.activeAlpha);
     for (const [c, r] of this.activePiece.cells) {
       if (r >= 0) {
         g.fillRect(ox + c * cs + 1, oy + r * cs + 1, cs - 2, cs - 2);
+      }
+    }
+    // Inner highlight strip
+    g.fillStyle(this.activeColor, Math.min(this.activeAlpha * 1.25, 1));
+    for (const [c, r] of this.activePiece.cells) {
+      if (r >= 0) {
+        g.fillRect(ox + c * cs + 2, oy + r * cs + 2, cs - 4, 2);
       }
     }
   }

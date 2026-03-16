@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const MONSTER_SPEEDS = { slow: 40, normal: 70, fast: 110, pro: 160 };
 const MONSTER_COUNT = { slow: 2, normal: 3, fast: 3, pro: 4 };
@@ -68,26 +69,20 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     this.speedTier = 0; // tracks difficulty progression tier
 
     // Frame (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Score text (both eyes — gray)
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `0 / ${WIN_CATCHES}`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${WIN_CATCHES}`, 1);
 
     // Timer (both eyes — gray)
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -153,9 +148,9 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     const tierMultiplier = 1 + Math.floor(this.monstersCaught / CATCHES_PER_TIER) * SPEED_BOOST_PER_TIER;
     const effectiveBaseSpeed = this.baseSpeed * tierMultiplier;
 
-    const circle = this.add.circle(mx, my, radius, this.ballColor)
-      .setAlpha(this.ballAlpha)
-      .setInteractive({ useHandCursor: true });
+    const circle = GameVisuals.glowCircle(this, mx, my, radius, this.ballColor, this.ballAlpha);
+    circle.setInteractive(new Phaser.Geom.Circle(0, 0, radius), Phaser.Geom.Circle.Contains);
+    GameVisuals.pulse(this, circle, 0.94, 1.06, 600 + Math.random() * 400);
 
     // Eyes — use ballColor (monster body color) to preserve dichoptic separation
     const eyeOfsX = radius * 0.3;
@@ -218,7 +213,8 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
 
   catchMonster(index) {
     const m = this.monsters[index];
-    const { x, y, radius } = m.circle;
+    const { x, y } = m.circle;
+    const { radius } = m;
     const isSmall = radius < 20;
 
     // Points: small = +2, large = +1

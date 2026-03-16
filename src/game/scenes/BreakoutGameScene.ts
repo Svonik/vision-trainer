@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const BALL_SPEEDS = { slow: 200, normal: 300, fast: 400, pro: 500 };
 const BRICK_COLS = 8;
@@ -59,33 +60,34 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
     // Frame (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Platform
     const pw = fw * GAME.PLATFORM_WIDTH_RATIO;
     const ph = fh * GAME.PLATFORM_HEIGHT_RATIO;
     const py = fy + fh - ph / 2 - 10;
-    this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor)
-      .setAlpha(this.platformAlpha);
+    // Physics body (invisible)
+    this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor, 0);
     this.physics.add.existing(this.platform, false);
     this.platform.body.setImmovable(true);
+    // Visual glow
+    this.platformVisual = GameVisuals.glowRect(this, ccx, py, pw, ph, this.platformColor, this.platformAlpha);
 
-    // Ball
+    // Ball — visual glow circle + invisible physics circle
     const ballRadius = fw * 0.0125;
-    this.ball = this.add.circle(ccx, py - ph / 2 - ballRadius - 2, ballRadius, this.ballColor)
-      .setAlpha(this.ballAlpha);
+    const ballStartY = py - ph / 2 - ballRadius - 2;
+    this.ball = this.add.circle(ccx, ballStartY, ballRadius, this.ballColor, 0);
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballRadius);
     this.ball.body.setCollideWorldBounds(false);
+    this.ballVisual = GameVisuals.glowCircle(this, ccx, ballStartY, ballRadius, this.ballColor, this.ballAlpha);
     this.ballSpeed = BALL_SPEEDS[this.settings.speed] || 200;
     this.ballLaunched = false;
 
@@ -101,8 +103,12 @@ export default class BreakoutGameScene extends Phaser.Scene {
         const bx = brickStartX + col * brickW;
         const by = brickStartY + row * brickH;
         const shade = row % 2 === 0 ? 0x909090 : 0x707070;
-        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade);
+        // Invisible physics rect
+        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
         this.physics.add.existing(brick, true);
+        // Visual glow rect
+        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
+        brick._visual = brickVisual;
         this.bricks.add(brick);
       }
     }
@@ -119,14 +125,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
     }
 
     // Score
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `0 / ${this.totalBricks}`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${this.totalBricks}`, 1);
 
     // Timer
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Launch hint
     this.launchHint = this.add.text(ccx, ccy + 60, t('breakout.launchHint'), {
@@ -216,10 +218,22 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.launchBall();
     }
 
+    // Sync platform visual
+    if (this.platformVisual) {
+      this.platformVisual.x = this.platform.x;
+      this.platformVisual.y = this.platform.y;
+    }
+
     // Ball follows platform before launch
     if (!this.ballLaunched && this.ball) {
       this.ball.x = this.platform.x;
       this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
+    }
+
+    // Sync ball visual
+    if (this.ballVisual && this.ball) {
+      this.ballVisual.x = this.ball.x;
+      this.ballVisual.y = this.ball.y;
     }
 
     // Ball out of bounds (bottom) — increased margin to 40px
@@ -307,6 +321,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     });
 
+    if (brick._visual) { brick._visual.destroy(); brick._visual = null; }
     brick.destroy();
     this.bricksDestroyed++;
     this.scoreText.setText(`${this.bricksDestroyed} / ${this.totalBricks}`);
@@ -340,6 +355,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.ball.body.setVelocity(0, 0);
     this.ball.x = this.platform.x;
     this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
+    if (this.ballVisual) {
+      this.ballVisual.x = this.ball.x;
+      this.ballVisual.y = this.ball.y;
+    }
 
     if (!this.launchHint) {
       const ccx = this.field.x + this.field.w / 2;

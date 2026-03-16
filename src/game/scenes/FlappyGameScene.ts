@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const SCROLL_SPEEDS = { slow: 100, normal: 150, fast: 200, pro: 260 };
 const GRAVITY = 400;          // px/s²
@@ -70,38 +71,36 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK);
 
     // Field border (GRAY — both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Ground line (GRAY — both eyes)
     this.groundY = fy + fh - 4;
     this.groundLine = this.add.rectangle(fx + fw / 2, this.groundY, fw, 2, COLORS.GRAY);
 
-    // Bird (platformColor — one eye)
+    // Bird (platformColor — one eye) — glow circle container
     const birdRadius = Math.round(fw * 0.03);
     const birdX = fx + fw * 0.25;
     const birdStartY = fy + fh / 2;
     this.bird = { x: birdX, y: birdStartY, vy: 0, radius: birdRadius };
-    this.birdGfx = this.add.circle(birdX, birdStartY, birdRadius, this.birdColor)
-      .setAlpha(this.birdAlpha);
+    // Keep plain circle for setFillStyle on game over
+    this.birdGfx = this.add.circle(birdX, birdStartY, birdRadius, this.birdColor, 0);
+    this.birdVisual = GameVisuals.glowCircle(this, birdX, birdStartY, birdRadius, this.birdColor, this.birdAlpha);
+    GameVisuals.pulse(this, this.birdVisual, 0.92, 1.08, 600);
 
     // Score text (GRAY — both eyes)
     this.scoreText = this.add.text(fx + fw / 2, fy + 10, '0', {
-      fontSize: '18px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+      fontSize: '18px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace',
     }).setOrigin(0.5, 0);
 
     // Timer text (GRAY — both eyes)
-    this.timerText = this.add.text(fx + fw - 10, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '00:00', 1);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -172,12 +171,14 @@ export default class FlappyGameScene extends Phaser.Scene {
     const newY = this.bird.y + this.bird.vy * dt;
     this.bird = { ...this.bird, y: newY };
     this.birdGfx.y = this.bird.y;
+    if (this.birdVisual) { this.birdVisual.x = this.bird.x; this.birdVisual.y = this.bird.y; }
 
     // Boundary: ceiling collision
     const ceilY = this.field.y + this.bird.radius;
     if (this.bird.y < ceilY) {
       this.bird = { ...this.bird, y: ceilY, vy: 0 };
       this.birdGfx.y = this.bird.y;
+      if (this.birdVisual) this.birdVisual.y = this.bird.y;
     }
 
     // Boundary: ground collision
@@ -185,6 +186,7 @@ export default class FlappyGameScene extends Phaser.Scene {
     if (this.bird.y >= groundHitY) {
       this.bird = { ...this.bird, y: groundHitY };
       this.birdGfx.y = this.bird.y;
+      if (this.birdVisual) this.birdVisual.y = this.bird.y;
       this.triggerGameOver();
       return;
     }
@@ -273,12 +275,10 @@ export default class FlappyGameScene extends Phaser.Scene {
     const botH = fy + usableFh - botY;
     const startX = fx + fw + pipeWidth / 2;
 
-    // Top pipe
-    const topGfx = this.add.rectangle(startX, fy + topH / 2, pipeWidth, topH, this.pipeColor)
-      .setAlpha(this.pipeAlpha);
-    // Bottom pipe
-    const botGfx = this.add.rectangle(startX, botY + botH / 2, pipeWidth, botH, this.pipeColor)
-      .setAlpha(this.pipeAlpha);
+    // Top pipe — glow rect container
+    const topGfx = GameVisuals.glowRect(this, startX, fy + topH / 2, pipeWidth, topH, this.pipeColor, this.pipeAlpha, 2);
+    // Bottom pipe — glow rect container
+    const botGfx = GameVisuals.glowRect(this, startX, botY + botH / 2, pipeWidth, botH, this.pipeColor, this.pipeAlpha, 2);
 
     this.pipes.push({
       x: startX,
@@ -322,8 +322,11 @@ export default class FlappyGameScene extends Phaser.Scene {
   triggerGameOver() {
     if (this.gameOver) return;
     this.gameOver = true;
-    // Brief red flash on bird — use GRAY instead of WHITE to preserve dichoptic integrity
-    this.birdGfx.setFillStyle(COLORS.GRAY);
+    // Flash the bird visual gray to preserve dichoptic integrity
+    if (this.birdVisual) {
+      this.tweens.killTweensOf(this.birdVisual);
+      this.birdVisual.setAlpha(0.5);
+    }
     SynthSounds.gameOver();
     GameVFX.screenShake(this);
     this.time.delayedCall(300, () => {

@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const BALL_SPEEDS = { slow: 180, normal: 260, fast: 360, pro: 460 };
 const AI_TRACKING = { slow: 0.40, normal: 0.60, fast: 0.80, pro: 0.95 };
@@ -113,22 +114,23 @@ export default class PongGameScene extends Phaser.Scene {
     const ccy = fy + fh / 2;
 
     // Border (both eyes — gray)
-    this.add.rectangle(ccx, ccy, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
-    // Center dashed line (both eyes — gray)
+    // Center dashed line (both eyes — gray, with subtle glow)
     const dashCount = 15;
     const dashH = (fh / dashCount) * 0.5;
     for (let i = 0; i < dashCount; i++) {
       const dy = fy + (fh / dashCount) * i + dashH / 2;
+      // Glow layer
+      this.add.rectangle(ccx, dy, 4, dashH + 2, COLORS.GRAY, 0.08);
+      // Main dash
       this.add.rectangle(ccx, dy, 2, dashH, COLORS.GRAY, 0.5);
     }
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
   }
 
   buildPaddles() {
@@ -140,17 +142,17 @@ export default class PongGameScene extends Phaser.Scene {
 
     // Left paddle — player — platformColor (one eye)
     const lx = fx + edgeOffset + pw / 2;
-    this.playerPaddle = this.add.rectangle(lx, ccy, pw, ph, this.platformColor)
-      .setAlpha(this.platformAlpha);
+    this.playerPaddle = this.add.rectangle(lx, ccy, pw, ph, this.platformColor, 0);
     this.physics.add.existing(this.playerPaddle, false);
     this.playerPaddle.body.setImmovable(true);
+    this.playerPaddleVisual = GameVisuals.glowRect(this, lx, ccy, pw, ph, this.platformColor, this.platformAlpha);
 
     // Right paddle — AI — ballColor (other eye)
     const rx = fx + fw - edgeOffset - pw / 2;
-    this.aiPaddle = this.add.rectangle(rx, ccy, pw, ph, this.ballColor)
-      .setAlpha(this.ballAlpha);
+    this.aiPaddle = this.add.rectangle(rx, ccy, pw, ph, this.ballColor, 0);
     this.physics.add.existing(this.aiPaddle, false);
     this.aiPaddle.body.setImmovable(true);
+    this.aiPaddleVisual = GameVisuals.glowRect(this, rx, ccy, pw, ph, this.ballColor, this.ballAlpha);
   }
 
   buildBall() {
@@ -159,11 +161,12 @@ export default class PongGameScene extends Phaser.Scene {
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
 
-    // Ball — WHITE (both eyes)
-    this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE);
+    // Ball — WHITE (both eyes) — invisible physics + glow visual
+    this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE, 0);
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballR);
     this.ball.body.setCollideWorldBounds(false);
+    this.ballVisual = GameVisuals.glowCircle(this, ccx, ccy, ballR, COLORS.WHITE, 1);
 
     // Colliders
     this.physics.add.collider(this.ball, this.playerPaddle, this.onBallHitPlayer, null, this);
@@ -176,17 +179,15 @@ export default class PongGameScene extends Phaser.Scene {
     const scoreY = fy + 20;
 
     this.playerScoreText = this.add.text(ccx - 60, scoreY, '0', {
-      fontSize: '28px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+      fontSize: '28px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace',
     }).setOrigin(0.5, 0);
 
     this.aiScoreText = this.add.text(ccx + 60, scoreY, '0', {
-      fontSize: '28px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+      fontSize: '28px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace',
     }).setOrigin(0.5, 0);
 
     const { y: fy2, h: fh } = this.field;
-    this.timerText = this.add.text(ccx, fy2 + 10, '00:00', {
-      fontSize: '13px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, ccx, fy2 + 10, '00:00', 0.5);
 
     const pauseBtn = this.add.text(fx + 10, fy2 + fh - 20, t('game.pause'), {
       fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
@@ -386,6 +387,12 @@ export default class PongGameScene extends Phaser.Scene {
 
     // AI update
     this.updateAI(delta);
+
+    // Sync paddle visuals
+    if (this.playerPaddleVisual) { this.playerPaddleVisual.x = this.playerPaddle.x; this.playerPaddleVisual.y = this.playerPaddle.y; }
+    if (this.aiPaddleVisual) { this.aiPaddleVisual.x = this.aiPaddle.x; this.aiPaddleVisual.y = this.aiPaddle.y; }
+    // Sync ball visual
+    if (this.ballVisual && this.ball) { this.ballVisual.x = this.ball.x; this.ballVisual.y = this.ball.y; }
 
     // Ball boundary checks (walls + scoring)
     this.checkBallOutOfBounds();

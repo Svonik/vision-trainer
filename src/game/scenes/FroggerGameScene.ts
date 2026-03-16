@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 const OBSTACLE_SPEEDS = { slow: 60, normal: 100, fast: 150, pro: 200 };
 const LANE_COUNT = 5;
@@ -69,16 +70,14 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.deaths = 0;
 
     // Frame (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Layout: safe zone at bottom, 5 lanes, safe zone at top
     // Total used height = SAFE_ZONE_H + LANE_COUNT * LANE_H + SAFE_ZONE_H
@@ -133,17 +132,15 @@ export default class FroggerGameScene extends Phaser.Scene {
 
       for (let j = 0; j < obstaclesInLane; j++) {
         const startX = fx + (j / obstaclesInLane) * fw + Math.random() * (fw / obstaclesInLane / 2);
-        const obs = this.add.rectangle(startX, laneY, OBSTACLE_W, OBSTACLE_H, this.ballColor)
-          .setAlpha(this.ballAlpha);
+        const obs = GameVisuals.glowRect(this, startX, laneY, OBSTACLE_W, OBSTACLE_H, this.ballColor, this.ballAlpha, 3);
         this.obstacleObjects.push({ obj: obs, laneY, goRight, speed, laneIndex: i });
       }
     }
 
-    // Player (platformColor — one eye)
-    this.player = this.add.rectangle(ccx, this.startY, PLAYER_W, PLAYER_H, this.platformColor)
-      .setAlpha(this.platformAlpha);
+    // Player (platformColor — one eye) — glow rect
+    this.player = GameVisuals.glowRect(this, ccx, this.startY, PLAYER_W, PLAYER_H, this.platformColor, this.platformAlpha, 4);
 
-    // Eyes on the player rectangle — use platformColor to preserve dichoptic separation
+    // Eyes on the player — use platformColor to preserve dichoptic separation
     this.playerEyeL = this.add.circle(ccx - 6, this.startY - 4, 4, this.platformColor, 0.8);
     this.playerEyeR = this.add.circle(ccx + 6, this.startY - 4, 4, this.platformColor, 0.8);
 
@@ -159,14 +156,10 @@ export default class FroggerGameScene extends Phaser.Scene {
     }
 
     // Score text (both eyes — gray)
-    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `${this.crossings} / ${WIN_CROSSINGS}`, {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `${this.crossings} / ${WIN_CROSSINGS}`, 1);
 
     // Timer
-    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {

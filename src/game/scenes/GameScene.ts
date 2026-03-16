@@ -7,6 +7,7 @@ import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
+import { GameVisuals } from '../vfx/GameVisuals';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -58,41 +59,38 @@ export default class GameScene extends Phaser.Scene {
     this.targetAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
     // Frame (both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
-      .setStrokeStyle(2, COLORS.GRAY)
-      .setFillStyle(COLORS.BLACK, 0);
+    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+    GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
     // Fixation cross (both eyes)
     const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
-    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
-    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+    GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
     // Platform
     const pw = fw * GAME.PLATFORM_WIDTH_RATIO;
     const ph = fh * GAME.PLATFORM_HEIGHT_RATIO;
     const py = fy + fh - ph / 2 - 10;
 
-    this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor)
-      .setAlpha(this.platformAlpha);
+    const platformContainer = GameVisuals.glowRect(this, ccx, py, pw, ph, this.platformColor, this.platformAlpha);
+    // Create a plain rectangle for physics (invisible, same bounds)
+    this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor, 0);
     this.physics.add.existing(this.platform, false);
     this.platform.body.setImmovable(true);
+    // Keep the visual container synced in update
+    this.platformVisual = platformContainer;
 
     // Score
     this.caught = 0;
     this.totalSpawned = 0;
     this.consecutiveHits = 0;
     this.consecutiveMisses = 0;
-    this.scoreText = this.add.text(fx + 10, fy + 10, `${t('game.score')}: 0 / ${GAME.TARGET_CATCHES}`, {
-      fontSize: '16px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    });
+    this.scoreText = GameVisuals.scoreText(this, fx + 10, fy + 10, `${t('game.score')}: 0 / ${GAME.TARGET_CATCHES}`);
 
     // Timer display
     this.sessionStartTime = Date.now();
-    this.timerText = this.add.text(fx + fw - 10, fy + 10, '00:00', {
-      fontSize: '16px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(1, 0);
+    this.timerText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '00:00', 1);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -192,10 +190,22 @@ export default class GameScene extends Phaser.Scene {
     );
     this.platform.body.reset(this.platform.x, this.platform.y);
 
-    // Check misses (objects off bottom)
+    // Sync platform visual container
+    if (this.platformVisual) {
+      this.platformVisual.x = this.platform.x;
+      this.platformVisual.y = this.platform.y;
+    }
+
+    // Check misses (objects off bottom) + sync visuals
     this.targets.getChildren().forEach((target) => {
-      if (target.active && target.y > this.field.y + this.field.h + 20) {
-        this.onMiss(target);
+      if (target.active) {
+        if (target._visual) {
+          target._visual.x = target.x;
+          target._visual.y = target.y;
+        }
+        if (target.y > this.field.y + this.field.h + 20) {
+          this.onMiss(target);
+        }
       }
     });
 
@@ -225,11 +235,14 @@ export default class GameScene extends Phaser.Scene {
       this.targets.getChildren().some((t) => t.active && Math.abs(t.x - x) < minSpacing)
     );
 
-    const target = this.add.circle(x, this.field.y - objDiameter, objDiameter / 2, this.targetColor)
-      .setAlpha(this.targetAlpha);
-
+    // Create a plain circle for physics collision detection
+    const target = this.add.circle(x, this.field.y - objDiameter, objDiameter / 2, this.targetColor, 0);
     this.physics.add.existing(target);
     target.body.setCircle(objDiameter / 2);
+    // Visual glow circle rendered on top
+    const targetVisual = GameVisuals.glowCircle(this, x, this.field.y - objDiameter, objDiameter / 2, this.targetColor, this.targetAlpha);
+    target._visual = targetVisual;
+    GameVisuals.pulse(this, targetVisual, 0.93, 1.07, 700 + Math.random() * 300);
     this.targets.add(target);
     // Set velocity AFTER adding to group (group.add resets velocity)
     target.body.setVelocityY(this.fallSpeed);
@@ -249,6 +262,7 @@ export default class GameScene extends Phaser.Scene {
     if (targetCenterX < platLeft || targetCenterX > platRight) return;
     if (targetBottom < platTop) return;
 
+    if (target._visual) { target._visual.destroy(); target._visual = null; }
     target.destroy();
     this.caught++;
     this.consecutiveHits++;
@@ -278,6 +292,7 @@ export default class GameScene extends Phaser.Scene {
 
   onMiss(target) {
     if (!target.active) return;
+    if (target._visual) { target._visual.destroy(); target._visual = null; }
     target.destroy();
     this.consecutiveMisses++;
     this.consecutiveHits = 0;
@@ -293,14 +308,14 @@ export default class GameScene extends Phaser.Scene {
     if (this.consecutiveHits >= 5) {
       // Player succeeding → reduce weak eye stimulation (make targets dimmer)
       this.targetAlpha = Math.max(this.targetAlpha - 0.05, 0.5);
-      this.targets.getChildren().forEach((t) => { if (t.active) t.setAlpha(this.targetAlpha); });
+      this.targets.getChildren().forEach((t) => { if (t.active && t._visual) t._visual.setAlpha(this.targetAlpha); });
       this.consecutiveHits = 0;
     }
 
     if (this.consecutiveMisses >= 3) {
       // Player struggling → increase weak eye stimulation (make targets brighter)
       this.targetAlpha = Math.min(this.targetAlpha + 0.05, 1.0);
-      this.targets.getChildren().forEach((t) => { if (t.active) t.setAlpha(this.targetAlpha); });
+      this.targets.getChildren().forEach((t) => { if (t.active && t._visual) t._visual.setAlpha(this.targetAlpha); });
       this.consecutiveMisses = 0;
     }
   }
