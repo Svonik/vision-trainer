@@ -10,6 +10,8 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
     if (type === 'warning') {
         return (
             <div
+                aria-live="assertive"
+                role="alert"
                 className="absolute top-0 left-0 right-0 bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur text-[var(--cta-text)] text-center py-3 px-4 font-semibold z-10 rounded-b-2xl"
                 style={{ animation: 'slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
             >
@@ -21,6 +23,9 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
     if (type === 'break') {
         return (
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Перерыв"
                 className="absolute inset-0 bg-[var(--bg)]/95 backdrop-blur-md flex items-center justify-center z-20"
                 style={{ animation: 'fadeIn 0.3s ease-out' }}
             >
