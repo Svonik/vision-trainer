@@ -22,8 +22,6 @@ function App() {
         <GameTimerContext.Provider value={{ elapsedMs }}>
             <HashRouter>
                 <Routes>
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/*" element={
                         <Layout>
                             <Routes>
@@ -44,6 +42,8 @@ function App() {
                                     <DisclaimerGuard><CalibrationGuard><GameSettingsGuard><GamePage setElapsedMs={setElapsedMs} /></GameSettingsGuard></CalibrationGuard></DisclaimerGuard>
                                 } />
                                 <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                                <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/dashboard" element={<DashboardPage />} />
                             </Routes>
                         </Layout>
                     } />
