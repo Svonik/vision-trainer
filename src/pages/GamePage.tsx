@@ -4,6 +4,8 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { getGameById } from '../config/games';
+import { t } from '../modules/i18n';
 
 const GAME_SCENE_MAP: Record<string, string> = {
     catcher: 'GameScene',
@@ -20,17 +22,23 @@ const GAME_SCENE_MAP: Record<string, string> = {
     catchmonsters: 'CatchMonstersGameScene',
 };
 
-interface GamePageProps {
-    setElapsedMs?: (ms: number | null) => void;
+function formatTime(ms: number): string {
+    const totalSecs = Math.floor(ms / 1000);
+    const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+    const secs = String(totalSecs % 60).padStart(2, '0');
+    return `${mins}:${secs}`;
 }
 
-export function GamePage({ setElapsedMs }: GamePageProps) {
+export function GamePage() {
     const location = useLocation();
     const navigate = useNavigate();
     const { gameId } = useParams();
     const settings = location.state?.settings;
     const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(null);
+    const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const phaserRef = useRef<IRefPhaserGame>(null);
+
+    const currentGame = gameId ? getGameById(gameId) : undefined;
 
     useEffect(() => {
         const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -57,15 +65,13 @@ export function GamePage({ setElapsedMs }: GamePageProps) {
         const handleExit = () => { navigate('/games'); };
         const handleWarning = (data: any) => { setSafetyWarning(data); };
         const handleReady = (scene: Phaser.Scene) => {
-            // If the active scene is not the target, switch to it
             if (scene.scene.key !== targetScene) {
                 scene.scene.start(targetScene);
                 return;
             }
             EventBus.emit(startEvent, settings);
         };
-
-        const handleTick = (ms: number) => { setElapsedMs?.(ms); };
+        const handleTick = (ms: number) => { setElapsedMs(ms); };
 
         EventBus.on('game-complete', handleComplete);
         EventBus.on('game-exit', handleExit);
@@ -79,13 +85,41 @@ export function GamePage({ setElapsedMs }: GamePageProps) {
             EventBus.removeListener('safety-timer-warning', handleWarning);
             EventBus.removeListener('current-scene-ready', handleReady);
             EventBus.removeListener('timer-tick', handleTick);
-            setElapsedMs?.(null);
+            setElapsedMs(null);
         };
     }, [settings, navigate, gameId]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] relative z-10">
-            <PhaserGame ref={phaserRef} />
+        <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
+            {/* Minimal game overlay header */}
+            <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-sm transition-colors"
+                >
+                    ← {t('nav.back')}
+                </button>
+                <div className="flex items-center gap-3">
+                    {currentGame && (
+                        <span className="text-[var(--text-secondary)] text-xs truncate max-w-32">
+                            {t(currentGame.titleKey)}
+                        </span>
+                    )}
+                    {elapsedMs !== null && (
+                        <span
+                            className="text-[var(--text-secondary)] text-sm font-mono"
+                            style={{ fontFamily: 'var(--font-display)' }}
+                        >
+                            {formatTime(elapsedMs)}
+                        </span>
+                    )}
+                </div>
+            </header>
+
+            <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
+                <PhaserGame ref={phaserRef} />
+            </div>
+
             {safetyWarning && (
                 <SafetyTimerBanner
                     type={safetyWarning.type}
