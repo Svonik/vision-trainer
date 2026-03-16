@@ -251,6 +251,7 @@ export default class GameScene extends Phaser.Scene {
 
   onCatch(platform, target) {
     if (!target.active) return;
+    if (this.caught >= GAME.TARGET_CATCHES) return;
 
     // SPEC COLLISION: center X in platform bounds AND bottom edge >= platform top
     const targetCenterX = target.x;

@@ -107,7 +107,7 @@ export function StatsPage() {
                                 <CountUp target={result.caught} />
                                 <p className="text-[var(--text-secondary)] text-sm mt-1 flex items-center justify-center gap-1">
                                     <Star className="w-4 h-4 text-[var(--warning)]" />
-                                    Ты собрал {result.caught} звёзд! из {GAME.TARGET_CATCHES}
+                                    Ты собрал {Math.min(result.caught, GAME.TARGET_CATCHES)} звёзд!
                                 </p>
                             </div>
 
