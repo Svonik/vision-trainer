@@ -84,7 +84,7 @@ export function GamePage({ setElapsedMs }: GamePageProps) {
     }, [settings, navigate, gameId]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black relative">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] relative z-10">
             <PhaserGame ref={phaserRef} />
             {safetyWarning && (
                 <SafetyTimerBanner
