@@ -102,7 +102,7 @@ export function TrainingSettingsPage() {
                                         boxShadow: '0 0 12px rgba(255,107,138,0.4)',
                                     }}
                                 />
-                                <span className="text-sm text-[var(--text-secondary)]">Л: {settings.contrastLeft}%</span>
+                                <span className="text-sm text-[var(--text-secondary)]">{t('stats.contrastL')}: {settings.contrastLeft}%</span>
                             </div>
                             <div className="text-center">
                                 <div
@@ -112,14 +112,14 @@ export function TrainingSettingsPage() {
                                         boxShadow: '0 0 12px rgba(107,223,255,0.4)',
                                     }}
                                 />
-                                <span className="text-sm text-[var(--text-secondary)]">П: {settings.contrastRight}%</span>
+                                <span className="text-sm text-[var(--text-secondary)]">{t('stats.contrastR')}: {settings.contrastRight}%</span>
                             </div>
                         </div>
 
                         <div className="space-y-3">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.leftHex }}>{`Левый глаз (${eyeColors.leftLabel})`}</span>
+                                    <span style={{ color: eyeColors.leftHex }}>{`${t('settings.leftEyeLabel')} (${eyeColors.leftLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastLeft}%</span>
                                 </div>
                                 <Slider
@@ -134,7 +134,7 @@ export function TrainingSettingsPage() {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.rightHex }}>{`Правый глаз (${eyeColors.rightLabel})`}</span>
+                                    <span style={{ color: eyeColors.rightHex }}>{`${t('settings.rightEyeLabel')} (${eyeColors.rightLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastRight}%</span>
                                 </div>
                                 <Slider

@@ -122,7 +122,7 @@ export function TrainingSummaryPage() {
                         </p>
                         {recommendation.suggestion !== 'keep' && (
                             <p className="text-sm opacity-60 mt-1">
-                                Л: {recommendation.left}% / П: {recommendation.right}%
+                                {`${t('stats.contrastL')}: ${recommendation.left}% / ${t('stats.contrastR')}: ${recommendation.right}%`}
                             </p>
                         )}
                     </div>

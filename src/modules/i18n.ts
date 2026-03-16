@@ -164,6 +164,16 @@ const strings = {
   'calibration.cyanRight': '(Циановая справа)',
   'calibration.redRight': 'Красная справа',
   'calibration.cyanLeft': '(Циановая слева)',
+  'disclaimer.point1': 'Данное приложение не является заменой очной консультации врача.',
+  'disclaimer.point2': 'Рекомендуется использовать под наблюдением офтальмолога.',
+  'disclaimer.point3': 'При возникновении двоения, головной боли или дискомфорта — прекратите использование.',
+  'progress.unknownGame': 'Игра',
+  'settings.glassesTypeLabel': 'Тип очков',
+  'settings.defaultSettingsLabel': 'Настройки по умолчанию',
+  'settings.leftEyeLabel': 'Левый глаз',
+  'settings.rightEyeLabel': 'Правый глаз',
+  'stats.contrastL': 'Л',
+  'stats.contrastR': 'П',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

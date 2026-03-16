@@ -46,15 +46,15 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
                         <ul className="space-y-3 text-base text-[var(--text)]">
                             <li className="flex gap-3 items-start">
                                 <BookOpen className="w-5 h-5 text-[var(--accent)] mt-0.5 flex-shrink-0" />
-                                <span>Данное приложение не является заменой очной консультации врача.</span>
+                                <span>{t('disclaimer.point1')}</span>
                             </li>
                             <li className="flex gap-3 items-start">
                                 <Eye className="w-5 h-5 text-[var(--accent)] mt-0.5 flex-shrink-0" />
-                                <span>Рекомендуется использовать под наблюдением офтальмолога.</span>
+                                <span>{t('disclaimer.point2')}</span>
                             </li>
                             <li className="flex gap-3 items-start">
                                 <Heart className="w-5 h-5 text-[var(--accent)] mt-0.5 flex-shrink-0" />
-                                <span>При возникновении двоения, головной боли или дискомфорта — прекратите использование.</span>
+                                <span>{t('disclaimer.point3')}</span>
                             </li>
                         </ul>
                         <label className="flex items-start gap-3 cursor-pointer">

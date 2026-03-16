@@ -23,7 +23,7 @@ interface SessionRowProps {
 
 const SessionRow = React.memo(function SessionRow({ session }: SessionRowProps) {
     const game = session.game ? getGameById(session.game) : undefined;
-    const gameName = game ? t(game.titleKey) : (session.game ?? 'Игра');
+    const gameName = game ? t(game.titleKey) : (session.game ?? t('progress.unknownGame'));
     const hitPct = session.hit_rate != null ? Math.round(session.hit_rate * 100) : 0;
     const speedLabel = session.speed && SPEEDS[session.speed as keyof typeof SPEEDS]
         ? SPEEDS[session.speed as keyof typeof SPEEDS].label

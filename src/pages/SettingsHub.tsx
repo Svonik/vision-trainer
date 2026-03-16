@@ -153,7 +153,7 @@ export function SettingsHub() {
             {/* Section 2: Glasses type */}
             <section
                 className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 space-y-4"
-                aria-label="Тип очков"
+                aria-label={t('settings.glassesTypeLabel')}
             >
                 <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider">
                     {t('settings.glassesSection')}
@@ -191,7 +191,7 @@ export function SettingsHub() {
             {/* Section 3: Default settings */}
             <section
                 className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 space-y-5"
-                aria-label="Настройки по умолчанию"
+                aria-label={t('settings.defaultSettingsLabel')}
             >
                 <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider">
                     {t('settings.defaultsSection')}
