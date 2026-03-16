@@ -365,16 +365,16 @@ export default class AsteroidGameScene extends Phaser.Scene {
       if (!blinkOn) return;
     }
 
-    const rad = (this.shipAngleDeg * Math.PI) / 180;
+    const heading = (this.shipAngleDeg - 90) * (Math.PI / 180); // direction ship points
     const size = 16;
 
-    // Triangle points: tip forward, base behind
-    const tipX = this.shipX + Math.cos(rad - Math.PI / 2) * size;
-    const tipY = this.shipY + Math.sin(rad - Math.PI / 2) * size;
-    const leftX = this.shipX + Math.cos(rad + Math.PI * 5 / 6) * size;
-    const leftY = this.shipY + Math.sin(rad + Math.PI * 5 / 6) * size;
-    const rightX = this.shipX + Math.cos(rad - Math.PI * 5 / 6) * size;
-    const rightY = this.shipY + Math.sin(rad - Math.PI * 5 / 6) * size;
+    // Triangle points: tip forward, two rear corners at ±140° from heading
+    const tipX = this.shipX + Math.cos(heading) * size;
+    const tipY = this.shipY + Math.sin(heading) * size;
+    const leftX = this.shipX + Math.cos(heading + Math.PI * 0.78) * size;
+    const leftY = this.shipY + Math.sin(heading + Math.PI * 0.78) * size;
+    const rightX = this.shipX + Math.cos(heading - Math.PI * 0.78) * size;
+    const rightY = this.shipY + Math.sin(heading - Math.PI * 0.78) * size;
 
     // Glow halo around ship
     g.lineStyle(6, this.platformColor, this.platformAlpha * 0.06);
@@ -483,15 +483,12 @@ export default class AsteroidGameScene extends Phaser.Scene {
 
     SynthSounds.launch();
 
-    const rad = (this.shipAngleDeg * Math.PI) / 180;
-    const tipX = this.shipX + Math.cos(rad - Math.PI / 2) * 18;
-    const tipY = this.shipY + Math.sin(rad - Math.PI / 2) * 18;
-    const dirRad = rad - Math.PI / 2;
+    const heading = (this.shipAngleDeg - 90) * (Math.PI / 180);
     const bullet = {
-      x: tipX,
-      y: tipY,
-      vx: Math.cos(dirRad) * BULLET_SPEED + this.shipVX,
-      vy: Math.sin(dirRad) * BULLET_SPEED + this.shipVY,
+      x: this.shipX + Math.cos(heading) * 18,
+      y: this.shipY + Math.sin(heading) * 18,
+      vx: Math.cos(heading) * BULLET_SPEED + this.shipVX,
+      vy: Math.sin(heading) * BULLET_SPEED + this.shipVY,
       age: 0,
     };
     this.bullets.push(bullet);
