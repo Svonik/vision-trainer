@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useGameTimer } from './GameTimerContext';
 import { t } from '../modules/i18n';
 import { getCalibration } from '../modules/storage';
+import { FloatingParticles } from './FloatingParticles';
 
 const STEPS = [
     { path: '/disclaimer', label: 'Дисклеймер' },
@@ -35,30 +36,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
     if (isGamePlay) {
         return (
-            <div className="min-h-screen bg-black">
-                <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur">
+            <div className="min-h-screen bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
+                <FloatingParticles />
+                <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                     <Button
                         variant="ghost"
                         onClick={() => navigate(-1)}
-                        className="text-gray-400 hover:text-white text-sm"
+                        className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-sm"
                     >
                         ← Назад
                     </Button>
                     {elapsedMs !== null && (
-                        <span className="text-gray-400 text-sm font-mono">
+                        <span className="text-[var(--text-secondary)] text-sm font-mono" style={{ fontFamily: 'var(--font-display)' }}>
                             {formatTime(elapsedMs)}
                         </span>
                     )}
                 </header>
-                <div className="pt-10">{children}</div>
+                <div className="pt-10 relative z-10">{children}</div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-black">
-            <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur border-b border-gray-800/50">
-                <span className="text-white font-semibold text-sm">Vision Trainer</span>
+        <div className="min-h-screen bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
+            <FloatingParticles />
+            <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur border-b border-[var(--border)]/30">
+                <span className="text-[var(--accent)] font-semibold text-sm">Vision Trainer</span>
                 <nav className="flex gap-1">
                     {STEPS.map((step) => {
                         const status = getStepStatus(step.path);
@@ -66,9 +69,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                             <span
                                 key={step.path}
                                 className={`text-xs px-2 py-1 rounded ${
-                                    status === 'active' ? 'text-cyan-400 bg-cyan-400/10' :
-                                    status === 'completed' ? 'text-gray-500' :
-                                    'text-gray-700'
+                                    status === 'active' ? 'bg-[var(--accent)]/20 text-[var(--accent)]' :
+                                    status === 'completed' ? 'text-[var(--text-secondary)]' :
+                                    'text-[var(--border)]'
                                 }`}
                             >
                                 {step.label}
@@ -81,7 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <Button
                             variant="ghost"
                             onClick={() => navigate('/calibration')}
-                            className="text-gray-400 hover:text-white text-xs h-7 px-2"
+                            className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-xs h-7 px-2"
                         >
                             {t('layout.recalibrate')}
                         </Button>
@@ -89,13 +92,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Button
                         variant="ghost"
                         onClick={() => navigate(-1)}
-                        className="text-gray-400 hover:text-white text-xs h-7 px-2"
+                        className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-xs h-7 px-2"
                     >
                         ←
                     </Button>
                 </div>
             </header>
-            <div className="pt-12">{children}</div>
+            <div className="pt-12 relative z-10">{children}</div>
         </div>
     );
 }
