@@ -95,6 +95,10 @@ const strings = {
   'safety.breakTimeChild': 'Время отдохнуть!',
   'safety.breakMessageChild': 'Давай сделаем паузу и посмотрим в окно на что-нибудь далёкое 🪟',
   'stats.firstSession': 'Сыграй первую игру!',
+  'nav.otherGame': 'Другая игра',
+  'nav.toGames': 'К играм',
+  'nav.back': 'Назад',
+  'stats.startGame': 'Начать игру!',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

@@ -45,4 +45,23 @@ describe('SettingsPage', () => {
         );
         expect(screen.getByText(/снизьте яркость/i)).toBeInTheDocument();
     });
+
+    it('shows game name in title', () => {
+        render(
+            <MemoryRouter initialEntries={['/games/catcher/settings']}>
+                <Routes><Route path="/games/:gameId/settings" element={<SettingsPage />} /></Routes>
+            </MemoryRouter>
+        );
+        expect(screen.getByText(/настройки:/i)).toBeInTheDocument();
+        expect(screen.getByText(/бинокулярный захват/i)).toBeInTheDocument();
+    });
+
+    it('shows "Другая игра" button', () => {
+        render(
+            <MemoryRouter initialEntries={['/games/catcher/settings']}>
+                <Routes><Route path="/games/:gameId/settings" element={<SettingsPage />} /></Routes>
+            </MemoryRouter>
+        );
+        expect(screen.getByText(/другая игра/i)).toBeInTheDocument();
+    });
 });

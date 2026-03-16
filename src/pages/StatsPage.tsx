@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Star, Hourglass } from 'lucide-react';
+import { Star, Hourglass, Grid } from 'lucide-react';
 import { getSessions } from '../modules/storage';
 import { SPEEDS, GAME } from '../modules/constants';
 import { t } from '../modules/i18n';
+import { getGameById } from '../config/games';
 
 function formatDuration(seconds: number): string {
     const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -67,6 +68,8 @@ export function StatsPage() {
         return sessions.length > 0 ? sessions[sessions.length - 1] : null;
     })();
 
+    const game = getGameById(gameId ?? '');
+
     const speedLabel = result?.speed && SPEEDS[result.speed as keyof typeof SPEEDS]
         ? SPEEDS[result.speed as keyof typeof SPEEDS].label
         : result?.speed ?? '—';
@@ -78,12 +81,23 @@ export function StatsPage() {
     const sessions = getSessions();
     const prevSession = sessions.length > 1 ? sessions[sessions.length - 2] : null;
 
+    // Settings to pass for "play again"
+    const playSettings = result?.settings ?? location.state?.settings ?? null;
+
+    const handlePlayAgain = () => {
+        if (playSettings) {
+            navigate(`/games/${gameId}/play`, { state: { settings: playSettings } });
+        } else {
+            navigate(`/games/${gameId}/settings`);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
                 <div className="p-6 space-y-6">
                     <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
-                        {t('stats.title')}
+                        {game ? `Результаты: ${t(game.titleKey)}` : t('stats.title')}
                     </h2>
 
                     {result ? (
@@ -136,24 +150,36 @@ export function StatsPage() {
                     )}
 
                     <div className="flex flex-col gap-3 pt-2">
-                        <button
-                            onClick={() => navigate(`/games/${gameId}/settings`)}
-                            className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
-                        >
-                            {t('stats.playAgain')}
-                        </button>
-                        <button
-                            onClick={() => navigate(`/games/${gameId}/settings`)}
-                            className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
-                        >
-                            {t('stats.changeSettings')}
-                        </button>
-                        <button
-                            onClick={() => navigate('/games')}
-                            className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 btn-press hover:bg-[var(--surface)]"
-                        >
-                            {t('stats.exit')}
-                        </button>
+                        {result ? (
+                            <>
+                                <button
+                                    onClick={handlePlayAgain}
+                                    className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
+                                >
+                                    {t('stats.playAgain')}
+                                </button>
+                                <button
+                                    onClick={() => navigate(`/games/${gameId}/settings`)}
+                                    className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
+                                >
+                                    {t('stats.changeSettings')}
+                                </button>
+                                <button
+                                    onClick={() => navigate('/games')}
+                                    className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 btn-press hover:bg-[var(--surface)] flex items-center justify-center gap-2"
+                                >
+                                    <Grid className="w-4 h-4" />
+                                    {t('nav.otherGame')}
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={() => navigate(`/games/${gameId}/settings`)}
+                                className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
+                            >
+                                {t('stats.startGame')}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

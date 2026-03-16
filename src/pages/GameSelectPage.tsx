@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router';
 import { t } from '@/modules/i18n';
 import { getSessions } from '../modules/storage';
+import { GAMES as GAMES_DATA } from '../config/games';
 
-interface GameConfig {
+interface GameDisplayConfig {
     id: string;
     titleKey: string;
     descriptionKey: string;
@@ -147,20 +148,25 @@ function CatchMonstersIllustration() {
     );
 }
 
-const GAMES: GameConfig[] = [
-    { id: 'binocular-catcher', titleKey: 'gameSelect.catcher.title', descriptionKey: 'gameSelect.catcher.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/catcher/settings', illustration: <CatcherIllustration /> },
-    { id: 'breakout', titleKey: 'gameSelect.breakout.title', descriptionKey: 'gameSelect.breakout.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/breakout/settings', illustration: <BreakoutIllustration /> },
-    { id: 'tetris', titleKey: 'gameSelect.tetris.title', descriptionKey: 'gameSelect.tetris.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/tetris/settings', illustration: <TetrisIllustration /> },
-    { id: 'invaders', titleKey: 'gameSelect.invaders.title', descriptionKey: 'gameSelect.invaders.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/invaders/settings', illustration: <InvadersIllustration /> },
-    { id: 'pong', titleKey: 'gameSelect.pong.title', descriptionKey: 'gameSelect.pong.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/pong/settings', illustration: <PongIllustration /> },
-    { id: 'snake', titleKey: 'gameSelect.snake.title', descriptionKey: 'gameSelect.snake.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/snake/settings', illustration: <SnakeIllustration /> },
-    { id: 'flappy', titleKey: 'gameSelect.flappy.title', descriptionKey: 'gameSelect.flappy.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/flappy/settings', illustration: <FlappyIllustration /> },
-    { id: 'asteroid', titleKey: 'gameSelect.asteroid.title', descriptionKey: 'gameSelect.asteroid.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/asteroid/settings', illustration: <AsteroidIllustration /> },
-    { id: 'balloonpop', titleKey: 'gameSelect.balloonpop.title', descriptionKey: 'gameSelect.balloonpop.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/balloonpop/settings', illustration: <BalloonPopIllustration /> },
-    { id: 'memorytiles', titleKey: 'gameSelect.memorytiles.title', descriptionKey: 'gameSelect.memorytiles.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/memorytiles/settings', illustration: <MemoryTilesIllustration /> },
-    { id: 'frogger', titleKey: 'gameSelect.frogger.title', descriptionKey: 'gameSelect.frogger.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/frogger/settings', illustration: <FroggerIllustration /> },
-    { id: 'catchmonsters', titleKey: 'gameSelect.catchmonsters.title', descriptionKey: 'gameSelect.catchmonsters.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/catchmonsters/settings', illustration: <CatchMonstersIllustration /> },
-];
+const ILLUSTRATION_MAP: Record<string, React.ReactNode> = {
+    'binocular-catcher': <CatcherIllustration />,
+    'breakout': <BreakoutIllustration />,
+    'tetris': <TetrisIllustration />,
+    'invaders': <InvadersIllustration />,
+    'pong': <PongIllustration />,
+    'snake': <SnakeIllustration />,
+    'flappy': <FlappyIllustration />,
+    'asteroid': <AsteroidIllustration />,
+    'balloonpop': <BalloonPopIllustration />,
+    'memorytiles': <MemoryTilesIllustration />,
+    'frogger': <FroggerIllustration />,
+    'catchmonsters': <CatchMonstersIllustration />,
+};
+
+const GAMES: GameDisplayConfig[] = GAMES_DATA.map(g => ({
+    ...g,
+    illustration: ILLUSTRATION_MAP[g.id] ?? null,
+}));
 
 export function GameSelectPage() {
     const navigate = useNavigate();
