@@ -90,6 +90,11 @@ const strings = {
   'layout.recalibrate': 'Перекалибровать',
   'settings.leftEyeRed': 'Левый глаз (красный)',
   'settings.rightEyeCyan': 'Правый глаз (циановый)',
+  'disclaimer.parentGate': 'Родители, прочтите это',
+  'safety.breakWarningChild': 'Глазки устали! Скоро перерыв',
+  'safety.breakTimeChild': 'Время отдохнуть!',
+  'safety.breakMessageChild': 'Давай сделаем паузу и посмотрим в окно на что-нибудь далёкое 🪟',
+  'stats.firstSession': 'Сыграй первую игру!',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
