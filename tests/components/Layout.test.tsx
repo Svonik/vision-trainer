@@ -8,24 +8,18 @@ vi.mock('../../src/modules/storage', () => ({
     isDisclaimerAccepted: vi.fn(() => true),
 }));
 
+vi.mock('../../src/components/FloatingParticles', () => ({
+    FloatingParticles: () => <div data-testid="floating-particles" />,
+}));
+
 describe('Layout', () => {
-    it('renders logo', () => {
+    it('renders Vision Trainer logo (tab variant)', () => {
         render(
             <MemoryRouter initialEntries={['/games']}>
                 <Layout><div>Content</div></Layout>
             </MemoryRouter>
         );
         expect(screen.getByText('Vision Trainer')).toBeInTheDocument();
-    });
-
-    it('logo is a clickable button', () => {
-        render(
-            <MemoryRouter initialEntries={['/games']}>
-                <Layout><div>Content</div></Layout>
-            </MemoryRouter>
-        );
-        const logo = screen.getByText('Vision Trainer');
-        expect(logo.tagName).toBe('BUTTON');
     });
 
     it('renders children', () => {
@@ -37,24 +31,51 @@ describe('Layout', () => {
         expect(screen.getByText('Test Content')).toBeInTheDocument();
     });
 
-    it('back button shows "Назад" text', () => {
+    it('renders TabBar on /games route', () => {
         render(
             <MemoryRouter initialEntries={['/games']}>
+                <Layout><div>Content</div></Layout>
+            </MemoryRouter>
+        );
+        // TabBar has aria-label="Main navigation"
+        expect(screen.getByRole('navigation', { name: /main navigation/i })).toBeInTheDocument();
+    });
+
+    it('renders TopBar on /games route', () => {
+        render(
+            <MemoryRouter initialEntries={['/games']}>
+                <Layout><div>Content</div></Layout>
+            </MemoryRouter>
+        );
+        expect(screen.getByRole('banner')).toBeInTheDocument();
+    });
+
+    it('push variant shows back button on settings page', () => {
+        render(
+            <MemoryRouter initialEntries={['/games/catcher/settings']}>
                 <Layout><div>Content</div></Layout>
             </MemoryRouter>
         );
         expect(screen.getByText(/назад/i)).toBeInTheDocument();
     });
 
-    it('completed steps are rendered as buttons', () => {
+    it('renders children fullscreen for /onboarding (no tab bar)', () => {
         render(
-            <MemoryRouter initialEntries={['/games/catcher/settings']}>
+            <MemoryRouter initialEntries={['/onboarding']}>
+                <Layout><div>Onboarding Content</div></Layout>
+            </MemoryRouter>
+        );
+        expect(screen.getByText('Onboarding Content')).toBeInTheDocument();
+        expect(screen.queryByRole('navigation', { name: /main navigation/i })).not.toBeInTheDocument();
+    });
+
+    it('does not render step indicator buttons (old navigation removed)', () => {
+        render(
+            <MemoryRouter initialEntries={['/games']}>
                 <Layout><div>Content</div></Layout>
             </MemoryRouter>
         );
-        // Disclaimer and Calibration steps should be completed and rendered as buttons
-        const stepButtons = screen.getAllByRole('button');
-        const labels = stepButtons.map(b => b.textContent);
-        expect(labels.some(l => l?.includes('Дисклеймер'))).toBe(true);
+        expect(screen.queryByText('Дисклеймер')).not.toBeInTheDocument();
+        expect(screen.queryByText('Калибровка')).not.toBeInTheDocument();
     });
 });
