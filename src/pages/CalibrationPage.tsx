@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { useCalibration } from '@/hooks/useCalibration';
@@ -52,10 +51,13 @@ export function CalibrationPage() {
 
     if (phase === 'adjust') {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-4">
-                <Card className="max-w-lg w-full bg-gray-900 border-gray-700 text-white">
+            <div
+                className="min-h-screen flex items-center justify-center p-4"
+                style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            >
+                <Card className="max-w-lg w-full bg-[var(--surface)] border-[var(--border)]/50 rounded-3xl spring-enter">
                     <CardHeader>
-                        <CardTitle className="text-lg text-white">
+                        <CardTitle className="text-lg text-[var(--text)]">
                             {t('calibration.adjustBrightness')}
                         </CardTitle>
                     </CardHeader>
@@ -63,82 +65,116 @@ export function CalibrationPage() {
                         {/* Live preview squares */}
                         <div className="flex justify-center gap-8 mb-4">
                             <div
-                                className="w-24 h-24 rounded-sm"
-                                style={{ backgroundColor: eyeColors.leftHex, opacity: redBrightness / 100 }}
+                                className="w-24 h-24 rounded-2xl"
+                                style={{
+                                    backgroundColor: eyeColors.leftHex,
+                                    opacity: redBrightness / 100,
+                                    boxShadow: '0 0 20px rgba(255,107,138,0.3)',
+                                }}
                                 aria-label="red square"
                             />
                             <div
-                                className="w-24 h-24 rounded-sm"
-                                style={{ backgroundColor: eyeColors.rightHex, opacity: cyanBrightness / 100 }}
+                                className="w-24 h-24 rounded-2xl"
+                                style={{
+                                    backgroundColor: eyeColors.rightHex,
+                                    opacity: cyanBrightness / 100,
+                                    boxShadow: '0 0 20px rgba(107,223,255,0.3)',
+                                }}
                                 aria-label="cyan square"
                             />
                         </div>
-                        <p className="text-center text-sm text-gray-400">{t('calibration.hint')}</p>
-                        <p className="text-xs text-gray-500 text-center">{`Попытка ${attempts} из ${CALIBRATION.MAX_ATTEMPTS}`}</p>
+                        <p className="text-center text-sm text-[var(--text-secondary)]">{t('calibration.hint')}</p>
+                        <p className="text-xs text-[var(--text-secondary)] text-center">{`Попытка ${attempts} из ${CALIBRATION.MAX_ATTEMPTS}`}</p>
 
                         <div className="space-y-2">
                             <label className="text-sm" style={{ color: '#ff6666' }}>
                                 {t('calibration.red')}: {redBrightness}
                             </label>
-                            <Slider
-                                value={[redBrightness]}
-                                min={CALIBRATION.SLIDER_MIN}
-                                max={CALIBRATION.SLIDER_MAX}
-                                step={CALIBRATION.SLIDER_STEP}
-                                onValueChange={([val]) => setRedBrightness(val)}
-                                className="w-full"
-                            />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setRedBrightness(Math.max(0, redBrightness - 5))}
+                                    className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
+                                >
+                                    −
+                                </button>
+                                <Slider
+                                    value={[redBrightness]}
+                                    min={CALIBRATION.SLIDER_MIN}
+                                    max={CALIBRATION.SLIDER_MAX}
+                                    step={CALIBRATION.SLIDER_STEP}
+                                    onValueChange={([val]) => setRedBrightness(val)}
+                                    className="flex-1"
+                                />
+                                <button
+                                    onClick={() => setRedBrightness(Math.min(100, redBrightness + 5))}
+                                    className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
+                                >
+                                    +
+                                </button>
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm" style={{ color: '#00e5e5' }}>
                                 {t('calibration.cyan')}: {cyanBrightness}
                             </label>
-                            <Slider
-                                value={[cyanBrightness]}
-                                min={CALIBRATION.SLIDER_MIN}
-                                max={CALIBRATION.SLIDER_MAX}
-                                step={CALIBRATION.SLIDER_STEP}
-                                onValueChange={([val]) => setCyanBrightness(val)}
-                                className="w-full"
-                            />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setCyanBrightness(Math.max(0, cyanBrightness - 5))}
+                                    className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
+                                >
+                                    −
+                                </button>
+                                <Slider
+                                    value={[cyanBrightness]}
+                                    min={CALIBRATION.SLIDER_MIN}
+                                    max={CALIBRATION.SLIDER_MAX}
+                                    step={CALIBRATION.SLIDER_STEP}
+                                    onValueChange={([val]) => setCyanBrightness(val)}
+                                    className="flex-1"
+                                />
+                                <button
+                                    onClick={() => setCyanBrightness(Math.min(100, cyanBrightness + 5))}
+                                    className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
+                                >
+                                    +
+                                </button>
+                            </div>
                         </div>
 
                         {maxAttemptsReached ? (
                             <div className="space-y-3">
-                                <p className="text-yellow-400 text-sm">
+                                <p className="text-[var(--warning)] text-sm">
                                     {t('calibration.doctorWarning')}
                                 </p>
                                 <div className="flex gap-2">
-                                    <Button
+                                    <button
                                         onClick={handleContinueAnyway}
-                                        variant="outline"
-                                        className="flex-1 border-gray-600 text-gray-200 hover:bg-gray-800"
+                                        className="flex-1 rounded-full border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 py-2 btn-press"
                                     >
                                         {t('calibration.continueAnyway')}
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
                                         onClick={handleRetry}
-                                        className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white"
+                                        className="flex-1 rounded-full bg-[var(--cta)] text-[var(--cta-text)] py-2 font-semibold btn-press"
                                     >
                                         {t('calibration.recalibrate')}
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex gap-2">
-                                <Button
+                                <button
                                     onClick={handleRetry}
-                                    variant="outline"
-                                    className="flex-1 border-gray-600 text-gray-200 hover:bg-gray-800"
+                                    className="flex-1 rounded-full border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 py-2 btn-press"
                                 >
                                     {t('calibration.retry')}
-                                </Button>
-                                <Button
+                                </button>
+                                <button
                                     onClick={handleSaveAndContinue}
-                                    className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white"
+                                    className="flex-1 rounded-full bg-[var(--cta)] text-[var(--cta-text)] py-2 font-semibold btn-press"
                                 >
                                     {t('calibration.save')}
-                                </Button>
+                                </button>
                             </div>
                         )}
                     </CardContent>
@@ -148,60 +184,74 @@ export function CalibrationPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
-            <Card className="max-w-lg w-full bg-gray-900 border-gray-700 text-white">
+        <div
+            className="min-h-screen flex items-center justify-center p-4"
+            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+        >
+            <Card className="max-w-lg w-full bg-[var(--surface)] border-[var(--border)]/50 rounded-3xl spring-enter">
                 <CardHeader>
-                    <CardTitle className="text-lg text-white">
+                    <CardTitle className="text-lg text-[var(--text)]">
                         {t('calibration.instruction')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Glasses type toggle */}
                     <div className="space-y-2">
-                        <p className="text-sm text-gray-300">{t('calibration.glassesType')}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{t('calibration.glassesType')}</p>
                         <div className="flex gap-2">
-                            <Button
+                            <button
                                 onClick={() => setGlassesType('red-cyan')}
-                                variant={glassesType === 'red-cyan' ? 'default' : 'outline'}
-                                className={`flex-1 ${glassesType === 'red-cyan' ? 'bg-white text-black' : 'border-gray-600 text-gray-200 hover:bg-gray-800'}`}
+                                className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
+                                    glassesType === 'red-cyan'
+                                        ? 'bg-[var(--red-soft)]/20 text-[var(--red-soft)] border-[var(--red-soft)]'
+                                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50'
+                                }`}
                             >
                                 {t('calibration.glassesRed')}
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                                 onClick={() => setGlassesType('cyan-red')}
-                                variant={glassesType === 'cyan-red' ? 'default' : 'outline'}
-                                className={`flex-1 ${glassesType === 'cyan-red' ? 'bg-white text-black' : 'border-gray-600 text-gray-200 hover:bg-gray-800'}`}
+                                className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
+                                    glassesType === 'cyan-red'
+                                        ? 'bg-[var(--cyan-soft)]/20 text-[var(--cyan-soft)] border-[var(--cyan-soft)]'
+                                        : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50'
+                                }`}
                             >
                                 {t('calibration.glassesCyan')}
-                            </Button>
+                            </button>
                         </div>
                     </div>
                     <div className="flex justify-center gap-8">
                         <div
-                            className="w-24 h-24 rounded-sm"
-                            style={{ backgroundColor: eyeColors.leftHex }}
+                            className="w-24 h-24 rounded-2xl"
+                            style={{
+                                backgroundColor: eyeColors.leftHex,
+                                boxShadow: '0 0 20px rgba(255,107,138,0.3)',
+                            }}
                             aria-label="red square"
                         />
                         <div
-                            className="w-24 h-24 rounded-sm"
-                            style={{ backgroundColor: eyeColors.rightHex }}
+                            className="w-24 h-24 rounded-2xl"
+                            style={{
+                                backgroundColor: eyeColors.rightHex,
+                                boxShadow: '0 0 20px rgba(107,223,255,0.3)',
+                            }}
                             aria-label="cyan square"
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Button
+                        <button
                             onClick={handleSeeBoth}
-                            className="flex-1 bg-green-700 hover:bg-green-600 text-white"
+                            className="flex-1 rounded-full bg-[var(--cta)] text-[var(--cta-text)] py-2.5 font-semibold btn-press"
                         >
                             {t('calibration.seeBoth')}
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             onClick={handleSeeOne}
-                            variant="outline"
-                            className="flex-1 border-gray-600 text-gray-200 hover:bg-gray-800"
+                            className="flex-1 rounded-full border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 py-2.5 btn-press"
                         >
                             {t('calibration.seeOne')}
-                        </Button>
+                        </button>
                     </div>
                 </CardContent>
             </Card>

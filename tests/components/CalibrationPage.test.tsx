@@ -26,4 +26,13 @@ describe('CalibrationPage', () => {
         expect(document.querySelector('[aria-label="red square"]')).toBeInTheDocument();
         expect(document.querySelector('[aria-label="cyan square"]')).toBeInTheDocument();
     });
+
+    it('has +/- buttons for slider adjustment', () => {
+        render(<MemoryRouter><CalibrationPage /></MemoryRouter>);
+        fireEvent.click(screen.getByText(/только один/));
+        const minusButtons = screen.getAllByText('−');
+        const plusButtons = screen.getAllByText('+');
+        expect(minusButtons.length).toBeGreaterThan(0);
+        expect(plusButtons.length).toBeGreaterThan(0);
+    });
 });
