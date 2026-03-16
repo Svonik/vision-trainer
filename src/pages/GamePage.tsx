@@ -16,6 +16,8 @@ const GAME_SCENE_MAP: Record<string, string> = {
     asteroid: 'AsteroidGameScene',
     balloonpop: 'BalloonPopGameScene',
     memorytiles: 'MemoryTilesGameScene',
+    frogger: 'FroggerGameScene',
+    catchmonsters: 'CatchMonstersGameScene',
 };
 
 interface GamePageProps {
@@ -43,6 +45,8 @@ export function GamePage({ setElapsedMs }: GamePageProps) {
             asteroid: 'start-asteroid-game',
             balloonpop: 'start-balloonpop-game',
             memorytiles: 'start-memorytiles-game',
+            frogger: 'start-frogger-game',
+            catchmonsters: 'start-catchmonsters-game',
         };
         const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 

@@ -9,6 +9,8 @@ import FlappyGameScene from './scenes/FlappyGameScene';
 import AsteroidGameScene from './scenes/AsteroidGameScene';
 import BalloonPopGameScene from './scenes/BalloonPopGameScene';
 import MemoryTilesGameScene from './scenes/MemoryTilesGameScene';
+import FroggerGameScene from './scenes/FroggerGameScene';
+import CatchMonstersGameScene from './scenes/CatchMonstersGameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -20,7 +22,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 } }
     },
-    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene, BalloonPopGameScene, MemoryTilesGameScene]
+    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene, BalloonPopGameScene, MemoryTilesGameScene, FroggerGameScene, CatchMonstersGameScene]
 };
 
 const StartGame = (parent: string) => {

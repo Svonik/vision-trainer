@@ -1,0 +1,363 @@
+// @ts-nocheck
+import { t } from '../../modules/i18n';
+import { COLORS, GAME } from '../../modules/constants';
+import { createGameSettings } from '../../modules/gameState';
+import { createSafetyTimer } from '../../modules/safetyTimer';
+import { getEyeColors } from '../../modules/glassesColors';
+import { EventBus } from '../EventBus';
+import { SynthSounds } from '../audio/SynthSounds';
+import { GameVFX } from '../vfx/GameVFX';
+
+const MONSTER_SPEEDS = { slow: 40, normal: 70, fast: 110, pro: 160 };
+const MONSTER_COUNT = { slow: 2, normal: 3, fast: 3, pro: 4 };
+const WIN_CATCHES = 25;
+const DIRECTION_CHANGE_MIN_MS = 1000;
+const DIRECTION_CHANGE_MAX_MS = 3000;
+const CROSSHAIR_SIZE = 16;
+
+export default class CatchMonstersGameScene extends Phaser.Scene {
+  constructor() {
+    super('CatchMonstersGameScene');
+  }
+
+  create() {
+    SynthSounds.resume();
+
+    this.startGameHandler = (settings) => {
+      this.settings = createGameSettings(settings || {});
+      this.startGameplay();
+    };
+    this.safetyFinishHandler = () => { this.endGame(false); };
+    this.safetyExtendHandler = () => {
+      if (this.safetyTimer && this.safetyTimer.canExtend()) {
+        this.safetyTimer.extend();
+        this.isPaused = false;
+      }
+    };
+
+    EventBus.on('start-catchmonsters-game', this.startGameHandler);
+    EventBus.on('safety-finish', this.safetyFinishHandler);
+    EventBus.on('safety-extend', this.safetyExtendHandler);
+
+    this.events.on('shutdown', this.shutdown, this);
+
+    EventBus.emit('current-scene-ready', this);
+  }
+
+  startGameplay() {
+    const fw = GAME.WIDTH * GAME.FIELD_WIDTH_RATIO;
+    const fh = GAME.HEIGHT * GAME.FIELD_HEIGHT_RATIO;
+    const fx = (GAME.WIDTH - fw) / 2;
+    const fy = (GAME.HEIGHT - fh) / 2;
+    this.field = { x: fx, y: fy, w: fw, h: fh };
+
+    const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
+    const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
+    this.platformColor = isLeftPlatform ? eyeColors.leftColor : eyeColors.rightColor;
+    this.ballColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
+    this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
+    this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.baseSpeed = MONSTER_SPEEDS[this.settings.speed] || 70;
+    this.activeMonsterCount = MONSTER_COUNT[this.settings.speed] || 3;
+    this.monstersCaught = 0;
+    this.totalMonsters = 0;
+
+    // Frame (both eyes)
+    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
+      .setStrokeStyle(2, COLORS.GRAY)
+      .setFillStyle(COLORS.BLACK, 0);
+
+    // Fixation cross (both eyes)
+    const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
+    const ccx = fx + fw / 2;
+    const ccy = fy + fh / 2;
+    this.add.rectangle(ccx, ccy, crossSize, 2, COLORS.WHITE);
+    this.add.rectangle(ccx, ccy, 2, crossSize, COLORS.WHITE);
+
+    // Score text (both eyes — gray)
+    this.scoreText = this.add.text(fx + fw - 10, fy + 10, `0 / ${WIN_CATCHES}`, {
+      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+    }).setOrigin(1, 0);
+
+    // Timer (both eyes — gray)
+    this.timerText = this.add.text(fx + fw / 2, fy + 10, '00:00', {
+      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+    }).setOrigin(0.5, 0);
+
+    // Pause button
+    const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
+      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+    }).setInteractive({ useHandCursor: true });
+    pauseBtn.on('pointerup', () => this.togglePause());
+
+    // Crosshair (platformColor — one eye)
+    this.crosshair = {
+      h: this.add.rectangle(ccx, ccy, CROSSHAIR_SIZE * 2, 2, this.platformColor).setAlpha(this.platformAlpha),
+      v: this.add.rectangle(ccx, ccy, 2, CROSSHAIR_SIZE * 2, this.platformColor).setAlpha(this.platformAlpha),
+      ring: this.add.circle(ccx, ccy, CROSSHAIR_SIZE / 2, this.platformColor, 0)
+        .setStrokeStyle(1.5, this.platformColor).setAlpha(this.platformAlpha),
+    };
+
+    // Monsters
+    this.monsters = [];
+    for (let i = 0; i < this.activeMonsterCount; i++) {
+      this.spawnMonster();
+    }
+
+    // Pointer move → crosshair follows
+    this.input.on('pointermove', (pointer) => {
+      if (!this.isPaused) this.moveCrosshair(pointer.x, pointer.y);
+    });
+
+    // Click → catch monster
+    this.input.on('pointerup', (pointer) => {
+      if (!this.isPaused) this.tryClick(pointer.x, pointer.y);
+    });
+
+    // Safety timer
+    this.safetyTimer = createSafetyTimer({
+      onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
+      onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
+    });
+    this.safetyTimer.start();
+
+    this.isPaused = false;
+    this.pauseOverlay = null;
+    this.trailCounter = 0;
+
+    this.game.events.on('blur', () => {
+      if (!this.isPaused) this.togglePause();
+    });
+  }
+
+  spawnMonster() {
+    const { x: fx, y: fy, w: fw, h: fh } = this.field;
+    const radius = 15 + Math.random() * 10; // 15–25
+    const margin = radius + 10;
+    const mx = fx + margin + Math.random() * (fw - margin * 2);
+    const my = fy + margin + Math.random() * (fh - margin * 2);
+
+    const circle = this.add.circle(mx, my, radius, this.ballColor)
+      .setAlpha(this.ballAlpha)
+      .setInteractive({ useHandCursor: true });
+
+    // Eyes to make it look like a monster
+    const eyeOfsX = radius * 0.3;
+    const eyeOfsY = radius * 0.2;
+    const eyeRadius = Math.max(2, radius * 0.15);
+    const eyeL = this.add.circle(mx - eyeOfsX, my - eyeOfsY, eyeRadius, COLORS.WHITE, 0.9);
+    const eyeR = this.add.circle(mx + eyeOfsX, my - eyeOfsY, eyeRadius, COLORS.WHITE, 0.9);
+
+    // Initial random velocity
+    const angle = Math.random() * Math.PI * 2;
+    const speed = this.baseSpeed * (0.8 + Math.random() * 0.4);
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+
+    const monster = {
+      circle,
+      eyeL,
+      eyeR,
+      radius,
+      vx,
+      vy,
+      sinePhase: Math.random() * Math.PI * 2,
+      sineAmp: 20 + Math.random() * 30,
+      sineFreq: 0.8 + Math.random() * 1.2,
+      baseVx: vx,
+      baseVy: vy,
+      dirChangeTimer: this.getNextDirChange(),
+    };
+
+    this.monsters.push(monster);
+    this.totalMonsters++;
+  }
+
+  getNextDirChange() {
+    return DIRECTION_CHANGE_MIN_MS + Math.random() * (DIRECTION_CHANGE_MAX_MS - DIRECTION_CHANGE_MIN_MS);
+  }
+
+  moveCrosshair(px, py) {
+    this.crosshair.h.x = px;
+    this.crosshair.h.y = py;
+    this.crosshair.v.x = px;
+    this.crosshair.v.y = py;
+    this.crosshair.ring.x = px;
+    this.crosshair.ring.y = py;
+  }
+
+  tryClick(px, py) {
+    for (let i = this.monsters.length - 1; i >= 0; i--) {
+      const m = this.monsters[i];
+      const dx = px - m.circle.x;
+      const dy = py - m.circle.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist <= m.radius + 8) {
+        this.catchMonster(i);
+        return;
+      }
+    }
+  }
+
+  catchMonster(index) {
+    const m = this.monsters[index];
+    const { x, y, radius } = m.circle;
+    const isSmall = radius < 20;
+
+    // Points: small = +2, large = +1
+    const points = isSmall ? 2 : 1;
+    this.monstersCaught += points;
+    this.scoreText.setText(`${this.monstersCaught} / ${WIN_CATCHES}`);
+
+    SynthSounds.hit();
+    GameVFX.particleBurst(this, x, y, this.ballColor, 8);
+    GameVFX.scorePopup(this, x, y - 20, `+${points}`);
+
+    // Remove monster graphics
+    m.circle.destroy();
+    m.eyeL.destroy();
+    m.eyeR.destroy();
+    this.monsters.splice(index, 1);
+
+    if (this.monstersCaught >= WIN_CATCHES) {
+      SynthSounds.victory();
+      this.endGame(true);
+      return;
+    }
+
+    // Spawn replacement
+    this.time.delayedCall(500, () => {
+      if (!this.isPaused && this.monsters.length < this.activeMonsterCount) {
+        this.spawnMonster();
+      }
+    });
+  }
+
+  shutdown() {
+    EventBus.removeListener('start-catchmonsters-game', this.startGameHandler);
+    EventBus.removeListener('safety-finish', this.safetyFinishHandler);
+    EventBus.removeListener('safety-extend', this.safetyExtendHandler);
+    if (this.safetyTimer) this.safetyTimer.stop();
+  }
+
+  update(time, delta) {
+    if (this.isPaused || !this.monsters) return;
+
+    const dt = delta / 1000;
+    const { x: fx, y: fy, w: fw, h: fh } = this.field;
+
+    for (const m of this.monsters) {
+      // Direction change countdown
+      m.dirChangeTimer -= delta;
+      if (m.dirChangeTimer <= 0) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = this.baseSpeed * (0.8 + Math.random() * 0.4);
+        m.baseVx = Math.cos(angle) * speed;
+        m.baseVy = Math.sin(angle) * speed;
+        m.dirChangeTimer = this.getNextDirChange();
+      }
+
+      // Sine-wave drift perpendicular to main direction
+      m.sinePhase += m.sineFreq * dt;
+      const perpX = -m.baseVy / (this.baseSpeed || 1);
+      const perpY = m.baseVx / (this.baseSpeed || 1);
+      const sineOffset = Math.sin(m.sinePhase) * m.sineAmp * dt;
+
+      m.circle.x += m.baseVx * dt + perpX * sineOffset;
+      m.circle.y += m.baseVy * dt + perpY * sineOffset;
+
+      // Wrap around field edges
+      if (m.circle.x < fx - m.radius) m.circle.x = fx + fw + m.radius;
+      else if (m.circle.x > fx + fw + m.radius) m.circle.x = fx - m.radius;
+      if (m.circle.y < fy - m.radius) m.circle.y = fy + fh + m.radius;
+      else if (m.circle.y > fy + fh + m.radius) m.circle.y = fy - m.radius;
+
+      // Sync eye positions
+      const eyeOfsX = m.radius * 0.3;
+      const eyeOfsY = m.radius * 0.2;
+      m.eyeL.x = m.circle.x - eyeOfsX;
+      m.eyeL.y = m.circle.y - eyeOfsY;
+      m.eyeR.x = m.circle.x + eyeOfsX;
+      m.eyeR.y = m.circle.y - eyeOfsY;
+
+      // Trail every 4th frame
+      this.trailCounter++;
+      if (this.trailCounter % 4 === 0) {
+        GameVFX.addTrailDot(this, m.circle.x, m.circle.y, this.ballColor, 2);
+      }
+    }
+
+    // Timer update
+    if (this.safetyTimer) {
+      const elapsed = this.safetyTimer.getElapsedMs();
+      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
+      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+      this.timerText.setText(`${mins}:${secs}`);
+    }
+  }
+
+  togglePause() {
+    this.isPaused = !this.isPaused;
+    if (this.isPaused) {
+      this.safetyTimer.pause();
+      this.showPauseMenu();
+    } else {
+      this.safetyTimer.resume();
+      if (this.pauseOverlay) {
+        this.pauseOverlay.forEach((el) => el.destroy());
+        this.pauseOverlay = null;
+      }
+    }
+  }
+
+  showPauseMenu() {
+    const cx = this.cameras.main.centerX;
+    const cy = this.cameras.main.centerY;
+
+    const bg = this.add.rectangle(cx, cy, 300, 200, COLORS.BLACK, 0.85)
+      .setStrokeStyle(2, COLORS.GRAY);
+    const title = this.add.text(cx, cy - 50, t('game.pause'), {
+      fontSize: '24px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
+    }).setOrigin(0.5);
+
+    const resumeBtn = this.add.rectangle(cx, cy + 10, 200, 40, COLORS.GRAY, 0.2)
+      .setStrokeStyle(1, COLORS.GRAY).setInteractive({ useHandCursor: true });
+    const resumeText = this.add.text(cx, cy + 10, t('game.resume'), {
+      fontSize: '16px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
+    }).setOrigin(0.5);
+    resumeBtn.on('pointerup', () => this.togglePause());
+
+    const quitBtn = this.add.rectangle(cx, cy + 60, 200, 40, COLORS.GRAY, 0.2)
+      .setStrokeStyle(1, COLORS.GRAY).setInteractive({ useHandCursor: true });
+    const quitText = this.add.text(cx, cy + 60, t('game.quit'), {
+      fontSize: '16px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
+    }).setOrigin(0.5);
+    quitBtn.on('pointerup', () => this.endGame(false));
+
+    this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
+  }
+
+  endGame(won) {
+    this.safetyTimer.stop();
+
+    const result = {
+      game: 'catchmonsters',
+      timestamp: new Date().toISOString(),
+      duration_s: Math.round(this.safetyTimer.getElapsedMs() / 1000),
+      caught: this.monstersCaught,
+      total_spawned: this.totalMonsters,
+      hit_rate: this.totalMonsters > 0
+        ? Math.round((this.monstersCaught / this.totalMonsters) * 100) / 100
+        : 0,
+      contrast_left: this.settings.contrastLeft,
+      contrast_right: this.settings.contrastRight,
+      speed: this.settings.speed,
+      eye_config: this.settings.eyeConfig,
+      completed: won,
+    };
+
+    EventBus.emit('game-complete', { result, settings: this.settings });
+  }
+}

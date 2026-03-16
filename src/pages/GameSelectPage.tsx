@@ -332,6 +332,76 @@ export function GameSelectPage() {
                     </Button>
                 </CardContent>
             </Card>
+
+            {/* Frogger */}
+            <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
+                <div className="relative h-16 bg-gray-800 rounded-t overflow-hidden flex flex-col justify-center gap-1 px-4">
+                    <div className="flex gap-2">
+                        <div className="w-8 h-4 bg-red-400/60 rounded-sm animate-pulse" style={{ animationDelay: '0s' }} />
+                        <div className="w-8 h-4 bg-red-400/40 rounded-sm animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="w-8 h-4 bg-orange-400/50 rounded-sm animate-pulse" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-8 h-4 bg-orange-400/30 rounded-sm animate-pulse" style={{ animationDelay: '0.6s' }} />
+                    </div>
+                    <div className="absolute right-6 bottom-3 w-5 h-5 bg-cyan-400/70 rounded-sm" />
+                </div>
+                <CardHeader>
+                    <CardTitle className="text-lg text-white">
+                        {t('gameSelect.frogger.title')}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-cyan-400/20 text-cyan-400 px-2 py-0.5 rounded">{t('gameSelect.difficulty.medium')}</span>
+                        {getGameCount('frogger') > 0 && (
+                            <span className="text-xs text-gray-500">Сыграно: {getGameCount('frogger')} раз</span>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-gray-300 text-sm">
+                        {t('gameSelect.frogger.description')}
+                    </p>
+                    <Button
+                        onClick={() => navigate('/games/frogger/settings')}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+                    >
+                        {t('gameSelect.play')}
+                    </Button>
+                </CardContent>
+            </Card>
+
+            {/* Catch Monsters */}
+            <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
+                <div className="relative h-16 bg-gray-800 rounded-t overflow-hidden flex items-center justify-center gap-4">
+                    <div className="w-7 h-7 bg-cyan-400/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <div className="w-5 h-5 bg-cyan-400/40 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                    <div className="w-6 h-6 bg-cyan-400/50 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                    <div className="absolute w-5 h-0.5 bg-red-400/70" />
+                    <div className="absolute w-0.5 h-5 bg-red-400/70" />
+                </div>
+                <CardHeader>
+                    <CardTitle className="text-lg text-white">
+                        {t('gameSelect.catchmonsters.title')}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-cyan-400/20 text-cyan-400 px-2 py-0.5 rounded">{t('gameSelect.difficulty.medium')}</span>
+                        {getGameCount('catchmonsters') > 0 && (
+                            <span className="text-xs text-gray-500">Сыграно: {getGameCount('catchmonsters')} раз</span>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-gray-300 text-sm">
+                        {t('gameSelect.catchmonsters.description')}
+                    </p>
+                    <Button
+                        onClick={() => navigate('/games/catchmonsters/settings')}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+                    >
+                        {t('gameSelect.play')}
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
     );
 }
