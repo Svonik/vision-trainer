@@ -66,3 +66,14 @@ export const addSession = (session) => {
   const sessions = getSessions();
   write(STORAGE_KEYS.SESSIONS, [...sessions, session]);
 };
+
+export const getDefaultSettings = () =>
+  read(STORAGE_KEYS.DEFAULT_SETTINGS) || {
+    contrastLeft: 100,
+    contrastRight: 100,
+    speed: 'slow',
+    eyeConfig: 'platform_left',
+  };
+
+export const saveDefaultSettings = (settings) =>
+  write(STORAGE_KEYS.DEFAULT_SETTINGS, settings);
