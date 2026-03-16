@@ -274,14 +274,14 @@ export default class TetrisGameScene extends Phaser.Scene {
   }
 
   clearLines(rows) {
-    // Sort descending so we can splice correctly
-    const sorted = [...rows].sort((a, b) => b - a);
-    let count = 0;
-    for (const r of sorted) {
-      this.board.splice(r, 1);
-      this.board.unshift(new Array(COLS).fill(null));
-      count++;
-    }
+    const count = rows.length;
+    // Filter out full rows in one pass (no index shifting bugs)
+    const rowSet = new Set(rows);
+    const remaining = this.board.filter((_, i) => !rowSet.has(i));
+    // Prepend empty rows to maintain board height
+    const emptyRows = Array.from({ length: count }, () => new Array(COLS).fill(null));
+    this.board = [...emptyRows, ...remaining];
+
     // Scoring: +1 per line, +4 bonus for tetris
     const bonus = count === 4 ? 4 : 0;
     this.linesCleared += count + bonus;
