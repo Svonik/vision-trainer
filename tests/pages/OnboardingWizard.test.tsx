@@ -39,7 +39,6 @@ describe('OnboardingWizard', () => {
                 <OnboardingWizard />
             </MemoryRouter>
         );
-        // DisclaimerPage renders "Продолжить" button
         expect(screen.getByRole('button', { name: /продолжить/i })).toBeInTheDocument();
     });
 
@@ -59,14 +58,10 @@ describe('OnboardingWizard', () => {
                 <OnboardingWizard />
             </MemoryRouter>
         );
-        // Check the disclaimer checkbox
-        const checkbox = screen.getByRole('checkbox');
-        fireEvent.click(checkbox);
-        // Click continue
-        const continueBtn = screen.getByRole('button', { name: /продолжить/i });
-        fireEvent.click(continueBtn);
-        // Should now show glasses type step
-        expect(screen.getByText(/какая линза/i)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        // Glasses step shows "красная линза" question
+        expect(screen.getByText(/красная линза/i)).toBeInTheDocument();
     });
 
     it('progresses from glasses to suppression test after selecting glasses type', () => {
@@ -75,12 +70,10 @@ describe('OnboardingWizard', () => {
                 <OnboardingWizard />
             </MemoryRouter>
         );
-        // Advance past disclaimer
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        // Select red glasses
-        const redBtn = screen.getByText(/красная/i);
-        fireEvent.click(redBtn);
+        // Click the first "Красная слева" button
+        fireEvent.click(screen.getByText(/красная слева/i));
         // Should now show suppression test
         expect(screen.getByText(/оба квадрата/i)).toBeInTheDocument();
     });
@@ -91,15 +84,11 @@ describe('OnboardingWizard', () => {
                 <OnboardingWizard />
             </MemoryRouter>
         );
-        // Advance past disclaimer
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        // Select glasses
-        fireEvent.click(screen.getByText(/красная/i));
-        // Pass suppression test
-        const seeBothBtn = screen.getByText(/вижу оба/i);
-        fireEvent.click(seeBothBtn);
-        expect(mockNavigate).toHaveBeenCalledWith('/games');
+        fireEvent.click(screen.getByText(/красная слева/i));
+        fireEvent.click(screen.getByText(/вижу оба/i));
+        expect(mockNavigate).toHaveBeenCalledWith('/mode-select');
     });
 
     it('advances to brightness adjust step when suppression test fails', () => {
@@ -108,15 +97,10 @@ describe('OnboardingWizard', () => {
                 <OnboardingWizard />
             </MemoryRouter>
         );
-        // Advance past disclaimer
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        // Select glasses
-        fireEvent.click(screen.getByText(/красная/i));
-        // Fail suppression test
-        const seeOneBtn = screen.getByText(/только один/i);
-        fireEvent.click(seeOneBtn);
-        // Should show brightness adjust step
+        fireEvent.click(screen.getByText(/красная слева/i));
+        fireEvent.click(screen.getByText(/только один/i));
         expect(screen.getByText(/подстройте яркость/i)).toBeInTheDocument();
     });
 });
