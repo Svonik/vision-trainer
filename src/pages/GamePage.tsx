@@ -59,33 +59,22 @@ export function GamePage() {
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
     const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 
-    // ===== DIAGNOSTIC LOGS =====
-    console.log(`[GamePage] RENDER gameId=${gameId} targetScene=${targetScene} instanceKey=${instanceKey} hasSettings=${!!settings}`);
-
     useEffect(() => {
-        console.log(`[GamePage] useEffect MOUNT gameId=${gameId} targetScene=${targetScene} startEvent=${startEvent} settings=`, settings);
-
         const handleComplete = ({ result, settings: s }: any) => {
-            console.log('[GamePage] game-complete received, navigating to stats');
             addSession(result);
             navigate(`/games/${gameId}/stats`, { state: { result, settings: s } });
         };
         const handleExit = () => {
-            console.log('[GamePage] game-exit received');
             navigate('/games');
         };
         const handleWarning = (data: any) => {
-            console.log('[GamePage] safety-timer-warning received', data);
             setSafetyWarning(data);
         };
         const handleReady = (scene: Phaser.Scene) => {
-            console.log(`[GamePage] current-scene-ready received: scene.key=${scene.scene.key} targetScene=${targetScene}`);
             if (scene.scene.key !== targetScene) {
-                console.log(`[GamePage] Wrong scene, starting ${targetScene}`);
                 scene.scene.start(targetScene);
                 return;
             }
-            console.log(`[GamePage] Emitting ${startEvent} with settings=`, settings);
             EventBus.emit(startEvent, settings);
         };
         const handleTick = (ms: number) => { setElapsedMs(ms); };
@@ -96,10 +85,7 @@ export function GamePage() {
         EventBus.on('current-scene-ready', handleReady);
         EventBus.on('timer-tick', handleTick);
 
-        console.log(`[GamePage] EventBus listeners registered. Listener counts: complete=${EventBus.listenerCount('game-complete')} ready=${EventBus.listenerCount('current-scene-ready')}`);
-
         return () => {
-            console.log(`[GamePage] useEffect CLEANUP gameId=${gameId}`);
             EventBus.removeListener('game-complete', handleComplete);
             EventBus.removeListener('game-exit', handleExit);
             EventBus.removeListener('safety-timer-warning', handleWarning);

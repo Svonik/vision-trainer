@@ -21,16 +21,13 @@ export default class FlappyGameScene extends Phaser.Scene {
   }
 
   preload() {
-    console.log('[FlappyScene] preload() called');
     this.load.audio('flappy-bgm', 'audio/flappy-bgm.mp3');
   }
 
   create() {
-    console.log('[FlappyScene] create() called, this.add=', this.add ? 'OK' : 'NULL');
     SynthSounds.resume();
 
     this.startGameHandler = (settings) => {
-      console.log('[FlappyScene] start-flappy-game received, settings=', settings);
       this.settings = createGameSettings(settings || {});
       this.startGameplay();
     };
@@ -48,7 +45,6 @@ export default class FlappyGameScene extends Phaser.Scene {
 
     this.events.on('shutdown', this.shutdown, this);
 
-    console.log('[FlappyScene] emitting current-scene-ready');
     EventBus.emit('current-scene-ready', this);
   }
 
