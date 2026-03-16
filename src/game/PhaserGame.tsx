@@ -17,12 +17,15 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
 {
     const game = useRef<Phaser.Game | null>(null!);
 
+    console.log('[PhaserGame] RENDER, game.current=', game.current ? 'EXISTS' : 'NULL');
+
     useLayoutEffect(() =>
     {
         if (game.current === null)
         {
-
+            console.log('[PhaserGame] useLayoutEffect: Creating new Phaser game');
             game.current = StartGame("game-container");
+            console.log('[PhaserGame] useLayoutEffect: Game created', game.current);
 
             if (typeof ref === 'function')
             {
@@ -32,10 +35,16 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
                 ref.current = { game: game.current, scene: null };
             }
 
+        } else {
+            console.log('[PhaserGame] useLayoutEffect: Game already exists, SKIPPING creation');
         }
 
         return () =>
         {
+            console.log('[PhaserGame] useLayoutEffect CLEANUP: destroying game');
+            // Clear ALL EventBus listeners before destroying — prevents stale
+            // scene handlers from firing on next game instance (React StrictMode!)
+            EventBus.removeAllListeners();
             if (game.current)
             {
                 game.current.destroy(true);
@@ -51,6 +60,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
     {
         const handler = (scene_instance: Phaser.Scene) =>
         {
+            console.log(`[PhaserGame] current-scene-ready handler: scene=${scene_instance.scene.key}`);
             if (currentActiveScene && typeof currentActiveScene === 'function')
             {
                 currentActiveScene(scene_instance);
@@ -64,8 +74,10 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
             }
         };
         EventBus.on('current-scene-ready', handler);
+        console.log(`[PhaserGame] useEffect: registered current-scene-ready handler, total listeners=${EventBus.listenerCount('current-scene-ready')}`);
         return () =>
         {
+            console.log('[PhaserGame] useEffect CLEANUP: removing current-scene-ready handler');
             EventBus.removeListener('current-scene-ready', handler);
         }
     }, [currentActiveScene, ref]);

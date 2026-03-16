@@ -15,6 +15,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    console.log('[GameScene/Catcher] create() called');
     // Store named handler references for cleanup
     this.startGameHandler = (settings) => {
       this.settings = createGameSettings(settings || {});
