@@ -9,17 +9,17 @@ import * as storage from '../../src/modules/storage';
 vi.mock('../../src/modules/storage');
 
 describe('DisclaimerGuard', () => {
-    it('redirects to /disclaimer when not accepted', () => {
+    it('redirects to /onboarding when not accepted', () => {
         vi.mocked(storage.isDisclaimerAccepted).mockReturnValue(false);
         render(
             <MemoryRouter initialEntries={['/games']}>
                 <Routes>
-                    <Route path="/disclaimer" element={<div>Disclaimer</div>} />
+                    <Route path="/onboarding" element={<div>Onboarding</div>} />
                     <Route path="/games" element={<DisclaimerGuard><div>Games</div></DisclaimerGuard>} />
                 </Routes>
             </MemoryRouter>
         );
-        expect(screen.getByText('Disclaimer')).toBeInTheDocument();
+        expect(screen.getByText('Onboarding')).toBeInTheDocument();
     });
 
     it('renders children when accepted', () => {
@@ -36,7 +36,7 @@ describe('DisclaimerGuard', () => {
 });
 
 describe('CalibrationGuard', () => {
-    it('redirects to /calibration when not passed', () => {
+    it('redirects to /onboarding when not passed', () => {
         vi.mocked(storage.getCalibration).mockReturnValue({
             red_brightness: 100, cyan_brightness: 100,
             suppression_passed: false, last_calibrated: null,
@@ -44,12 +44,12 @@ describe('CalibrationGuard', () => {
         render(
             <MemoryRouter initialEntries={['/games']}>
                 <Routes>
-                    <Route path="/calibration" element={<div>Calibration</div>} />
+                    <Route path="/onboarding" element={<div>Onboarding</div>} />
                     <Route path="/games" element={<CalibrationGuard><div>Games</div></CalibrationGuard>} />
                 </Routes>
             </MemoryRouter>
         );
-        expect(screen.getByText('Calibration')).toBeInTheDocument();
+        expect(screen.getByText('Onboarding')).toBeInTheDocument();
     });
 });
 
