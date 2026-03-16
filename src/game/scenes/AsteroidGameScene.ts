@@ -8,6 +8,7 @@ import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import { TouchControls } from '../vfx/TouchControls';
 
 const MAX_LIVES = 3;
 const INITIAL_ASTEROID_COUNT = 5;
@@ -142,6 +143,11 @@ export default class AsteroidGameScene extends Phaser.Scene {
       if (!this.isPaused) this.firePlayerBullet();
     });
 
+    // Touch controls (tablet support — only shown when touch device detected)
+    this.touchDPad = TouchControls.createDPad(this, this.field);
+    this.touchFire = TouchControls.createActionButton(this, this.field, '●');
+    this._touchFireFired = false;
+
     // Spawn initial asteroids
     this.speedMultiplier = ASTEROID_SPEED_MULTIPLIERS[this.settings.speed] || 1.0;
     for (let i = 0; i < INITIAL_ASTEROID_COUNT; i++) {
@@ -229,15 +235,15 @@ export default class AsteroidGameScene extends Phaser.Scene {
     const dt = delta / 1000;
     const { x: fx, y: fy, w: fw, h: fh } = this.field;
 
-    // Ship rotation
-    if (this.cursors.left.isDown) {
+    // Ship rotation (keyboard or touch D-pad left/right)
+    if (this.cursors.left.isDown || this.touchDPad?.left?.isDown) {
       this.shipAngleDeg -= SHIP_ROTATION_SPEED * dt;
-    } else if (this.cursors.right.isDown) {
+    } else if (this.cursors.right.isDown || this.touchDPad?.right?.isDown) {
       this.shipAngleDeg += SHIP_ROTATION_SPEED * dt;
     }
 
-    // Thrust
-    if (this.cursors.up.isDown) {
+    // Thrust (keyboard or touch D-pad up)
+    if (this.cursors.up.isDown || this.touchDPad?.up?.isDown) {
       const rad = ((this.shipAngleDeg - 90) * Math.PI) / 180;
       this.shipVX += Math.cos(rad) * SHIP_THRUST * dt;
       this.shipVY += Math.sin(rad) * SHIP_THRUST * dt;
@@ -258,8 +264,11 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (this.shipY < fy - margin) this.shipY = fy + fh + margin;
     if (this.shipY > fy + fh + margin) this.shipY = fy - margin;
 
-    // Fire on Space key
-    if (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+    // Fire on Space key or touch fire button (one-shot cooldown for touch)
+    const touchFireNow = this.touchFire?.isDown && !this._touchFireFired;
+    if (touchFireNow) this._touchFireFired = true;
+    if (!this.touchFire?.isDown) this._touchFireFired = false;
+    if ((this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) || touchFireNow) {
       this.firePlayerBullet();
     }
 

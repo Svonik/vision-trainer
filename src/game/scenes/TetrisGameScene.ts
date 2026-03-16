@@ -8,6 +8,7 @@ import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import { TouchControls } from '../vfx/TouchControls';
 
 // Fall intervals in ms per speed level
 const FALL_INTERVALS = { slow: 1000, normal: 600, fast: 400, pro: 250 };
@@ -134,6 +135,12 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+
+    // Touch controls (tablet support — only shown when touch device detected)
+    this.touchDPad = TouchControls.createDPad(this, this.field);
+    this.touchAction = TouchControls.createActionButton(this, this.field, '↻');
+    this._touchActionFired = false;
+    this._touchUpFired = false;
 
     // DAS (delayed auto shift) state
     this.das = { left: false, right: false, timer: 0, delay: 150, rate: 50, accum: 0 };
@@ -478,19 +485,26 @@ export default class TetrisGameScene extends Phaser.Scene {
     if (this.flashingRows) return; // wait for flash animation
 
     // Rotate: Up arrow or W — use JustDown to avoid repeat
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.wKey)) {
+    // Touch rotate: action button with one-shot cooldown
+    const touchRotate = this.touchAction?.isDown && !this._touchActionFired;
+    if (touchRotate) this._touchActionFired = true;
+    if (!this.touchAction?.isDown) this._touchActionFired = false;
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.wKey) || touchRotate) {
       this.tryRotate();
     }
 
-    // Hard drop: Space
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+    // Hard drop: Space or touch D-pad up tap (one-shot)
+    const touchHardDrop = this.touchDPad?.up?.isDown && !this._touchUpFired;
+    if (touchHardDrop) this._touchUpFired = true;
+    if (!this.touchDPad?.up?.isDown) this._touchUpFired = false;
+    if (Phaser.Input.Keyboard.JustDown(this.spaceKey) || touchHardDrop) {
       this.hardDrop();
       return;
     }
 
     // Horizontal movement with DAS
-    const leftDown = this.cursors.left.isDown || this.aKey.isDown;
-    const rightDown = this.cursors.right.isDown || this.dKey.isDown;
+    const leftDown = this.cursors.left.isDown || this.aKey.isDown || this.touchDPad?.left?.isDown;
+    const rightDown = this.cursors.right.isDown || this.dKey.isDown || this.touchDPad?.right?.isDown;
 
     if (leftDown && !rightDown) {
       if (!this.das.left) {
@@ -532,8 +546,8 @@ export default class TetrisGameScene extends Phaser.Scene {
       this.das.right = false;
     }
 
-    // Soft drop: Down arrow or S (2× speed)
-    const isSoftDrop = this.cursors.down.isDown || this.sKey.isDown;
+    // Soft drop: Down arrow or S (2× speed) or touch D-pad down
+    const isSoftDrop = this.cursors.down.isDown || this.sKey.isDown || this.touchDPad?.down?.isDown;
     const effectiveInterval = isSoftDrop ? this.fallInterval / 5 : this.fallInterval;
 
     // Auto-fall

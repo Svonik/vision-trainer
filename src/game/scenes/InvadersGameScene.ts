@@ -8,6 +8,7 @@ import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import { TouchControls } from '../vfx/TouchControls';
 
 const ALIEN_COLS = 8;
 const ALIEN_ROWS = 5;
@@ -179,6 +180,11 @@ export default class InvadersGameScene extends Phaser.Scene {
       if (!this.isPaused) this.firePlayerBullet();
     });
 
+    // Touch controls (tablet support — only shown when touch device detected)
+    this.touchLR = TouchControls.createLeftRight(this, this.field);
+    this.touchFire = TouchControls.createActionButton(this, this.field, '🔥');
+    this._touchFireFired = false;
+
     // Safety timer
     this.safetyTimer = createSafetyTimer({
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
@@ -214,10 +220,10 @@ export default class InvadersGameScene extends Phaser.Scene {
     if (this.isPaused || this.gameOver) return;
     if (!this.ship) return;
 
-    // Ship keyboard movement
-    if (this.cursors.left.isDown) {
+    // Ship keyboard + touch movement
+    if (this.cursors.left.isDown || this.touchLR?.left?.isDown) {
       this.ship.x -= PLATFORM_KEYBOARD_SPEED * (delta / 1000);
-    } else if (this.cursors.right.isDown) {
+    } else if (this.cursors.right.isDown || this.touchLR?.right?.isDown) {
       this.ship.x += PLATFORM_KEYBOARD_SPEED * (delta / 1000);
     }
     this.ship.x = Phaser.Math.Clamp(
@@ -228,8 +234,11 @@ export default class InvadersGameScene extends Phaser.Scene {
     // Sync ship visual
     if (this.shipVisual) { this.shipVisual.x = this.ship.x; this.shipVisual.y = this.ship.y; }
 
-    // Space to fire
-    if (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+    // Space to fire, or touch fire button (one-shot cooldown)
+    const touchFireNow = this.touchFire?.isDown && !this._touchFireFired;
+    if (touchFireNow) this._touchFireFired = true;
+    if (!this.touchFire?.isDown) this._touchFireFired = false;
+    if ((this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) || touchFireNow) {
       this.firePlayerBullet();
     }
 

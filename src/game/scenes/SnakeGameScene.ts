@@ -144,6 +144,11 @@ export default class SnakeGameScene extends Phaser.Scene {
       right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
 
+    // Touch controls (tablet support — only shown when touch device detected)
+    this.touchDPad = TouchControls.createDPad(this, this.field);
+    // Track per-direction one-shot so isDown doesn't repeatedly fire direction changes
+    this._touchDirFired = null;
+
     // Safety timer
     this.safetyTimer = createSafetyTimer({
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
@@ -187,30 +192,45 @@ export default class SnakeGameScene extends Phaser.Scene {
     if (!this.snake) return;
 
     // Handle direction input — check against nextDirection to prevent reversal on buffered inputs
+    // Touch: use one-shot flag per direction to avoid repeating each frame
+    const touchUpJust = this.touchDPad?.up?.isDown && this._touchDirFired !== 'up';
+    const touchDownJust = this.touchDPad?.down?.isDown && this._touchDirFired !== 'down';
+    const touchLeftJust = this.touchDPad?.left?.isDown && this._touchDirFired !== 'left';
+    const touchRightJust = this.touchDPad?.right?.isDown && this._touchDirFired !== 'right';
+    // Reset fired state when button is released
+    if (!this.touchDPad?.up?.isDown && !this.touchDPad?.down?.isDown &&
+        !this.touchDPad?.left?.isDown && !this.touchDPad?.right?.isDown) {
+      this._touchDirFired = null;
+    }
+
     if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
-        Phaser.Input.Keyboard.JustDown(this.wasd.up)) &&
+        Phaser.Input.Keyboard.JustDown(this.wasd.up) || touchUpJust) &&
       this.nextDirection.y !== 1
     ) {
       this.nextDirection = { ...DIR.UP };
+      if (touchUpJust) this._touchDirFired = 'up';
     } else if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
-        Phaser.Input.Keyboard.JustDown(this.wasd.down)) &&
+        Phaser.Input.Keyboard.JustDown(this.wasd.down) || touchDownJust) &&
       this.nextDirection.y !== -1
     ) {
       this.nextDirection = { ...DIR.DOWN };
+      if (touchDownJust) this._touchDirFired = 'down';
     } else if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.left) ||
-        Phaser.Input.Keyboard.JustDown(this.wasd.left)) &&
+        Phaser.Input.Keyboard.JustDown(this.wasd.left) || touchLeftJust) &&
       this.nextDirection.x !== 1
     ) {
       this.nextDirection = { ...DIR.LEFT };
+      if (touchLeftJust) this._touchDirFired = 'left';
     } else if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.right) ||
-        Phaser.Input.Keyboard.JustDown(this.wasd.right)) &&
+        Phaser.Input.Keyboard.JustDown(this.wasd.right) || touchRightJust) &&
       this.nextDirection.x !== -1
     ) {
       this.nextDirection = { ...DIR.RIGHT };
+      if (touchRightJust) this._touchDirFired = 'right';
     }
 
     // Move timer — use while loop to handle frame spikes correctly

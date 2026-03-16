@@ -8,6 +8,7 @@ import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import { TouchControls } from '../vfx/TouchControls';
 
 const OBSTACLE_SPEEDS = { slow: 60, normal: 100, fast: 150, pro: 200 };
 const LANE_COUNT = 5;
@@ -165,6 +166,10 @@ export default class FroggerGameScene extends Phaser.Scene {
     }).setInteractive({ useHandCursor: true });
     pauseBtn.on('pointerup', () => this.togglePause());
 
+    // Touch controls (tablet support — only shown when touch device detected)
+    this.touchDPad = TouchControls.createDPad(this, this.field);
+    this._touchMoveFired = null;
+
     // Input — grid-based movement
     this.cursors = this.input.keyboard.createCursorKeys();
     this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
@@ -230,11 +235,24 @@ export default class FroggerGameScene extends Phaser.Scene {
       }
     }
 
-    // Keyboard — one step per press
-    const up = Phaser.Input.Keyboard.JustDown(this.cursors.up);
-    const down = Phaser.Input.Keyboard.JustDown(this.cursors.down);
-    const left = Phaser.Input.Keyboard.JustDown(this.cursors.left);
-    const right = Phaser.Input.Keyboard.JustDown(this.cursors.right);
+    // Keyboard — one step per press; touch — one-shot per press
+    const touchUpJust = this.touchDPad?.up?.isDown && this._touchMoveFired !== 'up';
+    const touchDownJust = this.touchDPad?.down?.isDown && this._touchMoveFired !== 'down';
+    const touchLeftJust = this.touchDPad?.left?.isDown && this._touchMoveFired !== 'left';
+    const touchRightJust = this.touchDPad?.right?.isDown && this._touchMoveFired !== 'right';
+    if (!this.touchDPad?.up?.isDown && !this.touchDPad?.down?.isDown &&
+        !this.touchDPad?.left?.isDown && !this.touchDPad?.right?.isDown) {
+      this._touchMoveFired = null;
+    }
+    if (touchUpJust) this._touchMoveFired = 'up';
+    else if (touchDownJust) this._touchMoveFired = 'down';
+    else if (touchLeftJust) this._touchMoveFired = 'left';
+    else if (touchRightJust) this._touchMoveFired = 'right';
+
+    const up = Phaser.Input.Keyboard.JustDown(this.cursors.up) || touchUpJust;
+    const down = Phaser.Input.Keyboard.JustDown(this.cursors.down) || touchDownJust;
+    const left = Phaser.Input.Keyboard.JustDown(this.cursors.left) || touchLeftJust;
+    const right = Phaser.Input.Keyboard.JustDown(this.cursors.right) || touchRightJust;
 
     if (up || down || left || right) {
       this.movePlayer(up, down, left, right);
