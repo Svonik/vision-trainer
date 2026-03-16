@@ -100,6 +100,7 @@ export default class PongGameScene extends Phaser.Scene {
     const cy = this.field.y + this.field.h / 2;
     GameVFX.countdown(this, cx, cy, () => {
       this.isPaused = false;
+      this.input.setDefaultCursor('none');
       this.safetyTimer.start();
       // Launch the ball after a short delay post-countdown
       this.time.delayedCall(400, () => {
@@ -328,10 +329,12 @@ export default class PongGameScene extends Phaser.Scene {
     if (this.isPaused) {
       this.physics.pause();
       this.safetyTimer.pause();
+      this.input.setDefaultCursor('default');
       this.showPauseMenu();
     } else {
       this.physics.resume();
       this.safetyTimer.resume();
+      this.input.setDefaultCursor('none');
       if (this.pauseOverlay) {
         this.pauseOverlay.forEach((el) => el.destroy());
         this.pauseOverlay = null;
@@ -453,5 +456,6 @@ export default class PongGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+    this.input.setDefaultCursor('default');
   }
 }

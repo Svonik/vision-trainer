@@ -164,6 +164,7 @@ export default class SnakeGameScene extends Phaser.Scene {
     const cy = this.field.y + this.field.h / 2;
     GameVFX.countdown(this, cx, cy, () => {
       this.isPaused = false;
+      this.input.setDefaultCursor('none');
       this.safetyTimer.start();
     });
   }
@@ -174,6 +175,7 @@ export default class SnakeGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+    this.input.setDefaultCursor('default');
   }
 
   update(time, delta) {
@@ -381,9 +383,11 @@ export default class SnakeGameScene extends Phaser.Scene {
     this.isPaused = !this.isPaused;
     if (this.isPaused) {
       this.safetyTimer.pause();
+      this.input.setDefaultCursor('default');
       this.showPauseMenu();
     } else {
       this.safetyTimer.resume();
+      this.input.setDefaultCursor('none');
       if (this.pauseOverlay) {
         this.pauseOverlay.forEach((el) => el.destroy());
         this.pauseOverlay = null;

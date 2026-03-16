@@ -165,6 +165,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.isPaused = true;
     GameVFX.countdown(this, ccx, ccy, () => {
       this.isPaused = false;
+      this.input.setDefaultCursor('none');
       this.safetyTimer.start();
     });
   }
@@ -175,6 +176,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+    this.input.setDefaultCursor('default');
   }
 
   // ---- Asteroid spawning ----
@@ -481,12 +483,15 @@ export default class AsteroidGameScene extends Phaser.Scene {
 
     SynthSounds.launch();
 
-    const rad = ((this.shipAngleDeg - 90) * Math.PI) / 180;
+    const rad = (this.shipAngleDeg * Math.PI) / 180;
+    const tipX = this.shipX + Math.cos(rad - Math.PI / 2) * 18;
+    const tipY = this.shipY + Math.sin(rad - Math.PI / 2) * 18;
+    const dirRad = rad - Math.PI / 2;
     const bullet = {
-      x: this.shipX + Math.cos(rad) * 18,
-      y: this.shipY + Math.sin(rad) * 18,
-      vx: Math.cos(rad) * BULLET_SPEED + this.shipVX,
-      vy: Math.sin(rad) * BULLET_SPEED + this.shipVY,
+      x: tipX,
+      y: tipY,
+      vx: Math.cos(dirRad) * BULLET_SPEED + this.shipVX,
+      vy: Math.sin(dirRad) * BULLET_SPEED + this.shipVY,
       age: 0,
     };
     this.bullets.push(bullet);
@@ -553,9 +558,11 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.isPaused = !this.isPaused;
     if (this.isPaused) {
       this.safetyTimer.pause();
+      this.input.setDefaultCursor('default');
       this.showPauseMenu();
     } else {
       this.safetyTimer.resume();
+      this.input.setDefaultCursor('none');
       if (this.pauseOverlay) {
         this.pauseOverlay.forEach((el) => el.destroy());
         this.pauseOverlay = null;

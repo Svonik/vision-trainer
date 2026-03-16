@@ -147,6 +147,7 @@ export default class GameScene extends Phaser.Scene {
     const cy = this.field.y + this.field.h / 2;
     GameVFX.countdown(this, cx, cy, () => {
       this.isPaused = false;
+      this.input.setDefaultCursor('none');
 
       // Spawn timer
       const speedConfig = SPEEDS[this.settings.speed];
@@ -171,6 +172,7 @@ export default class GameScene extends Phaser.Scene {
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+    this.input.setDefaultCursor('default');
   }
 
   update(time, delta) {
@@ -327,11 +329,13 @@ export default class GameScene extends Phaser.Scene {
       this.physics.pause();
       if (this.spawnTimer) this.spawnTimer.paused = true;
       this.safetyTimer.pause();
+      this.input.setDefaultCursor('default');
       this.showPauseMenu();
     } else {
       this.physics.resume();
       if (this.spawnTimer) this.spawnTimer.paused = false;
       this.safetyTimer.resume();
+      this.input.setDefaultCursor('none');
       if (this.pauseOverlay) {
         this.pauseOverlay.forEach((el) => el.destroy());
         this.pauseOverlay = null;
