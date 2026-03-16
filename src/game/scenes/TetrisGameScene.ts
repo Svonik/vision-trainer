@@ -106,11 +106,11 @@ export default class TetrisGameScene extends Phaser.Scene {
     GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
     GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
-    // Score text
+    // Score text (left-aligned at grid left)
     this.scoreText = GameVisuals.scoreText(this, this.gridOriginX, fy + 10, this.scoreLabel(), 0);
 
-    // Timer text
-    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
+    // Timer text (right-aligned at grid right edge)
+    this.timerText = GameVisuals.scoreText(this, this.gridOriginX + this.cellSize * COLS, fy + 10, '00:00', 1);
 
     // Next piece label + preview area
     const previewX = this.gridOriginX + this.cellSize * COLS + 12;
@@ -268,6 +268,7 @@ export default class TetrisGameScene extends Phaser.Scene {
       if (this.isPaused || this.gameOver) return;
       this.clearLines(fullRows);
       this.flashingRows = null;
+      this.drawAll(); // immediately render cleared board
       this.spawnPiece();
     });
   }

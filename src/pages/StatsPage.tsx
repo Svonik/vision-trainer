@@ -52,7 +52,7 @@ function DeltaIndicator({ current, previous }: { current: number; previous: numb
     if (delta === 0) return null;
     const isUp = delta > 0;
     return (
-        <span className={`text-xs ml-2 ${isUp ? 'text-[var(--success)]' : 'text-[var(--accent-secondary)]'}`}>
+        <span className={`text-sm ml-2 ${isUp ? 'text-[var(--success)]' : 'text-[var(--accent-secondary)]'}`}>
             {isUp ? '↑' : '↓'}{Math.abs(delta)}%
         </span>
     );
@@ -81,8 +81,8 @@ export function StatsPage() {
     const sessions = getSessions();
     const prevSession = sessions.length > 1 ? sessions[sessions.length - 2] : null;
 
-    // Settings to pass for "play again"
-    const playSettings = result?.settings ?? location.state?.settings ?? null;
+    // Settings to pass for "play again" — location.state.settings is passed from GamePage
+    const playSettings = location.state?.settings ?? null;
 
     const handlePlayAgain = () => {
         if (playSettings) {
@@ -105,7 +105,7 @@ export function StatsPage() {
                             {/* Caught - big number with star */}
                             <div className="text-center">
                                 <CountUp target={result.caught} />
-                                <p className="text-[var(--text-secondary)] text-sm mt-1 flex items-center justify-center gap-1">
+                                <p className="text-[var(--text-secondary)] text-base mt-1 flex items-center justify-center gap-1">
                                     <Star className="w-4 h-4 text-[var(--warning)]" />
                                     Ты собрал {Math.min(result.caught, GAME.TARGET_CATCHES)} звёзд!
                                 </p>
@@ -114,7 +114,7 @@ export function StatsPage() {
                             {/* Hit rate ring */}
                             <div className="text-center">
                                 <ProgressRing percent={hitRatePercent} />
-                                <p className="text-[var(--text-secondary)] text-sm mt-2">
+                                <p className="text-[var(--text-secondary)] text-base mt-2">
                                     {t('stats.hitRate')}
                                     {prevSession && (
                                         <DeltaIndicator
@@ -131,11 +131,11 @@ export function StatsPage() {
                                     <Hourglass className="w-5 h-5 text-[var(--text-secondary)]" />
                                     {formatDuration(result.duration_s)}
                                 </p>
-                                <p className="text-[var(--text-secondary)] text-sm">{t('stats.sessionTime')}</p>
+                                <p className="text-[var(--text-secondary)] text-base">{t('stats.sessionTime')}</p>
                             </div>
 
                             {/* Settings footer */}
-                            <div className="flex justify-center gap-4 text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]/50 bg-[var(--surface)]/50">
+                            <div className="flex justify-center gap-4 text-sm text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]/50 bg-[var(--surface)]/50">
                                 <span>{t('stats.speed')}: {speedLabel}</span>
                                 <span>Контраст: {result.contrast_left}% / {result.contrast_right}%</span>
                             </div>

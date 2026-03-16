@@ -69,6 +69,11 @@ export function GamePage() {
                 scene.scene.start(targetScene);
                 return;
             }
+            // If scene was already used (gameEnded=true), restart it fresh
+            if ((scene as any).gameEnded || (scene as any).gameOver) {
+                scene.scene.restart();
+                return; // restart will re-trigger create() → current-scene-ready → handleReady
+            }
             EventBus.emit(startEvent, settings);
         };
         const handleTick = (ms: number) => { setElapsedMs(ms); };
@@ -95,19 +100,19 @@ export function GamePage() {
             <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
                     onClick={() => navigate(-1)}
-                    className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-sm transition-colors"
+                    className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-base transition-colors"
                 >
                     ← {t('nav.back')}
                 </button>
                 <div className="flex items-center gap-3">
                     {currentGame && (
-                        <span className="text-[var(--text-secondary)] text-xs truncate max-w-32">
+                        <span className="text-[var(--text-secondary)] text-sm truncate max-w-32">
                             {t(currentGame.titleKey)}
                         </span>
                     )}
                     {elapsedMs !== null && (
                         <span
-                            className="text-[var(--text-secondary)] text-sm font-mono"
+                            className="text-[var(--text-secondary)] text-base font-mono"
                             style={{ fontFamily: 'var(--font-display)' }}
                         >
                             {formatTime(elapsedMs)}
