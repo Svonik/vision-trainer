@@ -113,17 +113,22 @@ export default class BalloonPopGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
     this.isPaused = false;
     this.pauseOverlay = null;
+    this.gameEnded = false;
 
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
+    // Tab blur → auto-pause (store reference for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    // Pause gameplay until countdown finishes, then spawn first balloon
+    this.isPaused = true;
+    GameVFX.countdown(this, ccx, ccy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+      this.spawnBalloon();
     });
-
-    // Spawn first balloon immediately
-    this.spawnBalloon();
   }
 
   drawCrosshair(x, y) {
@@ -261,6 +266,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
@@ -283,8 +289,8 @@ export default class BalloonPopGameScene extends Phaser.Scene {
       }
     }
 
-    // Ensure we always try to maintain up to MAX_BALLOONS
-    if (this.balloons.length < MAX_BALLOONS && this.balloons.length < 1) {
+    // Fix: refill up to MAX_BALLOONS (not just < 1)
+    if (this.balloons.length < MAX_BALLOONS) {
       this.spawnBalloon();
     }
 
@@ -340,6 +346,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
 
     const result = {

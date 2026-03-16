@@ -118,10 +118,17 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.obstacles = [];
     this.obstacleObjects = [];
 
+    // Fix: store per-lane random speed factors at init time so they aren't
+    // re-randomized on each goal crossing (speed multiplier applied multiplicatively)
+    this.laneSpeedFactors = [];
+    for (let i = 0; i < LANE_COUNT; i++) {
+      this.laneSpeedFactors.push(0.8 + Math.random() * 0.4);
+    }
+
     for (let i = 0; i < LANE_COUNT; i++) {
       const laneY = this.laneTopY[i] + LANE_H / 2;
       const goRight = i % 2 === 0;
-      const speed = this.baseSpeed * this.speedMultiplier * (0.8 + Math.random() * 0.4);
+      const speed = this.baseSpeed * this.speedMultiplier * this.laneSpeedFactors[i];
       const obstaclesInLane = 2 + Math.floor(Math.random() * 2);
 
       for (let j = 0; j < obstaclesInLane; j++) {
@@ -136,9 +143,9 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.player = this.add.rectangle(ccx, this.startY, PLAYER_W, PLAYER_H, this.platformColor)
       .setAlpha(this.platformAlpha);
 
-    // Eyes on the player rectangle
-    this.playerEyeL = this.add.circle(ccx - 6, this.startY - 4, 4, COLORS.WHITE, 0.8);
-    this.playerEyeR = this.add.circle(ccx + 6, this.startY - 4, 4, COLORS.WHITE, 0.8);
+    // Eyes on the player rectangle — use platformColor to preserve dichoptic separation
+    this.playerEyeL = this.add.circle(ccx - 6, this.startY - 4, 4, this.platformColor, 0.8);
+    this.playerEyeR = this.add.circle(ccx + 6, this.startY - 4, 4, this.platformColor, 0.8);
 
     // Player grid position (col is discrete, row tracks which zone)
     this.playerGridCol = 5;
@@ -176,17 +183,25 @@ export default class FroggerGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
     this.isPaused = false;
     this.pauseOverlay = null;
     this.isDead = false;
+    this.isInGoalAnimation = false;
+    this.gameEnded = false;
 
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
-    });
+    // Tab blur → auto-pause (store reference for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
 
     this.layoutOffsetY = layoutOffsetY;
+
+    // Pause gameplay until countdown finishes
+    this.isPaused = true;
+    GameVFX.countdown(this, ccx, ccy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+    });
   }
 
   shutdown() {
@@ -194,10 +209,12 @@ export default class FroggerGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
-    if (this.isPaused || !this.player || this.isDead) return;
+    // Separate isDead (collision freeze) from isInGoalAnimation (goal freeze)
+    if (this.isPaused || !this.player || this.isDead || this.isInGoalAnimation) return;
 
     // Move obstacles
     const dt = delta / 1000;
@@ -352,10 +369,10 @@ export default class FroggerGameScene extends Phaser.Scene {
     GameVFX.scorePopup(this, this.player.x, this.player.y - 20, '+1');
     GameVFX.circleFlash(this, this.player.x, this.player.y, 20, COLORS.WHITE);
 
-    // Increase speed slightly each crossing
+    // Fix: apply speed multiplier multiplicatively using per-lane stored factors
     this.speedMultiplier = 1 + this.crossings * 0.08;
     for (const lane of this.obstacleObjects) {
-      lane.speed = this.baseSpeed * this.speedMultiplier * (0.8 + Math.random() * 0.4);
+      lane.speed = this.baseSpeed * this.speedMultiplier * this.laneSpeedFactors[lane.laneIndex];
     }
 
     if (this.crossings >= WIN_CROSSINGS) {
@@ -364,9 +381,10 @@ export default class FroggerGameScene extends Phaser.Scene {
       return;
     }
 
-    // Respawn player at bottom
-    this.isDead = true;
+    // Use isInGoalAnimation to freeze update without triggering collision logic
+    this.isInGoalAnimation = true;
     this.time.delayedCall(300, () => {
+      this.isInGoalAnimation = false;
       this.respawnPlayer();
     });
   }
@@ -413,6 +431,9 @@ export default class FroggerGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
 
     const totalSpawned = this.crossings + this.deaths;

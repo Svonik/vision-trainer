@@ -103,16 +103,6 @@ export default class GameScene extends Phaser.Scene {
     // Targets group
     this.targets = this.physics.add.group();
 
-    // Spawn timer
-    const speedConfig = SPEEDS[this.settings.speed];
-    this.fallSpeed = speedConfig.fallSpeed;
-    this.spawnTimer = this.time.addEvent({
-      delay: speedConfig.spawnInterval,
-      callback: this.spawnTarget,
-      callbackScope: this,
-      loop: true,
-    });
-
     // Overlap detection
     this.physics.add.overlap(this.platform, this.targets, this.onCatch, null, this);
 
@@ -125,6 +115,7 @@ export default class GameScene extends Phaser.Scene {
           this.field.x + this.platform.width / 2,
           this.field.x + this.field.w - this.platform.width / 2,
         );
+        this.platform.body.reset(this.platform.x, this.platform.y);
       }
     });
 
@@ -133,7 +124,6 @@ export default class GameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
     this.time.addEvent({
       delay: 1000,
@@ -146,16 +136,35 @@ export default class GameScene extends Phaser.Scene {
     });
 
     // Pause state
-    this.isPaused = false;
+    this.isPaused = true; // freeze during countdown
     this.pauseOverlay = null;
+    this.gameEnded = false;
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
+    // Tab blur → auto-pause (named handler for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    // Countdown before gameplay starts
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    GameVFX.countdown(this, cx, cy, () => {
+      this.isPaused = false;
+
+      // Spawn timer
+      const speedConfig = SPEEDS[this.settings.speed];
+      this.fallSpeed = speedConfig.fallSpeed;
+      this.spawnTimer = this.time.addEvent({
+        delay: speedConfig.spawnInterval,
+        callback: this.spawnTarget,
+        callbackScope: this,
+        loop: true,
+      });
+
+      this.safetyTimer.start();
+
+      // Spawn first target
+      this.spawnTarget();
     });
-
-    // Spawn first target
-    this.spawnTarget();
   }
 
   shutdown() {
@@ -163,6 +172,7 @@ export default class GameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
@@ -180,6 +190,7 @@ export default class GameScene extends Phaser.Scene {
       this.field.x + this.platform.width / 2,
       this.field.x + this.field.w - this.platform.width / 2,
     );
+    this.platform.body.reset(this.platform.x, this.platform.y);
 
     // Check misses (objects off bottom)
     this.targets.getChildren().forEach((target) => {
@@ -298,12 +309,12 @@ export default class GameScene extends Phaser.Scene {
     this.isPaused = !this.isPaused;
     if (this.isPaused) {
       this.physics.pause();
-      this.spawnTimer.paused = true;
+      if (this.spawnTimer) this.spawnTimer.paused = true;
       this.safetyTimer.pause();
       this.showPauseMenu();
     } else {
       this.physics.resume();
-      this.spawnTimer.paused = false;
+      if (this.spawnTimer) this.spawnTimer.paused = false;
       this.safetyTimer.resume();
       if (this.pauseOverlay) {
         this.pauseOverlay.forEach((el) => el.destroy());
@@ -340,6 +351,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   endGame() {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
     if (this.spawnTimer) this.spawnTimer.remove();
 

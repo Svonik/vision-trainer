@@ -96,7 +96,8 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.fallAccum = 0;
     this.fallInterval = FALL_INTERVALS[this.settings.speed] || 600;
     this.gameOver = false;
-    this.isPaused = false;
+    this.isPaused = true; // freeze during countdown
+    this.gameEnded = false;
     this.pauseOverlay = null;
     this.flashingRows = null;
 
@@ -147,17 +148,25 @@ export default class TetrisGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
-    });
+    // Tab blur → auto-pause (named handler for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
 
-    // Spawn first two pieces
+    // Prepare first two pieces (for preview) but don't start falling yet
     this.nextPieceKey = this.randomPieceKey();
-    this.spawnPiece();
+    this.activePiece = null;
     this.drawAll();
+
+    // Countdown before first piece starts falling
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    GameVFX.countdown(this, cx, cy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+      this.spawnPiece();
+      this.drawAll();
+    });
   }
 
   scoreLabel() {
@@ -198,13 +207,22 @@ export default class TetrisGameScene extends Phaser.Scene {
   }
 
   rotateCells(cells) {
-    // Rotate cells 90° clockwise around their bounding box center
+    // Rotate cells 90° clockwise using proper pivot (center of bounding box)
+    // Collect min/max to find bounding box
     const minC = Math.min(...cells.map(([c]) => c));
     const maxC = Math.max(...cells.map(([c]) => c));
     const minR = Math.min(...cells.map(([, r]) => r));
     const maxR = Math.max(...cells.map(([, r]) => r));
+    // Use integer size to avoid drift: take max span so the bounding box is square
     const size = Math.max(maxC - minC, maxR - minR);
-    return cells.map(([c, r]) => [minC + (r - minR), minR + (size - (c - minC))]);
+    // CW rotation formula: (c, r) → (r, size - c) relative to top-left of bounding box
+    const rotated = cells.map(([c, r]) => [minC + (r - minR), minR + (size - (c - minC))]);
+    // Re-center: compute new bounding box and shift to match old top-left origin
+    const newMinC = Math.min(...rotated.map(([c]) => c));
+    const newMinR = Math.min(...rotated.map(([, r]) => r));
+    const shiftC = minC - newMinC;
+    const shiftR = minR - newMinR;
+    return rotated.map(([c, r]) => [c + shiftC, r + shiftR]);
   }
 
   getGhostCells() {
@@ -249,6 +267,8 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.drawAll(); // draw with flash
 
     this.time.delayedCall(200, () => {
+      // Skip if paused or game already ended to avoid running during pause
+      if (this.isPaused || this.gameOver) return;
       this.clearLines(fullRows);
       this.flashingRows = null;
       this.spawnPiece();
@@ -439,6 +459,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     if (leftDown && !rightDown) {
       if (!this.das.left) {
         this.das.left = true;
+        this.das.right = false; // explicit reset of opposing direction
         this.das.timer = 0;
         this.das.accum = 0;
         this.tryMove(-1, 0);
@@ -452,13 +473,10 @@ export default class TetrisGameScene extends Phaser.Scene {
           }
         }
       }
-    } else {
-      this.das.left = false;
-    }
-
-    if (rightDown && !leftDown) {
+    } else if (rightDown && !leftDown) {
       if (!this.das.right) {
         this.das.right = true;
+        this.das.left = false; // explicit reset of opposing direction
         this.das.timer = 0;
         this.das.accum = 0;
         this.tryMove(1, 0);
@@ -473,6 +491,8 @@ export default class TetrisGameScene extends Phaser.Scene {
         }
       }
     } else {
+      // Neither or both pressed — reset both
+      this.das.left = false;
       this.das.right = false;
     }
 
@@ -541,8 +561,10 @@ export default class TetrisGameScene extends Phaser.Scene {
   }
 
   endGame() {
-    if (this.gameOver) return;
+    if (this.gameEnded) return;
+    this.gameEnded = true;
     this.gameOver = true;
+
     SynthSounds.gameOver();
     if (this.safetyTimer) this.safetyTimer.stop();
 
@@ -569,5 +591,6 @@ export default class TetrisGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 }

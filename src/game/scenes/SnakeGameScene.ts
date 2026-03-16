@@ -134,7 +134,7 @@ export default class SnakeGameScene extends Phaser.Scene {
     this.foodPulseScale = 1.0;
     this.foodPulseDir = 1;
 
-    // Move timer
+    // Move timer — starts frozen, enabled after countdown
     this.moveInterval = MOVE_INTERVALS[this.settings.speed] || 150;
     this.timeSinceLastMove = 0;
 
@@ -152,19 +152,26 @@ export default class SnakeGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
-    this.isPaused = false;
+    this.isPaused = true; // freeze during countdown
+    this.gameEnded = false;
     this.isGameOver = false;
     this.pauseOverlay = null;
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused && !this.isGameOver) this.togglePause();
-    });
+    // Tab blur → auto-pause (named handler for cleanup)
+    this.blurHandler = () => { if (!this.isPaused && !this.isGameOver) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
 
     this.renderSnake();
     this.renderFood();
+
+    // Countdown before snake starts moving
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    GameVFX.countdown(this, cx, cy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+    });
   }
 
   shutdown() {
@@ -172,44 +179,47 @@ export default class SnakeGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
     if (this.isPaused || this.isGameOver) return;
     if (!this.snake) return;
 
-    // Handle direction input (prevent reversals)
+    // Handle direction input — check against nextDirection to prevent reversal on buffered inputs
     if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
         Phaser.Input.Keyboard.JustDown(this.wasd.up)) &&
-      this.direction.y !== 1
+      this.nextDirection.y !== 1
     ) {
       this.nextDirection = { ...DIR.UP };
     } else if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.down) ||
         Phaser.Input.Keyboard.JustDown(this.wasd.down)) &&
-      this.direction.y !== -1
+      this.nextDirection.y !== -1
     ) {
       this.nextDirection = { ...DIR.DOWN };
     } else if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.left) ||
         Phaser.Input.Keyboard.JustDown(this.wasd.left)) &&
-      this.direction.x !== 1
+      this.nextDirection.x !== 1
     ) {
       this.nextDirection = { ...DIR.LEFT };
     } else if (
       (Phaser.Input.Keyboard.JustDown(this.cursors.right) ||
         Phaser.Input.Keyboard.JustDown(this.wasd.right)) &&
-      this.direction.x !== -1
+      this.nextDirection.x !== -1
     ) {
       this.nextDirection = { ...DIR.RIGHT };
     }
 
-    // Move timer
+    // Move timer — use while loop to handle frame spikes correctly
     this.timeSinceLastMove += delta;
-    if (this.timeSinceLastMove >= this.moveInterval) {
+    while (this.timeSinceLastMove >= this.moveInterval) {
       this.timeSinceLastMove -= this.moveInterval;
       this.moveSnake();
+      // Stop processing moves if game ended mid-loop
+      if (this.isGameOver) break;
     }
 
     // Food pulse animation
@@ -393,7 +403,10 @@ export default class SnakeGameScene extends Phaser.Scene {
   }
 
   endGame() {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
     this.isGameOver = true;
+
     if (this.safetyTimer) this.safetyTimer.stop();
 
     // total_spawned = food eaten + 1 (the uneaten food when game ends counts as 1 miss)

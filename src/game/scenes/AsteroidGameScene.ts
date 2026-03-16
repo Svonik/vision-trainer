@@ -81,6 +81,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.isPaused = false;
     this.pauseOverlay = null;
     this.gameOver = false;
+    this.gameEnded = false;
     this.invulnerableUntilMs = 0;
     this.lastFireMs = -FIRE_COOLDOWN_MS;
 
@@ -158,14 +159,19 @@ export default class AsteroidGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
-
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
-    });
 
     this.trailFrameCounter = 0;
+
+    // Tab blur → auto-pause (store reference for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    // Pause gameplay until countdown finishes
+    this.isPaused = true;
+    GameVFX.countdown(this, ccx, ccy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+    });
   }
 
   shutdown() {
@@ -173,6 +179,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   // ---- Asteroid spawning ----
@@ -239,9 +246,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
       this.shipVY += Math.sin(rad) * SHIP_THRUST * dt;
     }
 
-    // Friction
-    this.shipVX *= Math.pow(SHIP_FRICTION, delta);
-    this.shipVY *= Math.pow(SHIP_FRICTION, delta);
+    // Friction — normalize to 60fps to be frame-rate independent
+    this.shipVX *= Math.pow(SHIP_FRICTION, delta / 16.667);
+    this.shipVY *= Math.pow(SHIP_FRICTION, delta / 16.667);
 
     // Move ship
     this.shipX += this.shipVX * dt;
@@ -536,7 +543,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
-    if (this.gameOver) return;
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.gameOver = true;
     this.safetyTimer.stop();
     if (won) {

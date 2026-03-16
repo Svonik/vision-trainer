@@ -64,6 +64,7 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.isPaused = false;
     this.pauseOverlay = null;
     this.gameOver = false;
+    this.gameEnded = false;
 
     // Background (BLACK — both eyes)
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK);
@@ -111,11 +112,13 @@ export default class FlappyGameScene extends Phaser.Scene {
     // Pipe container
     this.pipes = [];
     this.pipeGraphics = [];
-    this.lastPipeTime = -PIPE_SPAWN_INTERVAL; // spawn immediately on first update
+    // Fix: don't spawn pipe immediately — wait for first interval
+    this.lastPipeTime = 0;
 
-    // Input: click / tap
+    // Input: click / tap — guard against pause click-through
     this.input.on('pointerup', () => {
-      if (!this.isPaused && !this.gameOver) this.flap();
+      if (this.isPaused || this.gameOver) return;
+      this.flap();
     });
 
     // Input: Space / ArrowUp
@@ -127,11 +130,18 @@ export default class FlappyGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
+    // Tab blur → auto-pause (store reference for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    // Pause gameplay until countdown finishes
+    this.isPaused = true;
+    GameVFX.countdown(this, ccx, ccy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+      // Seed lastPipeTime so first pipe spawns after one interval
+      this.lastPipeTime = this.time.now;
     });
   }
 
@@ -140,6 +150,7 @@ export default class FlappyGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
@@ -311,8 +322,8 @@ export default class FlappyGameScene extends Phaser.Scene {
   triggerGameOver() {
     if (this.gameOver) return;
     this.gameOver = true;
-    // Brief red flash on bird
-    this.birdGfx.setFillStyle(COLORS.WHITE);
+    // Brief red flash on bird — use GRAY instead of WHITE to preserve dichoptic integrity
+    this.birdGfx.setFillStyle(COLORS.GRAY);
     SynthSounds.gameOver();
     GameVFX.screenShake(this);
     this.time.delayedCall(300, () => {
@@ -362,6 +373,9 @@ export default class FlappyGameScene extends Phaser.Scene {
   }
 
   endGame() {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     if (this.safetyTimer) this.safetyTimer.stop();
 
     const result = {

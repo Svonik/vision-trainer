@@ -12,6 +12,7 @@ const BALL_SPEEDS = { slow: 200, normal: 300, fast: 400, pro: 500 };
 const BRICK_COLS = 8;
 const BRICK_ROWS = 5;
 const MAX_LIVES = 3;
+const WALL_BOUNCE_COOLDOWN_MS = 100;
 
 export default class BreakoutGameScene extends Phaser.Scene {
   constructor() {
@@ -84,7 +85,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
       .setAlpha(this.ballAlpha);
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballRadius);
-    this.ball.body.setBounce(1, 1);
     this.ball.body.setCollideWorldBounds(false);
     this.ballSpeed = BALL_SPEEDS[this.settings.speed] || 200;
     this.ballLaunched = false;
@@ -153,6 +153,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
           this.field.x + this.platform.width / 2,
           this.field.x + this.field.w - this.platform.width / 2,
         );
+        this.platform.body.reset(this.platform.x, this.platform.y);
       }
     });
     this.input.on('pointerup', () => {
@@ -164,17 +165,25 @@ export default class BreakoutGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
-    this.isPaused = false;
+    this.isPaused = true; // freeze during countdown
+    this.gameEnded = false;
     this.pauseOverlay = null;
+    this.lastWallBounceTime = -WALL_BOUNCE_COOLDOWN_MS;
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
-    });
+    // Tab blur → auto-pause (named handler for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
 
     this.trailFrameCounter = 0;
+
+    // Countdown before first ball launch
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    GameVFX.countdown(this, cx, cy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+    });
   }
 
   shutdown() {
@@ -182,6 +191,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
@@ -199,6 +209,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.field.x + this.platform.width / 2,
       this.field.x + this.field.w - this.platform.width / 2,
     );
+    this.platform.body.reset(this.platform.x, this.platform.y);
 
     // Space to launch
     if (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey) && !this.ballLaunched) {
@@ -211,25 +222,35 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
     }
 
-    // Ball out of bounds (bottom)
-    if (this.ball && this.ball.y > this.field.y + this.field.h + 20) {
+    // Ball out of bounds (bottom) — increased margin to 40px
+    if (this.ball && this.ball.y > this.field.y + this.field.h + 40) {
       this.loseLife();
     }
 
     // Ball bouncing off walls (top, left, right)
     if (this.ball && this.ballLaunched) {
       const r = this.ball.radius;
+      const now = this.time.now;
       if (this.ball.y - r <= this.field.y) {
         this.ball.body.setVelocityY(Math.abs(this.ball.body.velocity.y));
-        SynthSounds.tick();
+        if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
+          SynthSounds.tick();
+          this.lastWallBounceTime = now;
+        }
       }
       if (this.ball.x - r <= this.field.x) {
         this.ball.body.setVelocityX(Math.abs(this.ball.body.velocity.x));
-        SynthSounds.tick();
+        if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
+          SynthSounds.tick();
+          this.lastWallBounceTime = now;
+        }
       }
       if (this.ball.x + r >= this.field.x + this.field.w) {
         this.ball.body.setVelocityX(-Math.abs(this.ball.body.velocity.x));
-        SynthSounds.tick();
+        if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
+          SynthSounds.tick();
+          this.lastWallBounceTime = now;
+        }
       }
 
       // Ball trail every 3rd frame
@@ -373,6 +394,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
 
     const result = {

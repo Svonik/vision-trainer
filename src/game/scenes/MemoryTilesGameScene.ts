@@ -25,6 +25,9 @@ const SYMBOL_TYPES = ['circle', 'square', 'triangle', 'star', 'diamond', 'heart'
 // How long (ms) a mismatched pair stays face-up before flipping back
 const MISMATCH_SHOW_MS = 900;
 
+// How long tiles are shown face-up at start before flipping face-down
+const PREVIEW_MS = 2000;
+
 export default class MemoryTilesGameScene extends Phaser.Scene {
   constructor() {
     super('MemoryTilesGameScene');
@@ -108,21 +111,58 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
 
     // Flip state
     this.flippedTiles = [];    // indices of currently face-up (unmatched) tiles
-    this.isLocked = false;     // locked while mismatch timeout runs
+    this.isLocked = true;      // locked during preview
 
     // Safety timer
     this.safetyTimer = createSafetyTimer({
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
     this.isPaused = false;
     this.pauseOverlay = null;
+    this.gameEnded = false;
 
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
+    // Tab blur → auto-pause (store reference for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    const ccx = fx + fw / 2;
+    const ccy = fy + fh / 2;
+
+    // Show all tiles face-up for PREVIEW_MS, then countdown, then start
+    this.showAllTilesFaceUp();
+    this.time.delayedCall(PREVIEW_MS, () => {
+      if (!this.scene.isActive()) return;
+      this.hideAllTilesFaceDown();
+      GameVFX.countdown(this, ccx, ccy, () => {
+        if (!this.scene.isActive()) return;
+        this.isLocked = false;
+        this.safetyTimer.start();
+      });
     });
+  }
+
+  showAllTilesFaceUp() {
+    for (let i = 0; i < this.tileData.length; i++) {
+      const data = this.tileData[i];
+      const obj = this.tileObjects[i];
+      obj.back.setVisible(false);
+      obj.front.setVisible(true);
+      const color = data.isColorA ? this.colorA : this.colorB;
+      const alpha = data.isColorA ? this.alphaA : this.alphaB;
+      this.drawSymbol(obj.front, data.symbol, obj.tx, obj.ty, color, alpha);
+    }
+  }
+
+  hideAllTilesFaceDown() {
+    for (let i = 0; i < this.tileData.length; i++) {
+      const obj = this.tileObjects[i];
+      obj.front.setVisible(false);
+      obj.front.clear();
+      obj.back.setVisible(true);
+      obj.back.setStrokeStyle(1, COLORS.GRAY);
+    }
   }
 
   buildTileData() {
@@ -319,6 +359,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
 
       // White flash on both tiles, then remove
       this.time.delayedCall(120, () => {
+        if (!this.scene.isActive()) return;
         [idxA, idxB].forEach((idx) => {
           const obj = this.tileObjects[idx];
           GameVFX.flash(this, obj.tx, obj.ty, TILE_SIZE - 4, TILE_SIZE - 4, 200);
@@ -344,6 +385,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       // Mismatch — show briefly then flip back
       this.isLocked = true;
       this.time.delayedCall(MISMATCH_SHOW_MS, () => {
+        if (!this.scene.isActive()) return;
         SynthSounds.miss();
         [idxA, idxB].forEach((idx) => this.flipTileFaceDown(idx));
         this.flippedTiles = [];
@@ -357,6 +399,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update() {
@@ -411,6 +454,9 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
 
     const result = {

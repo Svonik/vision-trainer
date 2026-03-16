@@ -14,6 +14,9 @@ const WIN_CATCHES = 25;
 const DIRECTION_CHANGE_MIN_MS = 1000;
 const DIRECTION_CHANGE_MAX_MS = 3000;
 const CROSSHAIR_SIZE = 16;
+// Difficulty progression: speed increase per 5 catches
+const SPEED_BOOST_PER_TIER = 0.05; // 5%
+const CATCHES_PER_TIER = 5;
 
 export default class CatchMonstersGameScene extends Phaser.Scene {
   constructor() {
@@ -62,6 +65,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     this.activeMonsterCount = MONSTER_COUNT[this.settings.speed] || 3;
     this.monstersCaught = 0;
     this.totalMonsters = 0;
+    this.speedTier = 0; // tracks difficulty progression tier
 
     // Frame (both eyes)
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
@@ -120,14 +124,21 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
     this.isPaused = false;
     this.pauseOverlay = null;
     this.trailCounter = 0;
+    this.gameEnded = false;
 
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
+    // Tab blur → auto-pause (store reference for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    // Pause gameplay until countdown finishes
+    this.isPaused = true;
+    GameVFX.countdown(this, ccx, ccy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
     });
   }
 
@@ -138,20 +149,24 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     const mx = fx + margin + Math.random() * (fw - margin * 2);
     const my = fy + margin + Math.random() * (fh - margin * 2);
 
+    // Compute current speed tier multiplier
+    const tierMultiplier = 1 + Math.floor(this.monstersCaught / CATCHES_PER_TIER) * SPEED_BOOST_PER_TIER;
+    const effectiveBaseSpeed = this.baseSpeed * tierMultiplier;
+
     const circle = this.add.circle(mx, my, radius, this.ballColor)
       .setAlpha(this.ballAlpha)
       .setInteractive({ useHandCursor: true });
 
-    // Eyes to make it look like a monster
+    // Eyes — use ballColor (monster body color) to preserve dichoptic separation
     const eyeOfsX = radius * 0.3;
     const eyeOfsY = radius * 0.2;
     const eyeRadius = Math.max(2, radius * 0.15);
-    const eyeL = this.add.circle(mx - eyeOfsX, my - eyeOfsY, eyeRadius, COLORS.WHITE, 0.9);
-    const eyeR = this.add.circle(mx + eyeOfsX, my - eyeOfsY, eyeRadius, COLORS.WHITE, 0.9);
+    const eyeL = this.add.circle(mx - eyeOfsX, my - eyeOfsY, eyeRadius, this.ballColor, 0.9);
+    const eyeR = this.add.circle(mx + eyeOfsX, my - eyeOfsY, eyeRadius, this.ballColor, 0.9);
 
     // Initial random velocity
     const angle = Math.random() * Math.PI * 2;
-    const speed = this.baseSpeed * (0.8 + Math.random() * 0.4);
+    const speed = effectiveBaseSpeed * (0.8 + Math.random() * 0.4);
     const vx = Math.cos(angle) * speed;
     const vy = Math.sin(angle) * speed;
 
@@ -221,6 +236,22 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     m.eyeR.destroy();
     this.monsters.splice(index, 1);
 
+    // Check difficulty tier progression: every CATCHES_PER_TIER catches, bump speed
+    const newTier = Math.floor(this.monstersCaught / CATCHES_PER_TIER);
+    if (newTier > this.speedTier) {
+      this.speedTier = newTier;
+      // Update existing monsters' base speed
+      const tierMultiplier = 1 + this.speedTier * SPEED_BOOST_PER_TIER;
+      for (const mon of this.monsters) {
+        const angle = Math.atan2(mon.baseVy, mon.baseVx);
+        const currentMagnitude = Math.hypot(mon.baseVx, mon.baseVy);
+        // Scale up proportionally
+        const newSpeed = currentMagnitude * (1 + SPEED_BOOST_PER_TIER);
+        mon.baseVx = Math.cos(angle) * newSpeed;
+        mon.baseVy = Math.sin(angle) * newSpeed;
+      }
+    }
+
     if (this.monstersCaught >= WIN_CATCHES) {
       SynthSounds.victory();
       this.endGame(true);
@@ -240,6 +271,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 
   update(time, delta) {
@@ -252,8 +284,10 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
       // Direction change countdown
       m.dirChangeTimer -= delta;
       if (m.dirChangeTimer <= 0) {
+        const tierMultiplier = 1 + this.speedTier * SPEED_BOOST_PER_TIER;
+        const effectiveBaseSpeed = this.baseSpeed * tierMultiplier;
         const angle = Math.random() * Math.PI * 2;
-        const speed = this.baseSpeed * (0.8 + Math.random() * 0.4);
+        const speed = effectiveBaseSpeed * (0.8 + Math.random() * 0.4);
         m.baseVx = Math.cos(angle) * speed;
         m.baseVy = Math.sin(angle) * speed;
         m.dirChangeTimer = this.getNextDirChange();
@@ -281,10 +315,12 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
       m.eyeL.y = m.circle.y - eyeOfsY;
       m.eyeR.x = m.circle.x + eyeOfsX;
       m.eyeR.y = m.circle.y - eyeOfsY;
+    }
 
-      // Trail every 4th frame
-      this.trailCounter++;
-      if (this.trailCounter % 4 === 0) {
+    // Fix: trail counter moved OUTSIDE the monsters loop
+    this.trailCounter++;
+    if (this.trailCounter % 4 === 0) {
+      for (const m of this.monsters) {
         GameVFX.addTrailDot(this, m.circle.x, m.circle.y, this.ballColor, 2);
       }
     }
@@ -340,6 +376,9 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
 
     const result = {

@@ -22,6 +22,8 @@ const PLAYER_BULLET_SPEED = 500;
 const ENEMY_BULLET_SPEED = 220;
 const FIRE_COOLDOWN_MS = 500;
 const ALIEN_STEP_DOWN = 18;
+const INVINCIBILITY_DURATION_MS = 2000;
+const BLINK_INTERVAL_MS = 150;
 
 const ALIEN_STEP_INTERVALS = {
   slow: 1500,
@@ -79,7 +81,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     // State
     this.lives = MAX_LIVES;
     this.enemiesDestroyed = 0;
-    this.isPaused = false;
+    this.isPaused = true; // freeze during countdown
+    this.gameEnded = false;
     this.pauseOverlay = null;
     this.lastPlayerFireMs = -FIRE_COOLDOWN_MS;
     this.alienDirection = 1; // 1 = right, -1 = left
@@ -88,6 +91,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.nextEnemyFireMs = this.randomEnemyFireDelay();
     this.lastEnemyFireMs = 0;
     this.gameOver = false;
+    this.invincible = false;
+    this.blinkTimer = null;
 
     // Frame (both eyes)
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh)
@@ -111,6 +116,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.ship.body.setImmovable(false);
 
     // Aliens grid (alienColor — other eye)
+    // Each alien entry: { body: rect, notchL: rect, notchR: rect }
     this.aliens = [];
     this.alienGroup = this.physics.add.staticGroup();
     const totalGridW = ALIEN_COLS * ALIEN_W + (ALIEN_COLS - 1) * 8;
@@ -123,13 +129,13 @@ export default class InvadersGameScene extends Phaser.Scene {
         const ay = alienStartY + row * (ALIEN_H + 8);
         const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor)
           .setAlpha(this.alienAlpha);
-        // small "eye" notches for visual interest
-        this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
+        // small "eye" notches stored on the alien object for cleanup
+        const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
           .setAlpha(this.alienAlpha * 0.8);
-        this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
+        const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
           .setAlpha(this.alienAlpha * 0.8);
         this.physics.add.existing(alien, true);
-        this.aliens.push(alien);
+        this.aliens.push({ body: alien, notchL, notchR });
         this.alienGroup.add(alien);
       }
     }
@@ -182,13 +188,18 @@ export default class InvadersGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
+    // Tab blur → auto-pause (named handler for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
+
+    // Countdown before gameplay starts
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    GameVFX.countdown(this, cx, cy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
     });
-
   }
 
   shutdown() {
@@ -196,6 +207,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+    if (this.blinkTimer) { this.blinkTimer.remove(); this.blinkTimer = null; }
   }
 
   update(time, delta) {
@@ -243,10 +256,10 @@ export default class InvadersGameScene extends Phaser.Scene {
       // Check collision with aliens
       let hit = false;
       for (let i = this.aliens.length - 1; i >= 0; i--) {
-        const alien = this.aliens[i];
-        if (!alien.active) continue;
-        if (this.rectsOverlap(b, alien, BULLET_W, BULLET_H, ALIEN_W, ALIEN_H)) {
-          this.destroyAlien(alien, i);
+        const alienEntry = this.aliens[i];
+        if (!alienEntry.body || !alienEntry.body.active) continue;
+        if (this.rectsOverlap(b, alienEntry.body, BULLET_W, BULLET_H, ALIEN_W, ALIEN_H)) {
+          this.destroyAlien(alienEntry, i);
           b.destroy();
           hit = true;
           break;
@@ -264,8 +277,8 @@ export default class InvadersGameScene extends Phaser.Scene {
         b.destroy();
         continue;
       }
-      // Check collision with ship
-      if (this.ship && this.rectsOverlap(b, this.ship, BULLET_W, BULLET_H, this.ship.width, this.ship.height)) {
+      // Check collision with ship (skip if invincible)
+      if (!this.invincible && this.ship && this.rectsOverlap(b, this.ship, BULLET_W, BULLET_H, this.ship.width, this.ship.height)) {
         b.destroy();
         this.loseLife();
         continue;
@@ -275,9 +288,9 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.enemyBullets = aliveEnemyBullets;
 
     // Check if any alien reached the bottom
-    for (const alien of this.aliens) {
-      if (!alien.active) continue;
-      if (alien.y + ALIEN_H / 2 >= this.field.y + this.field.h - 30) {
+    for (const alienEntry of this.aliens) {
+      if (!alienEntry.body || !alienEntry.body.active) continue;
+      if (alienEntry.body.y + ALIEN_H / 2 >= this.field.y + this.field.h - 30) {
         this.endGame(false);
         return;
       }
@@ -293,15 +306,15 @@ export default class InvadersGameScene extends Phaser.Scene {
   }
 
   marchAliens() {
-    const liveAliens = this.aliens.filter((a) => a.active);
+    const liveAliens = this.aliens.filter((a) => a.body && a.body.active);
     if (liveAliens.length === 0) return;
 
     // Find current left/right extent
     let minX = Infinity;
     let maxX = -Infinity;
     for (const a of liveAliens) {
-      if (a.x - ALIEN_W / 2 < minX) minX = a.x - ALIEN_W / 2;
-      if (a.x + ALIEN_W / 2 > maxX) maxX = a.x + ALIEN_W / 2;
+      if (a.body.x - ALIEN_W / 2 < minX) minX = a.body.x - ALIEN_W / 2;
+      if (a.body.x + ALIEN_W / 2 > maxX) maxX = a.body.x + ALIEN_W / 2;
     }
 
     const step = 16;
@@ -318,14 +331,20 @@ export default class InvadersGameScene extends Phaser.Scene {
     if (reverseAndStep) {
       // Step down first, then reverse
       for (const a of liveAliens) {
-        a.y += ALIEN_STEP_DOWN;
-        if (a.body) a.body.reset(a.x, a.y);
+        a.body.y += ALIEN_STEP_DOWN;
+        if (a.body.body) a.body.body.reset(a.body.x, a.body.y);
+        // Move notches with the body
+        if (a.notchL) { a.notchL.x = a.body.x - 8; a.notchL.y = a.body.y - 4; }
+        if (a.notchR) { a.notchR.x = a.body.x + 8; a.notchR.y = a.body.y - 4; }
       }
       this.alienDirection = -this.alienDirection;
     } else {
       for (const a of liveAliens) {
-        a.x += step * this.alienDirection;
-        if (a.body) a.body.reset(a.x, a.y);
+        a.body.x += step * this.alienDirection;
+        if (a.body.body) a.body.body.reset(a.body.x, a.body.y);
+        // Move notches with the body
+        if (a.notchL) { a.notchL.x = a.body.x - 8; a.notchL.y = a.body.y - 4; }
+        if (a.notchR) { a.notchR.x = a.body.x + 8; a.notchR.y = a.body.y - 4; }
       }
     }
 
@@ -355,14 +374,14 @@ export default class InvadersGameScene extends Phaser.Scene {
   }
 
   fireEnemyBullet() {
-    const liveAliens = this.aliens.filter((a) => a.active);
+    const liveAliens = this.aliens.filter((a) => a.body && a.body.active);
     if (liveAliens.length === 0) return;
 
     // Pick a random alien from the bottom row of each column
     const byColumn = {};
     for (const a of liveAliens) {
-      const colKey = Math.round(a.x);
-      if (!byColumn[colKey] || a.y > byColumn[colKey].y) {
+      const colKey = Math.round(a.body.x);
+      if (!byColumn[colKey] || a.body.y > byColumn[colKey].body.y) {
         byColumn[colKey] = a;
       }
     }
@@ -370,8 +389,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     const shooter = shooters[Math.floor(Math.random() * shooters.length)];
 
     const bullet = this.add.rectangle(
-      shooter.x,
-      shooter.y + ALIEN_H / 2 + BULLET_H / 2,
+      shooter.body.x,
+      shooter.body.y + ALIEN_H / 2 + BULLET_H / 2,
       BULLET_W,
       BULLET_H,
       this.alienColor,
@@ -379,7 +398,8 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.enemyBullets.push(bullet);
   }
 
-  destroyAlien(alien, index) {
+  destroyAlien(alienEntry, index) {
+    const alien = alienEntry.body;
     // Flash on hit
     const flash = this.add.rectangle(alien.x, alien.y, ALIEN_W, ALIEN_H, COLORS.WHITE)
       .setAlpha(0.9);
@@ -390,8 +410,11 @@ export default class InvadersGameScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     });
 
+    // Destroy notches together with the alien body
+    if (alienEntry.notchL) { alienEntry.notchL.destroy(); alienEntry.notchL = null; }
+    if (alienEntry.notchR) { alienEntry.notchR.destroy(); alienEntry.notchR = null; }
     alien.destroy();
-    this.aliens[index] = { active: false };
+    this.aliens[index] = { body: { active: false }, notchL: null, notchR: null };
     this.enemiesDestroyed++;
     this.scoreText.setText(`${this.enemiesDestroyed} / ${TOTAL_ALIENS}`);
 
@@ -415,7 +438,28 @@ export default class InvadersGameScene extends Phaser.Scene {
 
     if (this.lives <= 0) {
       this.endGame(false);
+      return;
     }
+
+    // Grant 2s invincibility with blinking effect
+    this.invincible = true;
+    let blinkCount = 0;
+    const totalBlinks = Math.floor(INVINCIBILITY_DURATION_MS / BLINK_INTERVAL_MS);
+    this.blinkTimer = this.time.addEvent({
+      delay: BLINK_INTERVAL_MS,
+      repeat: totalBlinks - 1,
+      callback: () => {
+        if (this.ship) {
+          blinkCount++;
+          this.ship.setAlpha(blinkCount % 2 === 0 ? this.platformAlpha : 0);
+        }
+      },
+    });
+    this.time.delayedCall(INVINCIBILITY_DURATION_MS, () => {
+      this.invincible = false;
+      if (this.ship) this.ship.setAlpha(this.platformAlpha);
+      if (this.blinkTimer) { this.blinkTimer.remove(); this.blinkTimer = null; }
+    });
   }
 
   rectsOverlap(a, b, aw, ah, bw, bh) {
@@ -471,8 +515,10 @@ export default class InvadersGameScene extends Phaser.Scene {
   }
 
   endGame(won) {
-    if (this.gameOver) return;
+    if (this.gameEnded) return;
+    this.gameEnded = true;
     this.gameOver = true;
+
     this.safetyTimer.stop();
     if (!won) SynthSounds.gameOver();
 

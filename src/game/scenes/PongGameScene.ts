@@ -71,7 +71,8 @@ export default class PongGameScene extends Phaser.Scene {
     this.volleyCount = 0;
     this.ballSpeed = BALL_SPEEDS[this.settings.speed] || 260;
     this.aiTracking = AI_TRACKING[this.settings.speed] || 0.60;
-    this.isPaused = false;
+    this.isPaused = true; // freeze during countdown
+    this.gameEnded = false;
     this.pauseOverlay = null;
     this.ballActive = false;
 
@@ -86,17 +87,24 @@ export default class PongGameScene extends Phaser.Scene {
       onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
-    this.safetyTimer.start();
 
-    // Tab blur → auto-pause
-    this.game.events.on('blur', () => {
-      if (!this.isPaused) this.togglePause();
-    });
+    // Tab blur → auto-pause (named handler for cleanup)
+    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
+    this.game.events.on('blur', this.blurHandler);
 
     this.trailFrameCounter = 0;
 
-    // Launch the ball after a short delay
-    this.time.delayedCall(800, () => { this.serveBall(); });
+    // Countdown before first serve
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    GameVFX.countdown(this, cx, cy, () => {
+      this.isPaused = false;
+      this.safetyTimer.start();
+      // Launch the ball after a short delay post-countdown
+      this.time.delayedCall(400, () => {
+        if (!this.isPaused) this.serveBall();
+      });
+    });
   }
 
   buildField() {
@@ -155,7 +163,6 @@ export default class PongGameScene extends Phaser.Scene {
     this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE);
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballR);
-    this.ball.body.setBounce(1, 1);
     this.ball.body.setCollideWorldBounds(false);
 
     // Colliders
@@ -207,6 +214,8 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   serveBall() {
+    if (this.isPaused) return; // guard: don't serve during pause
+
     if (this.serveHint) {
       this.serveHint.destroy();
       this.serveHint = null;
@@ -304,11 +313,13 @@ export default class PongGameScene extends Phaser.Scene {
       this.endGame();
       return;
     }
-    // Re-serve after short delay
+    // Re-serve after short delay, guarded against pause
     this.ball.body.setVelocity(0, 0);
     this.ball.x = this.field.x + this.field.w / 2;
     this.ball.y = this.field.y + this.field.h / 2;
-    this.time.delayedCall(1000, () => { this.serveBall(); });
+    this.time.delayedCall(1000, () => {
+      if (!this.isPaused) this.serveBall();
+    });
   }
 
   togglePause() {
@@ -397,6 +408,9 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   endGame() {
+    if (this.gameEnded) return;
+    this.gameEnded = true;
+
     this.safetyTimer.stop();
     if (this.playerScore >= WINNING_SCORE) {
       SynthSounds.victory();
@@ -431,5 +445,6 @@ export default class PongGameScene extends Phaser.Scene {
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
     if (this.safetyTimer) this.safetyTimer.stop();
+    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
   }
 }
