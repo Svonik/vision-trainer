@@ -15,6 +15,7 @@ export const createSessionResult = ({
   caught,
   totalSpawned,
   durationMs,
+  level,
 }) => {
   const durationS = Math.round(durationMs / 1000);
   const hitRate = totalSpawned > 0 ? Math.round((caught / totalSpawned) * 100) / 100 : 0;
@@ -30,5 +31,6 @@ export const createSessionResult = ({
     contrast_right: settings.contrastRight,
     speed: settings.speed,
     eye_config: settings.eyeConfig,
+    ...(level !== undefined ? { level } : {}),
   };
 };

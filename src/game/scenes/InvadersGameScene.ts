@@ -80,6 +80,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.alienAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
     // State
+    this.level = 1;
     this.lives = MAX_LIVES;
     this.enemiesDestroyed = 0;
     this.isPaused = true; // freeze during countdown
@@ -429,8 +430,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     GameVFX.scorePopup(this, alien.x, alien.y);
 
     if (this.enemiesDestroyed >= TOTAL_ALIENS) {
-      SynthSounds.victory();
-      this.endGame(true);
+      this.nextLevel();
     }
   }
 
@@ -522,6 +522,85 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isPaused = true;
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isPaused = false;
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    // Destroy existing aliens
+    for (const alienEntry of this.aliens) {
+      if (alienEntry.notchL) { alienEntry.notchL.destroy(); alienEntry.notchL = null; }
+      if (alienEntry.notchR) { alienEntry.notchR.destroy(); alienEntry.notchR = null; }
+      if (alienEntry.alienVisual) { alienEntry.alienVisual.destroy(); alienEntry.alienVisual = null; }
+      if (alienEntry.body && alienEntry.body.active) alienEntry.body.destroy();
+    }
+    this.alienGroup.clear(true, true);
+    this.aliens = [];
+
+    // Destroy remaining bullets
+    for (const b of this.playerBullets) b.destroy();
+    for (const b of this.enemyBullets) b.destroy();
+    this.playerBullets = [];
+    this.enemyBullets = [];
+
+    // Respawn aliens
+    const { x: fx, y: fy, w: fw } = this.field;
+    const totalGridW = ALIEN_COLS * ALIEN_W + (ALIEN_COLS - 1) * 8;
+    const alienStartX = fx + (fw - totalGridW) / 2 + ALIEN_W / 2;
+    const alienStartY = fy + 60;
+
+    for (let row = 0; row < ALIEN_ROWS; row++) {
+      for (let col = 0; col < ALIEN_COLS; col++) {
+        const ax = alienStartX + col * (ALIEN_W + 8);
+        const ay = alienStartY + row * (ALIEN_H + 8);
+        const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor, 0);
+        const alienVisual = GameVisuals.glowRect(this, ax, ay, ALIEN_W, ALIEN_H, this.alienColor, this.alienAlpha, 3);
+        const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
+          .setAlpha(this.alienAlpha * 0.8);
+        const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
+          .setAlpha(this.alienAlpha * 0.8);
+        this.physics.add.existing(alien, true);
+        this.aliens.push({ body: alien, alienVisual, notchL, notchR });
+        this.alienGroup.add(alien);
+      }
+    }
+
+    this.enemiesDestroyed = 0;
+    this.scoreText.setText(`0 / ${TOTAL_ALIENS}`);
+
+    // Faster march interval
+    this.alienStepInterval = Math.max(150, this.alienStepInterval * 0.85);
+    this.alienDirection = 1;
+    this.lastAlienStepMs = 0;
+
+    // Respawn ship at center
+    const ccx = fx + fw / 2;
+    this.ship.x = ccx;
+    if (this.shipVisual) { this.shipVisual.x = ccx; }
+  }
+
   endGame(won) {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -544,6 +623,7 @@ export default class InvadersGameScene extends Phaser.Scene {
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
       lives_remaining: this.lives,
+      level: this.level,
       completed: won,
     };
 

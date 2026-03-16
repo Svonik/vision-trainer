@@ -63,6 +63,7 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
+    this.level = 1;
     this.baseSpeed = OBSTACLE_SPEEDS[this.settings.speed] || 100;
     this.speedMultiplier = 1;
     this.lives = MAX_LIVES;
@@ -373,8 +374,7 @@ export default class FroggerGameScene extends Phaser.Scene {
     }
 
     if (this.crossings >= WIN_CROSSINGS) {
-      SynthSounds.victory();
-      this.endGame(true);
+      this.nextLevel();
       return;
     }
 
@@ -429,6 +429,42 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isInGoalAnimation = true;
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isInGoalAnimation = false;
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    this.crossings = 0;
+    this.scoreText.setText(`0 / ${WIN_CROSSINGS}`);
+    this.speedMultiplier *= 1.15;
+    for (const lane of this.obstacleObjects) {
+      lane.speed = this.baseSpeed * this.speedMultiplier * this.laneSpeedFactors[lane.laneIndex];
+    }
+    this.respawnPlayer();
+  }
+
   endGame(won) {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -450,6 +486,7 @@ export default class FroggerGameScene extends Phaser.Scene {
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
       lives_remaining: this.lives,
+      level: this.level,
       completed: won,
     };
 

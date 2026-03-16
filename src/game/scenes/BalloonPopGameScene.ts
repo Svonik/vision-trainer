@@ -58,6 +58,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.balloonAlpha = (isLeftBalloon ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.crosshairAlpha = (isLeftBalloon ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
+    this.level = 1;
     this.balloonLifespan = LIFESPAN_MS[this.settings.speed] || LIFESPAN_MS.normal;
 
     // Frame (both eyes)
@@ -237,8 +238,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.scoreText.setText(`${this.popped} / ${WIN_COUNT}`);
 
     if (this.popped >= WIN_COUNT) {
-      SynthSounds.victory();
-      this.endGame(true);
+      this.nextLevel();
       return;
     }
 
@@ -351,6 +351,41 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isPaused = true;
+    // Pause oscillation tweens
+    this.balloons.forEach((b) => b.tweenY.pause());
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isPaused = false;
+        this.balloons.forEach((b) => b.tweenY.resume());
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    this.popped = 0;
+    this.scoreText.setText(`0 / ${WIN_COUNT}`);
+    this.balloonLifespan = Math.max(500, Math.round(this.balloonLifespan * 0.85));
+  }
+
   endGame(won) {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -370,6 +405,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
       contrast_right: this.settings.contrastRight,
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
+      level: this.level,
       completed: won,
     };
 

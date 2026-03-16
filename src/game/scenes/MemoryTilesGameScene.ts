@@ -72,6 +72,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     this.alphaA = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.alphaB = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
+    this.level = 1;
     const gridConfig = GRID_CONFIG[this.settings.speed] || GRID_CONFIG.normal;
     this.cols = gridConfig.cols;
     this.rows = gridConfig.rows;
@@ -375,8 +376,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
         this.isLocked = false;
 
         if (this.pairsMatched >= this.totalPairs) {
-          SynthSounds.victory();
-          this.endGame(true);
+          this.nextLevel();
         }
       });
 
@@ -461,6 +461,69 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isLocked = true;
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    // Destroy existing tile objects
+    for (const obj of this.tileObjects) {
+      obj.back.destroy();
+      obj.front.destroy();
+      obj.hitArea.destroy();
+    }
+    this.tileObjects = [];
+
+    // Increase grid: add one pair (bump cols if cols <= rows, else bump rows)
+    if (this.cols <= this.rows) {
+      this.cols += 1;
+    } else {
+      this.rows += 1;
+    }
+    // Ensure total tiles remains even
+    if ((this.cols * this.rows) % 2 !== 0) {
+      this.rows += 1;
+    }
+
+    this.totalPairs = (this.cols * this.rows) / 2;
+    this.pairsMatched = 0;
+    this.flippedTiles = [];
+    this.scoreText.setText(`0 / ${this.totalPairs}`);
+
+    // Rebuild tile data and grid
+    this.tileData = this.buildTileData();
+    this.renderGrid();
+
+    // Show all face-up briefly, then flip down and unlock
+    this.showAllTilesFaceUp();
+    this.time.delayedCall(PREVIEW_MS, () => {
+      if (!this.scene.isActive()) return;
+      this.hideAllTilesFaceDown();
+      this.isLocked = false;
+    });
+  }
+
   endGame(won) {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -481,6 +544,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       contrast_right: this.settings.contrastRight,
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
+      level: this.level,
       completed: won,
     };
 

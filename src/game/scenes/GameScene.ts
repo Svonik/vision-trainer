@@ -135,6 +135,9 @@ export default class GameScene extends Phaser.Scene {
       loop: true,
     });
 
+    // Level
+    this.level = 1;
+
     // Pause state
     this.isPaused = true; // freeze during countdown
     this.pauseOverlay = null;
@@ -300,8 +303,7 @@ export default class GameScene extends Phaser.Scene {
     this.checkDynamicDifficulty();
 
     if (this.caught >= GAME.TARGET_CATCHES) {
-      SynthSounds.victory();
-      this.endGame();
+      this.nextLevel();
     }
   }
 
@@ -382,6 +384,51 @@ export default class GameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isPaused = true;
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isPaused = false;
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    this.caught = 0;
+    this.totalSpawned = 0;
+    this.scoreText.setText(`${t('game.score')}: 0 / ${GAME.TARGET_CATCHES}`);
+    this.fallSpeed *= 1.15;
+    // Reduce spawn interval by 10%: remove old timer and add new one with 90% delay
+    if (this.spawnTimer) {
+      const oldDelay = this.spawnTimer.delay;
+      this.spawnTimer.remove();
+      const newDelay = Math.max(200, Math.round(oldDelay * 0.9));
+      this.spawnTimer = this.time.addEvent({
+        delay: newDelay,
+        callback: this.spawnTarget,
+        callbackScope: this,
+        loop: true,
+      });
+    }
+  }
+
   endGame() {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -394,6 +441,7 @@ export default class GameScene extends Phaser.Scene {
       caught: this.caught,
       totalSpawned: this.totalSpawned,
       durationMs: this.safetyTimer.getElapsedMs(),
+      level: this.level,
     });
 
     EventBus.emit('game-complete', { result, settings: this.settings });

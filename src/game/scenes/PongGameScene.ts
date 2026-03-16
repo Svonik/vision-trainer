@@ -67,6 +67,7 @@ export default class PongGameScene extends Phaser.Scene {
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
+    this.level = 1;
     this.playerScore = 0;
     this.aiScore = 0;
     this.volleyCount = 0;
@@ -317,7 +318,11 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   checkWinCondition() {
-    if (this.playerScore >= WINNING_SCORE || this.aiScore >= WINNING_SCORE) {
+    if (this.playerScore >= WINNING_SCORE) {
+      this.nextLevel();
+      return;
+    }
+    if (this.aiScore >= WINNING_SCORE) {
       this.endGame();
       return;
     }
@@ -428,16 +433,52 @@ export default class PongGameScene extends Phaser.Scene {
     }
   }
 
+  nextLevel() {
+    this.level++;
+    this.isPaused = true;
+    this.ballActive = false;
+    this.ball.body.setVelocity(0, 0);
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isPaused = false;
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    this.playerScore = 0;
+    this.aiScore = 0;
+    this.playerScoreText.setText('0');
+    this.aiScoreText.setText('0');
+    this.ballSpeed += 30;
+    this.aiTracking = Math.min(0.99, this.aiTracking + 0.03);
+    this.time.delayedCall(400, () => {
+      if (!this.isPaused) this.serveBall();
+    });
+  }
+
   endGame() {
     if (this.gameEnded) return;
     this.gameEnded = true;
 
     this.safetyTimer.stop();
-    if (this.playerScore >= WINNING_SCORE) {
-      SynthSounds.victory();
-    } else {
-      SynthSounds.gameOver();
-    }
+    SynthSounds.gameOver();
 
     const total = this.playerScore + this.aiScore;
     const result = {
@@ -455,7 +496,8 @@ export default class PongGameScene extends Phaser.Scene {
       eye_config: this.settings.eyeConfig,
       player_score: this.playerScore,
       ai_score: this.aiScore,
-      completed: this.playerScore >= WINNING_SCORE,
+      level: this.level,
+      completed: false,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

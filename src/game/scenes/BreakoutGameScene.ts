@@ -170,6 +170,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
 
+    this.level = 1;
     this.isPaused = true; // freeze during countdown
     this.gameEnded = false;
     this.pauseOverlay = null;
@@ -340,8 +341,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     GameVFX.scorePopup(this, brick.x, brick.y);
 
     if (this.bricksDestroyed >= this.totalBricks) {
-      SynthSounds.victory();
-      this.endGame(true);
+      this.nextLevel();
     }
   }
 
@@ -423,6 +423,87 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isPaused = true;
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isPaused = false;
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    // Destroy existing bricks
+    this.bricks.getChildren().forEach((brick) => {
+      if (brick._visual) { brick._visual.destroy(); brick._visual = null; }
+      brick.destroy();
+    });
+    this.bricks.clear(true, true);
+
+    // Respawn bricks with extra row (capped at 8 rows)
+    const { x: fx, y: fy, w: fw } = this.field;
+    const rows = Math.min(8, BRICK_ROWS + this.level - 1);
+    const brickW = (fw * 0.88) / BRICK_COLS;
+    const brickH = (this.field.h * 0.2) / BRICK_ROWS;
+    const brickStartX = fx + (fw - brickW * BRICK_COLS) / 2 + brickW / 2;
+    const brickStartY = fy + 50;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < BRICK_COLS; col++) {
+        const bx = brickStartX + col * brickW;
+        const by = brickStartY + row * brickH;
+        const shade = row % 2 === 0 ? 0x909090 : 0x707070;
+        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
+        this.physics.add.existing(brick, true);
+        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
+        brick._visual = brickVisual;
+        this.bricks.add(brick);
+      }
+    }
+
+    this.totalBricks = BRICK_COLS * rows;
+    this.bricksDestroyed = 0;
+    this.scoreText.setText(`0 / ${this.totalBricks}`);
+
+    // Speed up ball
+    this.ballSpeed *= 1.15;
+
+    // Reset ball to platform
+    this.ballLaunched = false;
+    this.ball.body.setVelocity(0, 0);
+    this.ball.x = this.platform.x;
+    this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
+    if (this.ballVisual) {
+      this.ballVisual.x = this.ball.x;
+      this.ballVisual.y = this.ball.y;
+    }
+
+    if (!this.launchHint) {
+      const ccx = this.field.x + this.field.w / 2;
+      const ccy = this.field.y + this.field.h / 2;
+      this.launchHint = this.add.text(ccx, ccy + 60, t('breakout.launchHint'), {
+        fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+      }).setOrigin(0.5);
+    }
+  }
+
   endGame(won) {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -443,6 +524,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
       lives_remaining: this.lives,
+      level: this.level,
       completed: won,
     };
 

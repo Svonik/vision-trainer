@@ -62,6 +62,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
+    this.level = 1;
     this.baseSpeed = MONSTER_SPEEDS[this.settings.speed] || 70;
     this.activeMonsterCount = MONSTER_COUNT[this.settings.speed] || 3;
     this.monstersCaught = 0;
@@ -250,8 +251,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     }
 
     if (this.monstersCaught >= WIN_CATCHES) {
-      SynthSounds.victory();
-      this.endGame(true);
+      this.nextLevel();
       return;
     }
 
@@ -380,6 +380,47 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
   }
 
+  nextLevel() {
+    this.level++;
+    this.isPaused = true;
+
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+
+    const levelText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+      fontSize: '36px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+
+    SynthSounds.victory();
+
+    this.tweens.add({
+      targets: levelText,
+      alpha: 1, scaleX: 1.3, scaleY: 1.3,
+      duration: 300, yoyo: true, hold: 1500,
+      onComplete: () => {
+        levelText.destroy();
+        this.isPaused = false;
+        this.resetForNextLevel();
+      },
+    });
+  }
+
+  resetForNextLevel() {
+    this.monstersCaught = 0;
+    this.speedTier = 0;
+    this.scoreText.setText(`0 / ${WIN_CATCHES}`);
+    this.baseSpeed *= 1.15;
+    // Update all existing monsters' speed
+    for (const m of this.monsters) {
+      const angle = Math.atan2(m.baseVy, m.baseVx);
+      const currentMagnitude = Math.hypot(m.baseVx, m.baseVy);
+      const newSpeed = currentMagnitude * 1.15;
+      m.baseVx = Math.cos(angle) * newSpeed;
+      m.baseVy = Math.sin(angle) * newSpeed;
+    }
+  }
+
   endGame(won) {
     if (this.gameEnded) return;
     this.gameEnded = true;
@@ -399,6 +440,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
       contrast_right: this.settings.contrastRight,
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
+      level: this.level,
       completed: won,
     };
 
