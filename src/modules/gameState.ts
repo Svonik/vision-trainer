@@ -7,6 +7,7 @@ export const createGameSettings = (overrides = {}) => ({
   contrastRight: overrides.contrastRight ?? CONTRAST.DEFAULT,
   speed: overrides.speed ?? 'slow',
   eyeConfig: overrides.eyeConfig ?? 'platform_left',
+  glassesType: overrides.glassesType ?? 'red-cyan',
 });
 
 export const createSessionResult = ({

@@ -33,4 +33,11 @@ describe('GameState Module', () => {
         });
         expect(result.hit_rate).toBe(0);
     });
+
+    it('includes glassesType in settings', () => {
+        const defaults = createGameSettings();
+        expect(defaults.glassesType).toBe('red-cyan');
+        const custom = createGameSettings({ glassesType: 'cyan-red' });
+        expect(custom.glassesType).toBe('cyan-red');
+    });
 });

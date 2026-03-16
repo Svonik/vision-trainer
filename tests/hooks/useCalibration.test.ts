@@ -24,4 +24,9 @@ describe('useCalibration', () => {
         act(() => { result.current.pass(); });
         expect(result.current.passed).toBe(true);
     });
+
+    it('returns default glasses type', () => {
+        const { result } = renderHook(() => useCalibration());
+        expect(result.current.glassesType).toBe('red-cyan');
+    });
 });

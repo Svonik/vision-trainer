@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { useCalibration } from '@/hooks/useCalibration';
 import { CALIBRATION } from '@/modules/constants';
 import { t } from '@/modules/i18n';
+import { getEyeColors } from '@/modules/glassesColors';
 
 type Phase = 'test' | 'adjust';
 
@@ -16,7 +17,10 @@ export function CalibrationPage() {
         cyanBrightness, setCyanBrightness,
         attempts, addAttempt,
         pass, save,
+        glassesType, setGlassesType,
     } = useCalibration();
+
+    const eyeColors = getEyeColors(glassesType);
 
     const [phase, setPhase] = useState<Phase>('test');
     const maxAttemptsReached = attempts >= CALIBRATION.MAX_ATTEMPTS;
@@ -60,12 +64,12 @@ export function CalibrationPage() {
                         <div className="flex justify-center gap-8 mb-4">
                             <div
                                 className="w-24 h-24 rounded-sm"
-                                style={{ backgroundColor: '#FF0000', opacity: redBrightness / 100 }}
+                                style={{ backgroundColor: eyeColors.leftHex, opacity: redBrightness / 100 }}
                                 aria-label="red square"
                             />
                             <div
                                 className="w-24 h-24 rounded-sm"
-                                style={{ backgroundColor: '#00FFFF', opacity: cyanBrightness / 100 }}
+                                style={{ backgroundColor: eyeColors.rightHex, opacity: cyanBrightness / 100 }}
                                 aria-label="cyan square"
                             />
                         </div>
@@ -152,15 +156,35 @@ export function CalibrationPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {/* Glasses type toggle */}
+                    <div className="space-y-2">
+                        <p className="text-sm text-gray-300">{t('calibration.glassesType')}</p>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={() => setGlassesType('red-cyan')}
+                                variant={glassesType === 'red-cyan' ? 'default' : 'outline'}
+                                className={`flex-1 ${glassesType === 'red-cyan' ? 'bg-white text-black' : 'border-gray-600 text-gray-200 hover:bg-gray-800'}`}
+                            >
+                                {t('calibration.glassesRed')}
+                            </Button>
+                            <Button
+                                onClick={() => setGlassesType('cyan-red')}
+                                variant={glassesType === 'cyan-red' ? 'default' : 'outline'}
+                                className={`flex-1 ${glassesType === 'cyan-red' ? 'bg-white text-black' : 'border-gray-600 text-gray-200 hover:bg-gray-800'}`}
+                            >
+                                {t('calibration.glassesCyan')}
+                            </Button>
+                        </div>
+                    </div>
                     <div className="flex justify-center gap-8">
                         <div
                             className="w-24 h-24 rounded-sm"
-                            style={{ backgroundColor: '#FF0000' }}
+                            style={{ backgroundColor: eyeColors.leftHex }}
                             aria-label="red square"
                         />
                         <div
                             className="w-24 h-24 rounded-sm"
-                            style={{ backgroundColor: '#00FFFF' }}
+                            style={{ backgroundColor: eyeColors.rightHex }}
                             aria-label="cyan square"
                         />
                     </div>

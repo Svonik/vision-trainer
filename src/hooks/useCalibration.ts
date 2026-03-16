@@ -8,6 +8,7 @@ export function useCalibration() {
     const [cyanBrightness, setCyanBrightness] = useState(stored.cyan_brightness);
     const [attempts, setAttempts] = useState(0);
     const [passed, setPassed] = useState(stored.suppression_passed);
+    const [glassesType, setGlassesType] = useState(stored.glasses_type || 'red-cyan');
 
     const addAttempt = useCallback(() => {
         setAttempts(prev => prev + 1);
@@ -23,15 +24,17 @@ export function useCalibration() {
             cyan_brightness: cyanBrightness,
             suppression_passed: passed,
             last_calibrated: new Date().toISOString(),
+            glasses_type: glassesType,
             ...overrides,
         });
-    }, [redBrightness, cyanBrightness, passed]);
+    }, [redBrightness, cyanBrightness, passed, glassesType]);
 
     return {
         redBrightness, setRedBrightness,
         cyanBrightness, setCyanBrightness,
         attempts, addAttempt,
         passed, pass,
+        glassesType, setGlassesType,
         save,
     };
 }

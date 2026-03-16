@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,8 @@ import { Slider } from '@/components/ui/slider';
 import { useGameSettings } from '../hooks/useGameSettings';
 import { SPEEDS, CONTRAST } from '../modules/constants';
 import { t } from '../modules/i18n';
+import { getEyeColors } from '../modules/glassesColors';
+import { getCalibration } from '../modules/storage';
 
 const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
 
@@ -12,6 +15,13 @@ export function SettingsPage() {
     const { gameId } = useParams();
     const navigate = useNavigate();
     const { settings, updateSettings } = useGameSettings();
+
+    useEffect(() => {
+        const calibration = getCalibration();
+        updateSettings({ glassesType: calibration.glasses_type ?? 'red-cyan' });
+    }, []);
+
+    const eyeColors = getEyeColors(settings.glassesType ?? 'red-cyan');
 
     const handleStart = () => {
         navigate(`/games/${gameId}/play`, { state: { settings } });
@@ -40,14 +50,14 @@ export function SettingsPage() {
                             <div className="text-center">
                                 <div
                                     className="w-12 h-12 rounded-full mx-auto mb-1"
-                                    style={{ backgroundColor: `rgba(255, 0, 0, ${settings.contrastLeft / 100})` }}
+                                    style={{ backgroundColor: `rgba(${eyeColors.leftRgbCss}, ${settings.contrastLeft / 100})` }}
                                 />
                                 <span className="text-xs text-gray-400">Л: {settings.contrastLeft}%</span>
                             </div>
                             <div className="text-center">
                                 <div
                                     className="w-12 h-12 rounded-full mx-auto mb-1"
-                                    style={{ backgroundColor: `rgba(0, 255, 255, ${settings.contrastRight / 100})` }}
+                                    style={{ backgroundColor: `rgba(${eyeColors.rightRgbCss}, ${settings.contrastRight / 100})` }}
                                 />
                                 <span className="text-xs text-gray-400">П: {settings.contrastRight}%</span>
                             </div>
@@ -56,7 +66,7 @@ export function SettingsPage() {
                         <div className="space-y-3">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span style={{ color: '#ff6666' }}>{t('settings.leftEyeRed')}</span>
+                                    <span style={{ color: eyeColors.leftHex }}>{`Левый глаз (${eyeColors.leftLabel})`}</span>
                                     <span className="text-gray-400">{settings.contrastLeft}%</span>
                                 </div>
                                 <Slider
@@ -71,7 +81,7 @@ export function SettingsPage() {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span style={{ color: '#00e5e5' }}>{t('settings.rightEyeCyan')}</span>
+                                    <span style={{ color: eyeColors.rightHex }}>{`Правый глаз (${eyeColors.rightLabel})`}</span>
                                     <span className="text-gray-400">{settings.contrastRight}%</span>
                                 </div>
                                 <Slider

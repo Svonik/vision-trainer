@@ -3,6 +3,7 @@ import { t } from '../../modules/i18n';
 import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
+import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -49,10 +50,11 @@ export default class FlappyGameScene extends Phaser.Scene {
     const fy = (GAME.HEIGHT - fh) / 2;
     this.field = { x: fx, y: fy, w: fw, h: fh };
 
+    const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
     const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
     // Bird → platformColor, Pipes → ballColor (dichoptic split)
-    this.birdColor = isLeftPlatform ? COLORS.RED : COLORS.CYAN;
-    this.pipeColor = isLeftPlatform ? COLORS.CYAN : COLORS.RED;
+    this.birdColor = isLeftPlatform ? eyeColors.leftColor : eyeColors.rightColor;
+    this.pipeColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.birdAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.pipeAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 

@@ -3,6 +3,7 @@ import { t } from '../../modules/i18n';
 import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
+import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -58,9 +59,10 @@ export default class PongGameScene extends Phaser.Scene {
     // Left paddle (player) → platformColor (one eye)
     // Right paddle (AI)    → ballColor (other eye)
     // Ball                 → WHITE (both eyes)
+    const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
     const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-    this.platformColor = isLeftPlatform ? COLORS.RED : COLORS.CYAN;
-    this.ballColor = isLeftPlatform ? COLORS.CYAN : COLORS.RED;
+    this.platformColor = isLeftPlatform ? eyeColors.leftColor : eyeColors.rightColor;
+    this.ballColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 

@@ -39,6 +39,7 @@ export const initStorage = () => {
       cyan_brightness: 100,
       suppression_passed: false,
       last_calibrated: null,
+      glasses_type: 'red-cyan',
     });
     write(STORAGE_KEYS.SESSIONS, []);
   }
@@ -54,6 +55,7 @@ export const getCalibration = () =>
     cyan_brightness: 100,
     suppression_passed: false,
     last_calibrated: null,
+    glasses_type: 'red-cyan',
   };
 
 export const saveCalibration = (cal) => write(STORAGE_KEYS.CALIBRATION, cal);

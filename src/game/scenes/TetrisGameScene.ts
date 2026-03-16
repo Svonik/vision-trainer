@@ -3,6 +3,7 @@ import { t } from '../../modules/i18n';
 import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
+import { getEyeColors } from '../../modules/glassesColors';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -62,9 +63,10 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.field = { x: fx, y: fy, w: fw, h: fh };
 
     // Dichoptic color assignment
+    const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
     const isLeftActive = this.settings.eyeConfig === 'platform_left';
-    this.activeColor = isLeftActive ? COLORS.RED : COLORS.CYAN;
-    this.placedColor = isLeftActive ? COLORS.CYAN : COLORS.RED;
+    this.activeColor = isLeftActive ? eyeColors.leftColor : eyeColors.rightColor;
+    this.placedColor = isLeftActive ? eyeColors.rightColor : eyeColors.leftColor;
     this.activeAlpha = (isLeftActive ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.placedAlpha = (isLeftActive ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
