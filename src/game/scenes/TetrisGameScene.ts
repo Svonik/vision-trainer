@@ -96,6 +96,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.piecesPlaced = 0;
     this.fallAccum = 0;
     this.fallInterval = FALL_INTERVALS[this.settings.speed] || 600;
+    this.level = 1;
     this.gameOver = false;
     this.isPaused = true; // freeze during countdown
     this.gameEnded = false;
@@ -168,7 +169,7 @@ export default class TetrisGameScene extends Phaser.Scene {
   }
 
   scoreLabel() {
-    return `${t('tetris.linesCleared')}: ${this.linesCleared}`;
+    return `${t('tetris.linesCleared')}: ${this.linesCleared} | Ур. ${this.level}`;
   }
 
   randomPieceKey() {
@@ -290,6 +291,25 @@ export default class TetrisGameScene extends Phaser.Scene {
     SynthSounds.score();
     if (count === 4) {
       GameVFX.screenShake(this, 4, 150);
+    }
+
+    // Level up every 10 lines
+    if (this.linesCleared >= this.level * 10) {
+      this.level++;
+      this.fallInterval = Math.max(100, this.fallInterval * 0.85);
+      this.scoreText.setText(this.scoreLabel());
+      SynthSounds.score();
+      const cx = this.field.x + this.field.w / 2;
+      const cy = this.field.y + this.field.h / 2;
+      const flashText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+        fontSize: '32px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif', fontStyle: 'bold',
+      }).setOrigin(0.5).setAlpha(0);
+      this.tweens.add({
+        targets: flashText,
+        alpha: 1, scaleX: 1.2, scaleY: 1.2,
+        duration: 200, yoyo: true, hold: 1000,
+        onComplete: () => flashText.destroy(),
+      });
     }
   }
 
@@ -602,6 +622,7 @@ export default class TetrisGameScene extends Phaser.Scene {
       contrast_right: this.settings.contrastRight,
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
+      level: this.level,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

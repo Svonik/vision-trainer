@@ -74,6 +74,9 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.pauseOverlay = null;
     this.gameOver = false;
     this.gameEnded = false;
+    this.level = 1;
+    this.pipesForNextLevel = 5;
+    this.gapSize = fh * GAP_RATIO;
 
     // Background (BLACK — both eyes)
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK);
@@ -103,7 +106,7 @@ export default class FlappyGameScene extends Phaser.Scene {
     GameVisuals.pulse(this, this.birdVisual, 0.92, 1.08, 600);
 
     // Score text (GRAY — both eyes)
-    this.scoreText = this.add.text(fx + fw / 2, fy + 10, '0', {
+    this.scoreText = this.add.text(fx + fw / 2, fy + 10, '0  Ур.1', {
       fontSize: '18px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace',
     }).setOrigin(0.5, 0);
 
@@ -238,9 +241,29 @@ export default class FlappyGameScene extends Phaser.Scene {
       if (!updatedPipe.scored && updatedPipe.x + pipeWidth / 2 < this.bird.x - this.bird.radius) {
         this.pipes[i] = { ...updatedPipe, scored: true };
         this.score++;
-        this.scoreText.setText(String(this.score));
+        this.scoreText.setText(`${this.score}  Ур.${this.level}`);
         SynthSounds.score();
         GameVFX.scorePopup(this, this.bird.x, this.bird.y);
+
+        // Level up every pipesForNextLevel pipes
+        if (this.score >= this.pipesForNextLevel) {
+          this.level++;
+          this.pipesForNextLevel += 5;
+          this.scrollSpeed *= 1.10;
+          this.gapSize = Math.max(this.field.h * 0.25, this.gapSize * 0.97);
+          this.scoreText.setText(`${this.score}  Ур.${this.level}`);
+          const cx = this.field.x + this.field.w / 2;
+          const cy = this.field.y + this.field.h / 2;
+          const flashText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+            fontSize: '32px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif', fontStyle: 'bold',
+          }).setOrigin(0.5).setAlpha(0);
+          this.tweens.add({
+            targets: flashText,
+            alpha: 1, scaleX: 1.2, scaleY: 1.2,
+            duration: 200, yoyo: true, hold: 1000,
+            onComplete: () => flashText.destroy(),
+          });
+        }
       }
 
       // Collision detection (AABB vs circle)
@@ -282,7 +305,7 @@ export default class FlappyGameScene extends Phaser.Scene {
   spawnPipe() {
     const { x: fx, y: fy, w: fw, h: fh } = this.field;
     const pipeWidth = fw * 0.10;
-    const gapHeight = fh * GAP_RATIO;
+    const gapHeight = this.gapSize !== undefined ? this.gapSize : fh * GAP_RATIO;
     const groundLineThickness = 6;
     const usableFh = fh - groundLineThickness;
 
@@ -424,6 +447,7 @@ export default class FlappyGameScene extends Phaser.Scene {
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
       completed: false,
+      level: this.level,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

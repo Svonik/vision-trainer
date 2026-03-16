@@ -85,6 +85,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.gameEnded = false;
     this.invulnerableUntilMs = 0;
     this.lastFireMs = -FIRE_COOLDOWN_MS;
+    this.level = 1;
 
     // Ship physics state (manual, no arcade physics — ship wraps)
     this.shipX = fx + fw / 2;
@@ -121,6 +122,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
 
     // Score text (GRAY — both eyes)
     this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '0', 1);
+
+    // Wave text (GRAY — both eyes)
+    this.waveText = GameVisuals.scoreText(this, fx + 10, fy + 28, 'Волна 1', 0);
 
     // Timer (GRAY — both eyes)
     this.timerText = GameVisuals.scoreText(this, ccx, fy + 10, '00:00', 0.5);
@@ -335,9 +339,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     // Remove inactive asteroids
     this.asteroids = this.asteroids.filter((a) => a.active);
 
-    // Win check
+    // Wave clear check — start next wave instead of ending
     if (this.asteroids.length === 0 && !this.gameOver) {
-      this.endGame(true);
+      this.nextWave();
       return;
     }
 
@@ -531,6 +535,41 @@ export default class AsteroidGameScene extends Phaser.Scene {
     });
   }
 
+  nextWave() {
+    this.level++;
+    this.speedMultiplier *= 1.15;
+
+    // Reset ship to center
+    this.shipX = this.field.x + this.field.w / 2;
+    this.shipY = this.field.y + this.field.h / 2;
+    this.shipVX = 0;
+    this.shipVY = 0;
+
+    // Update wave display
+    if (this.waveText) this.waveText.setText(`Волна ${this.level}`);
+
+    // Spawn new wave of large asteroids (capped at 10)
+    const count = Math.min(INITIAL_ASTEROID_COUNT + this.level - 1, 10);
+    for (let i = 0; i < count; i++) {
+      this.spawnAsteroid('large', null, null);
+    }
+
+    SynthSounds.score();
+
+    // Wave flash
+    const cx = this.field.x + this.field.w / 2;
+    const cy = this.field.y + this.field.h / 2;
+    const flashText = this.add.text(cx, cy, `Волна ${this.level}!`, {
+      fontSize: '32px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif', fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0);
+    this.tweens.add({
+      targets: flashText,
+      alpha: 1, scaleX: 1.2, scaleY: 1.2,
+      duration: 200, yoyo: true, hold: 1000,
+      onComplete: () => flashText.destroy(),
+    });
+  }
+
   loseLife(time) {
     this.lives--;
     if (this.lives >= 0 && this.lives < this.livesIcons.length) {
@@ -623,6 +662,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
       eye_config: this.settings.eyeConfig,
       lives_remaining: this.lives,
       completed: won,
+      level: this.level,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

@@ -93,7 +93,9 @@ export default class SnakeGameScene extends Phaser.Scene {
 
     // Score (both eyes — gray)
     this.score = 0;
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `${t('game.score')}: 0`, 1);
+    this.level = 1;
+    this.nextLevelAt = 5;
+    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `${t('game.score')}: 0 | Ур.1`, 1);
 
     // Timer (both eyes — gray)
     this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
@@ -273,11 +275,30 @@ export default class SnakeGameScene extends Phaser.Scene {
     if (this.food && newHead.x === this.food.x && newHead.y === this.food.y) {
       ate = true;
       this.score++;
-      this.scoreText.setText(`${t('game.score')}: ${this.score}`);
+      this.scoreText.setText(`${t('game.score')}: ${this.score} | Ур.${this.level}`);
       const { x: foodPx, y: foodPy } = this.cellToPixel(this.food.x, this.food.y);
       SynthSounds.score();
       GameVFX.particleBurst(this, foodPx, foodPy, this.ballColor);
       GameVFX.scorePopup(this, foodPx, foodPy);
+
+      // Level up every nextLevelAt food
+      if (this.score >= this.nextLevelAt) {
+        this.level++;
+        this.nextLevelAt += 5;
+        this.moveInterval = Math.max(40, this.moveInterval * 0.85);
+        this.scoreText.setText(`${t('game.score')}: ${this.score} | Ур.${this.level}`);
+        const cx = this.field.x + this.field.w / 2;
+        const cy = this.field.y + this.field.h / 2;
+        const flashText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
+          fontSize: '32px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif', fontStyle: 'bold',
+        }).setOrigin(0.5).setAlpha(0);
+        this.tweens.add({
+          targets: flashText,
+          alpha: 1, scaleX: 1.2, scaleY: 1.2,
+          duration: 200, yoyo: true, hold: 1000,
+          onComplete: () => flashText.destroy(),
+        });
+      }
     }
 
     const newSnake = ate
@@ -445,6 +466,7 @@ export default class SnakeGameScene extends Phaser.Scene {
       contrast_right: this.settings.contrastRight,
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
+      level: this.level,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });
