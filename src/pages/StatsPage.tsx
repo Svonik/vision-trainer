@@ -69,7 +69,7 @@ export function StatsPage() {
             <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
                 <div className="p-6 space-y-6">
                     <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
-                        {game ? `Результаты: ${t(game.titleKey)}` : t('stats.title')}
+                        {game ? `${t('stats.resultsFor')}${t(game.titleKey)}` : t('stats.title')}
                     </h2>
 
                     {result ? (
@@ -79,7 +79,7 @@ export function StatsPage() {
                                 <CountUp target={result.caught} />
                                 <p className="text-[var(--text-secondary)] text-base mt-1 flex items-center justify-center gap-1">
                                     <Star className="w-4 h-4 text-[var(--warning)]" />
-                                    Ты собрал {Math.min(result.caught, GAME.TARGET_CATCHES)} звёзд!
+                                    {t('stats.collectedStars')} {Math.min(result.caught, GAME.TARGET_CATCHES)} {t('stats.starsLabel')}
                                 </p>
                             </div>
 
@@ -109,7 +109,7 @@ export function StatsPage() {
                             {/* Settings footer */}
                             <div className="flex justify-center gap-4 text-sm text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]/50 bg-[var(--surface)]/50">
                                 <span>{t('stats.speed')}: {speedLabel}</span>
-                                <span>Контраст: {result.contrast_left}% / {result.contrast_right}%</span>
+                                <span>{t('stats.contrast')}: {result.contrast_left}% / {result.contrast_right}%</span>
                             </div>
                         </div>
                     ) : (

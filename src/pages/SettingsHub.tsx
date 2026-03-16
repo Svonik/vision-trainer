@@ -125,10 +125,10 @@ export function SettingsHub() {
             {/* Section 1: Calibration */}
             <section
                 className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 space-y-4"
-                aria-label="Калибровка"
+                aria-label={t('settings.calibrationSection')}
             >
                 <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider">
-                    Калибровка
+                    {t('settings.calibrationSection')}
                 </h2>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -138,7 +138,7 @@ export function SettingsHub() {
                             <XCircle className="w-5 h-5 text-[var(--warning)]" />
                         )}
                         <span className="text-[var(--text)] text-base">
-                            {passed ? t('settings.calibrationStatus') : 'Не пройдена'}
+                            {passed ? t('settings.calibrationStatus') : t('settings.calibrationNotPassed')}
                         </span>
                     </div>
                     <button
@@ -201,7 +201,7 @@ export function SettingsHub() {
                 <div className="space-y-3">
                     <div className="space-y-2">
                         <div className="flex justify-between text-base">
-                            <span className="text-[var(--text-secondary)]">Контраст Л</span>
+                            <span className="text-[var(--text-secondary)]">{t('settings.contrastLeft')}</span>
                             <span className="text-[var(--text-secondary)]">{defaultContrast.left}%</span>
                         </div>
                         <Slider
@@ -215,7 +215,7 @@ export function SettingsHub() {
                     </div>
                     <div className="space-y-2">
                         <div className="flex justify-between text-base">
-                            <span className="text-[var(--text-secondary)]">Контраст П</span>
+                            <span className="text-[var(--text-secondary)]">{t('settings.contrastRight')}</span>
                             <span className="text-[var(--text-secondary)]">{defaultContrast.right}%</span>
                         </div>
                         <Slider
@@ -280,7 +280,7 @@ export function SettingsHub() {
                     onClick={handleSaveDefaults}
                     className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                 >
-                    Сохранить настройки
+                    {t('settings.saveDefaults')}
                 </button>
             </section>
         </div>

@@ -25,17 +25,17 @@ export function ProgressPage() {
             <div className="flex flex-col items-center justify-center min-h-[70vh] p-6 text-center space-y-6">
                 <Star className="w-16 h-16 text-[var(--warning)]" />
                 <h2 className="font-[var(--font-display)] text-2xl text-[var(--text)]">
-                    Сыграй первую игру!
+                    {t('progress.playFirst')}
                 </h2>
                 <p className="text-[var(--text-secondary)] text-base max-w-xs">
-                    Здесь будет твоя история тренировок и прогресс.
+                    {t('progress.historyHint')}
                 </p>
                 <button
                     onClick={() => navigate('/games')}
                     className="bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 px-8 font-semibold btn-press font-[var(--font-display)]"
                 >
                     <Gamepad2 className="inline w-5 h-5 mr-2" />
-                    Выбрать игру
+                    {t('progress.chooseGame')}
                 </button>
             </div>
         );
@@ -113,7 +113,7 @@ export function ProgressPage() {
             <div className="flex items-center justify-center gap-1 pt-2 pb-4">
                 <TrendingUp className="w-4 h-4 text-[var(--text-secondary)]" />
                 <p className="text-[var(--text-secondary)] text-sm">
-                    {totalSessions} {totalSessions === 1 ? 'тренировка' : totalSessions < 5 ? 'тренировки' : 'тренировок'}
+                    {totalSessions} {totalSessions === 1 ? t('progress.sessionsOne') : totalSessions < 5 ? t('progress.sessionsFew') : t('progress.sessionsMany')}
                 </p>
             </div>
         </div>

@@ -46,7 +46,7 @@ export function SettingsPage() {
 
                 <div className="p-6 space-y-8">
                     <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
-                        {game ? `Настройки: ${t(game.titleKey)}` : 'Настройки игры'}
+                        {game ? `${t('settingsPage.title')}${t(game.titleKey)}` : t('settingsPage.titleDefault')}
                     </h2>
 
                     {/* Contrast section */}
@@ -68,7 +68,7 @@ export function SettingsPage() {
                                         boxShadow: '0 0 12px rgba(255,107,138,0.4)',
                                     }}
                                 />
-                                <span className="text-sm text-[var(--text-secondary)]">Л: {settings.contrastLeft}%</span>
+                                <span className="text-sm text-[var(--text-secondary)]">{t('settingsPage.eyeLeft')}{settings.contrastLeft}%</span>
                             </div>
                             <div className="text-center">
                                 <div
@@ -78,7 +78,7 @@ export function SettingsPage() {
                                         boxShadow: '0 0 12px rgba(107,223,255,0.4)',
                                     }}
                                 />
-                                <span className="text-sm text-[var(--text-secondary)]">П: {settings.contrastRight}%</span>
+                                <span className="text-sm text-[var(--text-secondary)]">{t('settingsPage.eyeRight')}{settings.contrastRight}%</span>
                             </div>
                         </div>
 

@@ -40,10 +40,10 @@ export function GlassesTypeStep({ glassesType, onSelect }: Props) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6">
             <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--text)] text-center">
-                Настройка очков
+                {t('calibration.glassesTitle')}
             </h2>
             <p className="text-[var(--text-secondary)] text-base">
-                С какой стороны красная линза?
+                {t('calibration.redLensQuestion')}
             </p>
 
             <div className="grid grid-cols-2 gap-4 w-full max-w-md">
@@ -56,8 +56,8 @@ export function GlassesTypeStep({ glassesType, onSelect }: Props) {
                             : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]'
                     }`}
                 >
-                    <p className="font-[var(--font-display)] text-base font-semibold text-[var(--text)] mb-1">Красная слева</p>
-                    <p className="text-[var(--text-secondary)] text-sm mb-3">(Циановая справа)</p>
+                    <p className="font-[var(--font-display)] text-base font-semibold text-[var(--text)] mb-1">{t('calibration.redLeft')}</p>
+                    <p className="text-[var(--text-secondary)] text-sm mb-3">{t('calibration.cyanRight')}</p>
                     <GlassesIllustration
                         leftColor="rgba(220, 40, 40, 0.5)"
                         rightColor="rgba(6, 195, 220, 0.5)"
@@ -73,8 +73,8 @@ export function GlassesTypeStep({ glassesType, onSelect }: Props) {
                             : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]'
                     }`}
                 >
-                    <p className="font-[var(--font-display)] text-base font-semibold text-[var(--text)] mb-1">Красная справа</p>
-                    <p className="text-[var(--text-secondary)] text-sm mb-3">(Циановая слева)</p>
+                    <p className="font-[var(--font-display)] text-base font-semibold text-[var(--text)] mb-1">{t('calibration.redRight')}</p>
+                    <p className="text-[var(--text-secondary)] text-sm mb-3">{t('calibration.cyanLeft')}</p>
                     <GlassesIllustration
                         leftColor="rgba(6, 195, 220, 0.5)"
                         rightColor="rgba(220, 40, 40, 0.5)"
