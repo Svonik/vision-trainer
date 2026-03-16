@@ -38,7 +38,9 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
                     </p>
                     <div className="flex flex-col gap-3 pt-2">
                         <button
+                            autoFocus
                             onClick={onExtend}
+                            onKeyDown={e => e.key === 'Escape' && onFinish()}
                             className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                         >
                             {t('safety.extend')}
