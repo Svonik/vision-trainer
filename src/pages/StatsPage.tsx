@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Star, Hourglass } from 'lucide-react';
 import { getSessions } from '../modules/storage';
 import { SPEEDS, GAME } from '../modules/constants';
 import { t } from '../modules/i18n';
@@ -20,14 +19,18 @@ function CountUp({ target }: { target: number }) {
             return () => clearTimeout(timer);
         }
     }, [count, target]);
-    return <span className="text-5xl font-bold text-white">{count}</span>;
+    return <span className="font-[var(--font-display)] text-5xl font-semibold text-[var(--text)]">{count}</span>;
 }
 
 function ProgressRing({ percent }: { percent: number }) {
     const radius = 40;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (percent / 100) * circumference;
-    const color = percent > 70 ? '#22c55e' : percent > 40 ? '#eab308' : '#ef4444';
+    const color = percent > 70
+        ? 'var(--success)'
+        : percent > 40
+            ? 'var(--warning)'
+            : 'var(--accent-secondary)';
     return (
         <svg width="100" height="100" className="mx-auto">
             <circle cx="50" cy="50" r={radius} fill="none" stroke="#374151" strokeWidth="8" />
@@ -36,7 +39,7 @@ function ProgressRing({ percent }: { percent: number }) {
                 strokeDasharray={circumference} strokeDashoffset={offset}
                 transform="rotate(-90 50 50)"
                 className="transition-all duration-1000" />
-            <text x="50" y="50" textAnchor="middle" dy="6" fill="white" fontSize="18" fontWeight="bold">
+            <text x="50" y="50" textAnchor="middle" dy="6" fill="var(--text)" fontSize="18" fontWeight="bold">
                 {percent}%
             </text>
         </svg>
@@ -48,7 +51,7 @@ function DeltaIndicator({ current, previous }: { current: number; previous: numb
     if (delta === 0) return null;
     const isUp = delta > 0;
     return (
-        <span className={`text-xs ml-2 ${isUp ? 'text-green-400' : 'text-red-400'}`}>
+        <span className={`text-xs ml-2 ${isUp ? 'text-[var(--success)]' : 'text-[var(--accent-secondary)]'}`}>
             {isUp ? '↑' : '↓'}{Math.abs(delta)}%
         </span>
     );
@@ -76,26 +79,28 @@ export function StatsPage() {
     const prevSession = sessions.length > 1 ? sessions[sessions.length - 2] : null;
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
-            <Card className="w-full max-w-md bg-gray-900 border-gray-700 text-white">
-                <CardHeader>
-                    <CardTitle className="text-xl text-center text-white">
+        <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
+                <div className="p-6 space-y-6">
+                    <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
                         {t('stats.title')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                    </h2>
+
                     {result ? (
                         <div className="space-y-6">
-                            {/* Caught - big number */}
+                            {/* Caught - big number with star */}
                             <div className="text-center">
                                 <CountUp target={result.caught} />
-                                <p className="text-gray-400 text-sm mt-1">{t('stats.caught')} из {GAME.TARGET_CATCHES}</p>
+                                <p className="text-[var(--text-secondary)] text-sm mt-1 flex items-center justify-center gap-1">
+                                    <Star className="w-4 h-4 text-[var(--warning)]" />
+                                    Ты собрал {result.caught} звёзд! из {GAME.TARGET_CATCHES}
+                                </p>
                             </div>
 
                             {/* Hit rate ring */}
                             <div className="text-center">
                                 <ProgressRing percent={hitRatePercent} />
-                                <p className="text-gray-400 text-sm mt-2">
+                                <p className="text-[var(--text-secondary)] text-sm mt-2">
                                     {t('stats.hitRate')}
                                     {prevSession && (
                                         <DeltaIndicator
@@ -108,44 +113,50 @@ export function StatsPage() {
 
                             {/* Duration */}
                             <div className="text-center">
-                                <p className="text-2xl font-mono text-white">{formatDuration(result.duration_s)}</p>
-                                <p className="text-gray-400 text-sm">{t('stats.sessionTime')}</p>
+                                <p className="font-[var(--font-display)] text-2xl text-[var(--text)] flex items-center justify-center gap-2">
+                                    <Hourglass className="w-5 h-5 text-[var(--text-secondary)]" />
+                                    {formatDuration(result.duration_s)}
+                                </p>
+                                <p className="text-[var(--text-secondary)] text-sm">{t('stats.sessionTime')}</p>
                             </div>
 
                             {/* Settings footer */}
-                            <div className="flex justify-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-800">
+                            <div className="flex justify-center gap-4 text-xs text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]/50 bg-[var(--surface)]/50">
                                 <span>{t('stats.speed')}: {speedLabel}</span>
                                 <span>Контраст: {result.contrast_left}% / {result.contrast_right}%</span>
                             </div>
                         </div>
                     ) : (
-                        <p className="text-center text-gray-500">Нет данных</p>
+                        <div className="text-center py-8 space-y-3">
+                            <Star className="w-12 h-12 text-[var(--warning)] mx-auto" />
+                            <p className="font-[var(--font-display)] text-xl text-[var(--text)]">
+                                {t('stats.firstSession')}
+                            </p>
+                        </div>
                     )}
 
                     <div className="flex flex-col gap-3 pt-2">
-                        <Button
+                        <button
                             onClick={() => navigate(`/games/${gameId}/settings`)}
-                            className="w-full bg-white text-black hover:bg-gray-200 font-semibold"
+                            className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                         >
                             {t('stats.playAgain')}
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             onClick={() => navigate(`/games/${gameId}/settings`)}
-                            variant="outline"
-                            className="w-full border-gray-600 text-white hover:bg-gray-800"
+                            className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
                         >
                             {t('stats.changeSettings')}
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             onClick={() => navigate('/games')}
-                            variant="outline"
-                            className="w-full border-gray-600 text-gray-400 hover:bg-gray-800"
+                            className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 btn-press hover:bg-[var(--surface)]"
                         >
                             {t('stats.exit')}
-                        </Button>
+                        </button>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }
