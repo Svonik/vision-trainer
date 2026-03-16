@@ -134,10 +134,10 @@ const ILLUSTRATION_CONFIGS: Record<string, IllustrationConfig> = {
 
 function GameIllustration({ gameId }: { gameId: string }) {
     const config = ILLUSTRATION_CONFIGS[gameId];
-    if (!config) return <div className="relative h-28 bg-[var(--surface)] rounded-t-3xl overflow-hidden" />;
+    if (!config) return <div className="relative h-16 sm:h-28 bg-[var(--surface)] rounded-t-3xl overflow-hidden" />;
 
     return (
-        <div className={`relative h-28 bg-[var(--surface)] rounded-t-3xl overflow-hidden ${config.containerClass}`}>
+        <div className={`relative h-16 sm:h-28 bg-[var(--surface)] rounded-t-3xl overflow-hidden ${config.containerClass}`}>
             {config.elements.map((el, i) => (
                 <div key={i} className={el.className} style={el.style} />
             ))}
@@ -163,7 +163,7 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
             onClick={() => navigate(game.route)}
         >
             <GameIllustration gameId={game.id} />
-            <div className="p-4 space-y-3">
+            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                 <div>
                     <h2 className="font-[var(--font-display)] text-lg font-semibold text-[var(--text)]">
                         {t(game.titleKey)}
@@ -179,12 +179,12 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                         )}
                     </div>
                 </div>
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="hidden sm:block text-sm text-[var(--text-secondary)]">
                     {t(game.descriptionKey)}
                 </p>
                 <button
                     onClick={(e) => { e.stopPropagation(); navigate(game.route); }}
-                    className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 font-semibold btn-press"
+                    className="w-full sm:w-auto bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 px-6 font-semibold btn-press"
                 >
                     {t('gameSelect.play')}
                 </button>

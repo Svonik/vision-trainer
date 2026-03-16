@@ -5,6 +5,13 @@
   --font-display: 'Fredoka', system-ui, sans-serif;
 }
 
+html {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
 :root {
   --bg: #12101a;
   --surface: #1e1a2e;
@@ -55,6 +62,12 @@
 
 .spring-enter {
   animation: fadeSlideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (max-width: 359px) {
+  :root {
+    --tab-label-display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

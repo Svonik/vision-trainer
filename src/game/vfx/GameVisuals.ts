@@ -146,7 +146,8 @@ export const GameVisuals = {
    * All games use the same layout — no overlapping, no custom positioning.
    */
   createHUD: (scene: Phaser.Scene, field: { x: number; y: number; w: number; h: number }) => {
-    const font = { fontSize: '14px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace' };
+    const fontSize = `${Math.max(12, Math.round(field.w * 0.022))}px`;
+    const font = { fontSize, color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace' };
     const y = field.y + 8;
 
     const levelText = scene.add.text(field.x + 8, y, 'Ур.1', font).setOrigin(0, 0);

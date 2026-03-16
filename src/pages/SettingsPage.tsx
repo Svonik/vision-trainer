@@ -85,7 +85,7 @@ export function SettingsPage() {
                         <div className="space-y-3">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.leftHex }}>{`Левый глаз (${eyeColors.leftLabel})`}</span>
+                                    <span style={{ color: eyeColors.leftHex }}>{`${t('settings.leftEyeLabel')} (${eyeColors.leftLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastLeft}%</span>
                                 </div>
                                 <Slider
@@ -100,7 +100,7 @@ export function SettingsPage() {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.rightHex }}>{`Правый глаз (${eyeColors.rightLabel})`}</span>
+                                    <span style={{ color: eyeColors.rightHex }}>{`${t('settings.rightEyeLabel')} (${eyeColors.rightLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastRight}%</span>
                                 </div>
                                 <Slider
@@ -123,7 +123,7 @@ export function SettingsPage() {
                                 <button
                                     key={key}
                                     onClick={() => updateSettings({ speed: key })}
-                                    className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
+                                    className={`min-h-[48px] py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                         settings.speed === key
                                             ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                             : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -141,7 +141,7 @@ export function SettingsPage() {
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => updateSettings({ eyeConfig: 'platform_left' })}
-                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
+                                className={`min-h-[48px] py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     settings.eyeConfig === 'platform_left'
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                         : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -151,7 +151,7 @@ export function SettingsPage() {
                             </button>
                             <button
                                 onClick={() => updateSettings({ eyeConfig: 'platform_right' })}
-                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
+                                className={`min-h-[48px] py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     settings.eyeConfig === 'platform_right'
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
                                         : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
@@ -173,7 +173,7 @@ export function SettingsPage() {
                     {/* Change game button */}
                     <button
                         onClick={() => navigate('/games')}
-                        className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)] flex items-center justify-center gap-2"
+                        className="w-full min-h-[48px] border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)] flex items-center justify-center gap-2"
                     >
                         <Grid className="w-4 h-4" />
                         {t('nav.otherGame')}

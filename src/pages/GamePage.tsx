@@ -4,6 +4,7 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { LandscapePrompt } from '../components/LandscapePrompt';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
 import { formatTime } from '@/lib/formatTime';
@@ -62,7 +63,7 @@ export function GamePage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
-            <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
+            <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
                     onClick={() => navigate(-1)}
                     className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-base transition-colors"
@@ -86,7 +87,7 @@ export function GamePage() {
                 </div>
             </header>
 
-            <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
+            <div className="flex-1 flex items-center justify-center md:pt-10 relative z-10">
                 <PhaserGame key={instanceKey} ref={phaserRef} />
             </div>
 
@@ -97,6 +98,7 @@ export function GamePage() {
                     onFinish={() => { EventBus.emit('safety-finish'); }}
                 />
             )}
+            <LandscapePrompt />
         </div>
     );
 }

@@ -32,6 +32,7 @@ export function TabBar() {
     return (
         <nav
             className="fixed bottom-0 left-0 right-0 z-50 h-[60px] bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)]/30 flex"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             aria-label="Main navigation"
         >
             {TABS.map(({ route, labelKey, icon: Icon }) => {
@@ -48,7 +49,7 @@ export function TabBar() {
                         aria-current={active ? 'page' : undefined}
                     >
                         <Icon size={22} />
-                        <span className="text-xs leading-none">{t(labelKey)}</span>
+                        <span className="text-xs leading-none" style={{ display: 'var(--tab-label-display, inline)' }}>{t(labelKey)}</span>
                     </button>
                 );
             })}
