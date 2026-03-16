@@ -87,11 +87,9 @@ export default class GameScene extends Phaser.Scene {
     this.totalSpawned = 0;
     this.consecutiveHits = 0;
     this.consecutiveMisses = 0;
-    this.scoreText = GameVisuals.scoreText(this, fx + 10, fy + 10, `${t('game.score')}: 0 / ${GAME.TARGET_CATCHES}`);
 
-    // Timer display
-    this.sessionStartTime = Date.now();
-    this.timerText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '00:00', 1);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -221,11 +219,10 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    // Update timer — use safetyTimer to exclude paused time
-    const elapsed = this.safetyTimer.getElapsedMs();
-    const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-    const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-    this.timerText.setText(`${mins}:${secs}`);
+    // Update HUD
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.caught}/${GAME.TARGET_CATCHES}`);
+    }
   }
 
   spawnTarget() {
@@ -285,7 +282,7 @@ export default class GameScene extends Phaser.Scene {
     this.caught++;
     this.consecutiveHits++;
     this.consecutiveMisses = 0;
-    this.scoreText.setText(`${t('game.score')}: ${this.caught} / ${GAME.TARGET_CATCHES}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.caught}/${GAME.TARGET_CATCHES}`);
 
     // White flash (both eyes)
     const flash = this.add.circle(target.x, target.y, 20, COLORS.WHITE).setAlpha(0.8);
@@ -413,7 +410,7 @@ export default class GameScene extends Phaser.Scene {
   resetForNextLevel() {
     this.caught = 0;
     this.totalSpawned = 0;
-    this.scoreText.setText(`${t('game.score')}: 0 / ${GAME.TARGET_CATCHES}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.caught}/${GAME.TARGET_CATCHES}`);
     this.fallSpeed *= 1.15;
     // Reduce spawn interval by 10%: remove old timer and add new one with 90% delay
     if (this.spawnTimer) {

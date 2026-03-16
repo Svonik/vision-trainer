@@ -125,11 +125,8 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.livesIcons.push(icon);
     }
 
-    // Score
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${this.totalBricks}`, 1);
-
-    // Timer
-    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Launch hint
     this.launchHint = this.add.text(ccx, ccy + 60, t('breakout.launchHint'), {
@@ -284,12 +281,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
       }
     }
 
-    // Timer update
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.bricksDestroyed}/${this.totalBricks}`);
     }
   }
 
@@ -334,7 +328,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     if (brick._visual) { brick._visual.destroy(); brick._visual = null; }
     brick.destroy();
     this.bricksDestroyed++;
-    this.scoreText.setText(`${this.bricksDestroyed} / ${this.totalBricks}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.bricksDestroyed}/${this.totalBricks}`);
 
     SynthSounds.hit();
     GameVFX.particleBurst(this, brick.x, brick.y, 0x808080, 6);
@@ -480,7 +474,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
     this.totalBricks = BRICK_COLS * rows;
     this.bricksDestroyed = 0;
-    this.scoreText.setText(`0 / ${this.totalBricks}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.bricksDestroyed}/${this.totalBricks}`);
 
     // Speed up ball
     this.ballSpeed *= 1.15;

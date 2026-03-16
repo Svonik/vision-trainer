@@ -79,11 +79,8 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     const ccy = fy + fh / 2;
     GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
-    // Score text (both eyes — gray)
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${WIN_CATCHES}`, 1);
-
-    // Timer (both eyes — gray)
-    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -222,7 +219,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     // Points: small = +2, large = +1
     const points = isSmall ? 2 : 1;
     this.monstersCaught += points;
-    this.scoreText.setText(`${this.monstersCaught} / ${WIN_CATCHES}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.monstersCaught}/${WIN_CATCHES}`);
 
     SynthSounds.hit();
     GameVFX.particleBurst(this, x, y, this.ballColor, 8);
@@ -328,12 +325,9 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
       }
     }
 
-    // Timer update
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.monstersCaught}/${WIN_CATCHES}`);
     }
   }
 
@@ -409,7 +403,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
   resetForNextLevel() {
     this.monstersCaught = 0;
     this.speedTier = 0;
-    this.scoreText.setText(`0 / ${WIN_CATCHES}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.monstersCaught}/${WIN_CATCHES}`);
     this.baseSpeed *= 1.15;
     // Update all existing monsters' speed
     for (const m of this.monsters) {

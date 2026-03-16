@@ -105,13 +105,8 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.birdVisual = GameVisuals.glowCircle(this, birdX, birdStartY, birdRadius, this.birdColor, this.birdAlpha);
     GameVisuals.pulse(this, this.birdVisual, 0.92, 1.08, 600);
 
-    // Score text (GRAY — both eyes)
-    this.scoreText = this.add.text(fx + fw / 2, fy + 10, '0  Ур.1', {
-      fontSize: '18px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace',
-    }).setOrigin(0.5, 0);
-
-    // Timer text (GRAY — both eyes)
-    this.timerText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '00:00', 1);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -241,7 +236,7 @@ export default class FlappyGameScene extends Phaser.Scene {
       if (!updatedPipe.scored && updatedPipe.x + pipeWidth / 2 < this.bird.x - this.bird.radius) {
         this.pipes[i] = { ...updatedPipe, scored: true };
         this.score++;
-        this.scoreText.setText(`${this.score}  Ур.${this.level}`);
+        if (this.hud) this.hud.scoreText.setText(`★ ${this.score}`);
         SynthSounds.score();
         GameVFX.scorePopup(this, this.bird.x, this.bird.y);
 
@@ -251,7 +246,7 @@ export default class FlappyGameScene extends Phaser.Scene {
           this.pipesForNextLevel += 5;
           this.scrollSpeed *= 1.10;
           this.gapSize = Math.max(this.field.h * 0.25, this.gapSize * 0.97);
-          this.scoreText.setText(`${this.score}  Ур.${this.level}`);
+          if (this.hud) this.hud.levelText.setText(`Ур.${this.level}`);
           const cx = this.field.x + this.field.w / 2;
           const cy = this.field.y + this.field.h / 2;
           const flashText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
@@ -287,12 +282,9 @@ export default class FlappyGameScene extends Phaser.Scene {
       this.pipeGraphics.splice(idx, 1);
     }
 
-    // Timer display
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.score}`);
     }
   }
 

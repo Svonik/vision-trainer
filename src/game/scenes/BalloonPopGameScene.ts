@@ -71,13 +71,12 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     const ccy = fy + fh / 2;
     GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
-    // Score text
+    // Score
     this.popped = 0;
     this.totalBalloons = 0;
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${WIN_COUNT}`, 1);
 
-    // Timer text
-    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -235,7 +234,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     GameVFX.scorePopup(this, x, y);
 
     this.popped++;
-    this.scoreText.setText(`${this.popped} / ${WIN_COUNT}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.popped}/${WIN_COUNT}`);
 
     if (this.popped >= WIN_COUNT) {
       this.nextLevel();
@@ -298,11 +297,10 @@ export default class BalloonPopGameScene extends Phaser.Scene {
       this.spawnBalloon();
     }
 
-    // Timer display
-    const elapsed = this.safetyTimer.getElapsedMs();
-    const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-    const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-    this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.popped}/${WIN_COUNT}`);
+    }
   }
 
   togglePause() {
@@ -382,7 +380,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
 
   resetForNextLevel() {
     this.popped = 0;
-    this.scoreText.setText(`0 / ${WIN_COUNT}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.popped}/${WIN_COUNT}`);
     this.balloonLifespan = Math.max(500, Math.round(this.balloonLifespan * 0.85));
   }
 

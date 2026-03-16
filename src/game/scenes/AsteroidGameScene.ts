@@ -120,14 +120,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
       this.livesIcons.push(icon);
     }
 
-    // Score text (GRAY — both eyes)
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, '0', 1);
-
-    // Wave text (GRAY — both eyes)
-    this.waveText = GameVisuals.scoreText(this, fx + 10, fy + 28, 'Волна 1', 0);
-
-    // Timer (GRAY — both eyes)
-    this.timerText = GameVisuals.scoreText(this, ccx, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -350,12 +344,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.renderBullets();
     this.renderAsteroids();
 
-    // Timer display
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.asteroidsDestroyed}`);
     }
   }
 
@@ -503,7 +494,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
   hitAsteroid(asteroid) {
     asteroid.active = false;
     this.asteroidsDestroyed++;
-    this.scoreText.setText(String(this.asteroidsDestroyed));
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.asteroidsDestroyed}`);
 
     SynthSounds.hit();
     GameVFX.particleBurst(this, asteroid.x, asteroid.y, this.ballColor, 10);
@@ -545,8 +536,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.shipVX = 0;
     this.shipVY = 0;
 
-    // Update wave display
-    if (this.waveText) this.waveText.setText(`Волна ${this.level}`);
+    // Update HUD level
+    if (this.hud) this.hud.levelText.setText(`Ур.${this.level}`);
 
     // Spawn new wave of large asteroids (capped at 10)
     const count = Math.min(INITIAL_ASTEROID_COUNT + this.level - 1, 10);

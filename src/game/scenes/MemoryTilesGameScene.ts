@@ -85,11 +85,10 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     // Score / moves
     this.pairsMatched = 0;
     this.moves = 0;
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${this.totalPairs}`, 1);
-    this.movesText = GameVisuals.scoreText(this, fx + 10, fy + 10, 'Ходы: 0', 0);
+    this.movesText = GameVisuals.scoreText(this, fx + 10, fy + 28, 'Ходы: 0', 0);
 
-    // Timer
-    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -356,7 +355,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       // Match!
       SynthSounds.score();
       this.pairsMatched++;
-      this.scoreText.setText(`${this.pairsMatched} / ${this.totalPairs}`);
+      if (this.hud) this.hud.scoreText.setText(`★ ${this.pairsMatched}/${this.totalPairs}`);
 
       // White flash on both tiles, then remove
       this.time.delayedCall(120, () => {
@@ -411,11 +410,10 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       return;
     }
 
-    // Timer display
-    const elapsed = this.safetyTimer.getElapsedMs();
-    const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-    const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-    if (this.timerText) this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.pairsMatched}/${this.totalPairs}`);
+    }
   }
 
   togglePause() {
@@ -509,7 +507,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     this.totalPairs = (this.cols * this.rows) / 2;
     this.pairsMatched = 0;
     this.flippedTiles = [];
-    this.scoreText.setText(`0 / ${this.totalPairs}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.pairsMatched}/${this.totalPairs}`);
 
     // Rebuild tile data and grid
     this.tileData = this.buildTileData();

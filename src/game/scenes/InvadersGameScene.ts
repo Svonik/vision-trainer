@@ -153,11 +153,8 @@ export default class InvadersGameScene extends Phaser.Scene {
       this.livesIcons.push(icon);
     }
 
-    // Score text (GRAY — both eyes)
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `0 / ${TOTAL_ALIENS}`, 1);
-
-    // Timer (GRAY — both eyes)
-    this.timerText = GameVisuals.scoreText(this, ccx, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button (GRAY)
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -300,12 +297,9 @@ export default class InvadersGameScene extends Phaser.Scene {
       }
     }
 
-    // Timer display
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.enemiesDestroyed}/${TOTAL_ALIENS}`);
     }
   }
 
@@ -423,7 +417,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     alien.destroy();
     this.aliens[index] = { body: { active: false }, notchL: null, notchR: null };
     this.enemiesDestroyed++;
-    this.scoreText.setText(`${this.enemiesDestroyed} / ${TOTAL_ALIENS}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.enemiesDestroyed}/${TOTAL_ALIENS}`);
 
     SynthSounds.hit();
     GameVFX.particleBurst(this, alien.x, alien.y, this.alienColor);
@@ -588,7 +582,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     }
 
     this.enemiesDestroyed = 0;
-    this.scoreText.setText(`0 / ${TOTAL_ALIENS}`);
+    if (this.hud) this.hud.scoreText.setText(`★ ${this.enemiesDestroyed}/${TOTAL_ALIENS}`);
 
     // Faster march interval
     this.alienStepInterval = Math.max(150, this.alienStepInterval * 0.85);

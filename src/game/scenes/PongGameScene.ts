@@ -188,8 +188,7 @@ export default class PongGameScene extends Phaser.Scene {
       fontSize: '28px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace',
     }).setOrigin(0.5, 0);
 
-    const { y: fy2, h: fh } = this.field;
-    this.timerText = GameVisuals.scoreText(this, ccx, fy2 + 10, '00:00', 0.5);
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     const pauseBtn = this.add.text(fx + 10, fy2 + fh - 20, t('game.pause'), {
       fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
@@ -424,12 +423,9 @@ export default class PongGameScene extends Phaser.Scene {
       }
     }
 
-    // Timer display
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `${this.playerScore} : ${this.aiScore}`);
     }
   }
 

@@ -107,11 +107,8 @@ export default class TetrisGameScene extends Phaser.Scene {
     GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
     GameVisuals.styledBorder(this, fx, fy, fw, fh);
 
-    // Score text (left-aligned at grid left)
-    this.scoreText = GameVisuals.scoreText(this, this.gridOriginX, fy + 10, this.scoreLabel(), 0);
-
-    // Timer text (right-aligned at grid right edge)
-    this.timerText = GameVisuals.scoreText(this, this.gridOriginX + this.cellSize * COLS, fy + 10, '00:00', 1);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Next piece label + preview area
     const previewX = this.gridOriginX + this.cellSize * COLS + 12;
@@ -287,7 +284,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     // Scoring: +1 per line, +4 bonus for tetris
     const bonus = count === 4 ? 4 : 0;
     this.linesCleared += count + bonus;
-    this.scoreText.setText(this.scoreLabel());
+    if (this.hud) this.hud.scoreText.setText(`${this.linesCleared} линий`);
     SynthSounds.score();
     if (count === 4) {
       GameVFX.screenShake(this, 4, 150);
@@ -297,7 +294,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     if (this.linesCleared >= this.level * 10) {
       this.level++;
       this.fallInterval = Math.max(100, this.fallInterval * 0.85);
-      this.scoreText.setText(this.scoreLabel());
+      if (this.hud) this.hud.scoreText.setText(`${this.linesCleared} линий`);
       SynthSounds.score();
       const cx = this.field.x + this.field.w / 2;
       const cy = this.field.y + this.field.h / 2;
@@ -549,12 +546,9 @@ export default class TetrisGameScene extends Phaser.Scene {
       }
     }
 
-    // Timer display
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `${this.linesCleared} линий`);
     }
   }
 

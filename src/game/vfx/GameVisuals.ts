@@ -140,4 +140,30 @@ export const GameVisuals = {
       fontFamily: '"JetBrains Mono", "Courier New", monospace',
     }).setOrigin(align, 0);
   },
+
+  /**
+   * Standard HUD: level (left), timer (center), score (right)
+   * All games use the same layout — no overlapping, no custom positioning.
+   */
+  createHUD: (scene: Phaser.Scene, field: { x: number; y: number; w: number; h: number }) => {
+    const font = { fontSize: '14px', color: '#808080', fontFamily: '"JetBrains Mono", "Courier New", monospace' };
+    const y = field.y + 8;
+
+    const levelText = scene.add.text(field.x + 8, y, 'Ур.1', font).setOrigin(0, 0);
+    const timerText = scene.add.text(field.x + field.w / 2, y, '00:00', font).setOrigin(0.5, 0);
+    const scoreText = scene.add.text(field.x + field.w - 8, y, '', font).setOrigin(1, 0);
+
+    return { levelText, timerText, scoreText };
+  },
+
+  /**
+   * Update all three HUD elements in one call.
+   */
+  updateHUD: (hud: { levelText: Phaser.GameObjects.Text; timerText: Phaser.GameObjects.Text; scoreText: Phaser.GameObjects.Text }, level: number, elapsedMs: number, scoreStr: string) => {
+    hud.levelText.setText(`Ур.${level}`);
+    const mins = String(Math.floor(elapsedMs / 60000)).padStart(2, '0');
+    const secs = String(Math.floor((elapsedMs % 60000) / 1000)).padStart(2, '0');
+    hud.timerText.setText(`${mins}:${secs}`);
+    hud.scoreText.setText(scoreStr);
+  },
 };

@@ -91,14 +91,13 @@ export default class SnakeGameScene extends Phaser.Scene {
     const ccy = fy + fh / 2;
     GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
-    // Score (both eyes — gray)
+    // Score
     this.score = 0;
     this.level = 1;
     this.nextLevelAt = 5;
-    this.scoreText = GameVisuals.scoreText(this, fx + fw - 10, fy + 10, `${t('game.score')}: 0 | Ур.1`, 1);
 
-    // Timer (both eyes — gray)
-    this.timerText = GameVisuals.scoreText(this, fx + fw / 2, fy + 10, '00:00', 0.5);
+    // HUD
+    this.hud = GameVisuals.createHUD(this, this.field);
 
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
@@ -228,12 +227,9 @@ export default class SnakeGameScene extends Phaser.Scene {
     if (this.foodPulseScale <= 0.8) { this.foodPulseScale = 0.8; this.foodPulseDir = 1; }
     this.renderFood();
 
-    // Timer update
-    if (this.safetyTimer) {
-      const elapsed = this.safetyTimer.getElapsedMs();
-      const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-      const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-      this.timerText.setText(`${mins}:${secs}`);
+    // HUD update
+    if (this.safetyTimer && this.hud) {
+      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.score}`);
     }
   }
 
@@ -275,7 +271,7 @@ export default class SnakeGameScene extends Phaser.Scene {
     if (this.food && newHead.x === this.food.x && newHead.y === this.food.y) {
       ate = true;
       this.score++;
-      this.scoreText.setText(`${t('game.score')}: ${this.score} | Ур.${this.level}`);
+      if (this.hud) this.hud.scoreText.setText(`★ ${this.score}`);
       const { x: foodPx, y: foodPy } = this.cellToPixel(this.food.x, this.food.y);
       SynthSounds.score();
       GameVFX.particleBurst(this, foodPx, foodPy, this.ballColor);
@@ -286,7 +282,7 @@ export default class SnakeGameScene extends Phaser.Scene {
         this.level++;
         this.nextLevelAt += 5;
         this.moveInterval = Math.max(40, this.moveInterval * 0.85);
-        this.scoreText.setText(`${t('game.score')}: ${this.score} | Ур.${this.level}`);
+        if (this.hud) this.hud.levelText.setText(`Ур.${this.level}`);
         const cx = this.field.x + this.field.w / 2;
         const cy = this.field.y + this.field.h / 2;
         const flashText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
