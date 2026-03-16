@@ -80,18 +80,24 @@ export function GamePage() {
         EventBus.on('timer-tick', handleTick);
 
         // Force-restart the scene if Phaser is already running (e.g. "Play Again")
-        // current-scene-ready only fires from create(), which doesn't re-fire on navigate
-        const game = phaserRef.current?.game;
-        if (game) {
-            const scene = game.scene.getScene(targetScene);
-            if (scene) {
-                // Scene exists and was already created — restart it to trigger create() again
-                game.scene.stop(targetScene);
+        // current-scene-ready only fires from create(), which doesn't re-fire on navigate.
+        // Use a short delay to ensure EventBus listeners above are registered first.
+        const timer = setTimeout(() => {
+            const game = phaserRef.current?.game;
+            if (!game) return;
+            const activeScenes = game.scene.getScenes(true);
+            const targetActive = activeScenes.find((s: Phaser.Scene) => s.scene.key === targetScene);
+            if (targetActive) {
+                // Scene already running — restart it (preserves instance, re-runs preload+create)
+                targetActive.scene.restart();
+            } else {
+                // Scene not active — start it (handles first-time and wrong-scene cases)
                 game.scene.start(targetScene);
             }
-        }
+        }, 50);
 
         return () => {
+            clearTimeout(timer);
             EventBus.removeListener('game-complete', handleComplete);
             EventBus.removeListener('game-exit', handleExit);
             EventBus.removeListener('safety-timer-warning', handleWarning);
