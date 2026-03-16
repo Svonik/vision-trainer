@@ -202,6 +202,7 @@ export default class PongGameScene extends Phaser.Scene {
 
   buildInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     // Mouse Y → player paddle
     this.input.on('pointermove', (pointer) => {
@@ -216,6 +217,11 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   serveBall() {
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return; // guard: don't serve during pause
 
     if (this.serveHint) {
@@ -370,6 +376,11 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return;
     if (!this.playerPaddle) return;
 

@@ -149,6 +149,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     // Input
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.input.on('pointermove', (pointer) => {
       if (!this.isPaused) {
         this.platform.x = Phaser.Math.Clamp(
@@ -200,6 +201,11 @@ export default class BreakoutGameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return;
     if (!this.platform) return;
 

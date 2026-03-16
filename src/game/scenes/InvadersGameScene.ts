@@ -167,6 +167,7 @@ export default class InvadersGameScene extends Phaser.Scene {
     // Input
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.input.on('pointermove', (pointer) => {
       if (!this.isPaused && this.ship) {
         this.ship.x = Phaser.Math.Clamp(
@@ -211,6 +212,7 @@ export default class InvadersGameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
     if (this.isPaused || this.gameOver) return;
     if (!this.ship) return;
 

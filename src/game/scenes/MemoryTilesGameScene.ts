@@ -405,6 +405,11 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
 
   update() {
     if (!this.safetyTimer) return;
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
 
     // Timer display
     const elapsed = this.safetyTimer.getElapsedMs();

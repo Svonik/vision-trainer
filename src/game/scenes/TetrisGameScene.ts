@@ -135,6 +135,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     // DAS (delayed auto shift) state
     this.das = { left: false, right: false, timer: 0, delay: 150, rate: 50, accum: 0 };
@@ -450,6 +451,11 @@ export default class TetrisGameScene extends Phaser.Scene {
 
   update(time, delta) {
     if (this.gameOver) return;
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return;
     if (!this.activePiece) return;
     if (this.flashingRows) return; // wait for flash animation

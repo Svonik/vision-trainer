@@ -139,6 +139,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
     // Input
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.input.on('pointerup', () => {
       if (!this.isPaused) this.firePlayerBullet();
     });
@@ -223,6 +224,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
   // ---- Update loop ----
 
   update(time, delta) {
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
     if (this.isPaused || this.gameOver) return;
     if (!this.shipGraphics) return;
 

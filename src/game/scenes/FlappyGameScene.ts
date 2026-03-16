@@ -122,6 +122,7 @@ export default class FlappyGameScene extends Phaser.Scene {
 
     // Input: Space / ArrowUp
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
 
     // Safety timer
@@ -155,6 +156,7 @@ export default class FlappyGameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
     if (this.isPaused || this.gameOver) return;
     if (!this.bird) return;
 

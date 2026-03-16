@@ -134,6 +134,7 @@ export default class SnakeGameScene extends Phaser.Scene {
 
     // Input
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.wasd = {
       up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
       down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
@@ -179,6 +180,7 @@ export default class SnakeGameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
     if (this.isPaused || this.isGameOver) return;
     if (!this.snake) return;
 

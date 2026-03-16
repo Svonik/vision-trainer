@@ -144,6 +144,11 @@ export default class BalloonPopGameScene extends Phaser.Scene {
   }
 
   spawnBalloon() {
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return;
     if (this.balloons.length >= MAX_BALLOONS) return;
 

@@ -274,6 +274,11 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
 
   update(time, delta) {
     if (this.isPaused || !this.monsters) return;
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
 
     const dt = delta / 1000;
     const { x: fx, y: fy, w: fw, h: fh } = this.field;

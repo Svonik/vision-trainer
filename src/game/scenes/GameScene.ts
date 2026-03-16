@@ -106,6 +106,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Input
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.input.on('pointermove', (pointer) => {
       if (!this.isPaused) {
         this.platform.x = Phaser.Math.Clamp(
@@ -176,6 +177,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return;
     if (!this.platform) return;
 
@@ -219,6 +225,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   spawnTarget() {
+    // ESC to toggle pause
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.togglePause();
+      return;
+    }
     if (this.isPaused) return;
     if (this.targets.countActive() >= GAME.MAX_OBJECTS) return;
 

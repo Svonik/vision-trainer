@@ -169,6 +169,7 @@ export default class FroggerGameScene extends Phaser.Scene {
 
     // Input — grid-based movement
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.moveReady = true;
 
     // Safety timer
@@ -209,6 +210,7 @@ export default class FroggerGameScene extends Phaser.Scene {
 
   update(time, delta) {
     // Separate isDead (collision freeze) from isInGoalAnimation (goal freeze)
+    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
     if (this.isPaused || !this.player || this.isDead || this.isInGoalAnimation) return;
 
     // Move obstacles
