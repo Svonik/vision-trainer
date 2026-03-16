@@ -30,7 +30,7 @@ export function OnboardingWizard() {
 
     const handleSuppressionPass = () => {
         save({ suppression_passed: true });
-        navigate('/games');
+        navigate('/mode-select');
     };
 
     const handleSuppressionFail = () => {
@@ -45,7 +45,7 @@ export function OnboardingWizard() {
 
     const handleAdjustComplete = () => {
         save({ suppression_passed: true });
-        navigate('/games');
+        navigate('/mode-select');
     };
 
     const currentStepIndex = STEP_ORDER.indexOf(step);
