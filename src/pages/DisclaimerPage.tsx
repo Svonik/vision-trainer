@@ -5,13 +5,21 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { acceptDisclaimer } from '@/modules/storage';
 import { t } from '@/modules/i18n';
 
-export function DisclaimerPage() {
+interface DisclaimerPageProps {
+    onComplete?: () => void;
+}
+
+export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
     const [accepted, setAccepted] = useState(false);
     const navigate = useNavigate();
 
     const handleContinue = () => {
         acceptDisclaimer();
-        navigate('/calibration');
+        if (onComplete) {
+            onComplete();
+        } else {
+            navigate('/calibration');
+        }
     };
 
     return (
