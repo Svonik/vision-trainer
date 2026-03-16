@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate } from 'react-router';
 import { Star, TrendingUp, Clock, Gamepad2 } from 'lucide-react';
 import { getSessions } from '../modules/storage';
@@ -14,6 +15,46 @@ function formatDate(iso: string): string {
         return iso;
     }
 }
+
+interface SessionRowProps {
+    session: any;
+    index: number;
+}
+
+const SessionRow = React.memo(function SessionRow({ session }: SessionRowProps) {
+    const game = session.game ? getGameById(session.game) : undefined;
+    const gameName = game ? t(game.titleKey) : (session.game ?? 'Игра');
+    const hitPct = session.hit_rate != null ? Math.round(session.hit_rate * 100) : 0;
+    const speedLabel = session.speed && SPEEDS[session.speed as keyof typeof SPEEDS]
+        ? SPEEDS[session.speed as keyof typeof SPEEDS].label
+        : session.speed ?? '—';
+
+    return (
+        <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-2xl p-4 flex items-center justify-between">
+            <div className="space-y-1">
+                <p className="text-[var(--text)] text-base font-medium truncate max-w-[180px]">
+                    {gameName}
+                </p>
+                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-2">
+                    {session.timestamp ? formatDate(session.timestamp) : '—'}
+                    <span>·</span>
+                    {speedLabel}
+                </p>
+            </div>
+            <div className="text-right space-y-1">
+                <p className="font-[var(--font-display)] text-lg text-[var(--text)]">
+                    {hitPct}%
+                </p>
+                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-1 justify-end">
+                    <Star className="w-3 h-3 text-[var(--warning)]" />
+                    {session.caught ?? 0}
+                    <Clock className="w-3 h-3 ml-1" />
+                    {session.duration_s != null ? formatDuration(session.duration_s) : '—'}
+                </p>
+            </div>
+        </div>
+    );
+});
 
 export function ProgressPage() {
     const navigate = useNavigate();
@@ -43,9 +84,9 @@ export function ProgressPage() {
 
     const totalSessions = sessions.length;
     const avgHitRate = sessions.length > 0
-        ? Math.round(sessions.reduce((sum, s) => sum + (s.hit_rate ?? 0), 0) / sessions.length * 100)
+        ? Math.round(sessions.reduce((sum: number, s: any) => sum + (s.hit_rate ?? 0), 0) / sessions.length * 100)
         : 0;
-    const totalTime = sessions.reduce((sum, s) => sum + (s.duration_s ?? 0), 0);
+    const totalTime = sessions.reduce((sum: number, s: any) => sum + (s.duration_s ?? 0), 0);
 
     return (
         <div className="p-4 space-y-4 max-w-lg mx-auto">
@@ -71,43 +112,9 @@ export function ProgressPage() {
 
             {/* Session list */}
             <div className="space-y-3">
-                {sorted.map((session, idx) => {
-                    const game = session.game ? getGameById(session.game) : undefined;
-                    const gameName = game ? t(game.titleKey) : (session.game ?? 'Игра');
-                    const hitPct = session.hit_rate != null ? Math.round(session.hit_rate * 100) : 0;
-                    const speedLabel = session.speed && SPEEDS[session.speed as keyof typeof SPEEDS]
-                        ? SPEEDS[session.speed as keyof typeof SPEEDS].label
-                        : session.speed ?? '—';
-
-                    return (
-                        <div
-                            key={idx}
-                            className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-2xl p-4 flex items-center justify-between"
-                        >
-                            <div className="space-y-1">
-                                <p className="text-[var(--text)] text-base font-medium truncate max-w-[180px]">
-                                    {gameName}
-                                </p>
-                                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-2">
-                                    {session.timestamp ? formatDate(session.timestamp) : '—'}
-                                    <span>·</span>
-                                    {speedLabel}
-                                </p>
-                            </div>
-                            <div className="text-right space-y-1">
-                                <p className="font-[var(--font-display)] text-lg text-[var(--text)]">
-                                    {hitPct}%
-                                </p>
-                                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-1 justify-end">
-                                    <Star className="w-3 h-3 text-[var(--warning)]" />
-                                    {session.caught ?? 0}
-                                    <Clock className="w-3 h-3 ml-1" />
-                                    {session.duration_s != null ? formatDuration(session.duration_s) : '—'}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
+                {sorted.map((session, idx) => (
+                    <SessionRow key={idx} session={session} index={idx} />
+                ))}
             </div>
 
             <div className="flex items-center justify-center gap-1 pt-2 pb-4">
