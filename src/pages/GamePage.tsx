@@ -22,6 +22,21 @@ const GAME_SCENE_MAP: Record<string, string> = {
     catchmonsters: 'CatchMonstersGameScene',
 };
 
+const START_EVENT_MAP: Record<string, string> = {
+    catcher: 'start-game',
+    breakout: 'start-breakout-game',
+    tetris: 'start-tetris-game',
+    invaders: 'start-invaders-game',
+    pong: 'start-pong-game',
+    snake: 'start-snake-game',
+    flappy: 'start-flappy-game',
+    asteroid: 'start-asteroid-game',
+    balloonpop: 'start-balloonpop-game',
+    memorytiles: 'start-memorytiles-game',
+    frogger: 'start-frogger-game',
+    catchmonsters: 'start-catchmonsters-game',
+};
+
 function formatTime(ms: number): string {
     const totalSecs = Math.floor(ms / 1000);
     const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
@@ -38,26 +53,16 @@ export function GamePage() {
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const phaserRef = useRef<IRefPhaserGame>(null);
 
+    // KEY ARCHITECTURAL FIX: unique key forces React to destroy+recreate PhaserGame
+    // on every navigation to this page (including "Play Again").
+    // This guarantees a fresh Phaser instance with no stale scene state.
+    const [instanceKey] = useState(() => Date.now());
+
     const currentGame = gameId ? getGameById(gameId) : undefined;
+    const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
+    const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 
     useEffect(() => {
-        const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
-        const START_EVENT_MAP: Record<string, string> = {
-            catcher: 'start-game',
-            breakout: 'start-breakout-game',
-            tetris: 'start-tetris-game',
-            invaders: 'start-invaders-game',
-            pong: 'start-pong-game',
-            snake: 'start-snake-game',
-            flappy: 'start-flappy-game',
-            asteroid: 'start-asteroid-game',
-            balloonpop: 'start-balloonpop-game',
-            memorytiles: 'start-memorytiles-game',
-            frogger: 'start-frogger-game',
-            catchmonsters: 'start-catchmonsters-game',
-        };
-        const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
-
         const handleComplete = ({ result, settings: s }: any) => {
             addSession(result);
             navigate(`/games/${gameId}/stats`, { state: { result, settings: s } });
@@ -79,25 +84,7 @@ export function GamePage() {
         EventBus.on('current-scene-ready', handleReady);
         EventBus.on('timer-tick', handleTick);
 
-        // Force-restart the scene if Phaser is already running (e.g. "Play Again")
-        // current-scene-ready only fires from create(), which doesn't re-fire on navigate.
-        // Use a short delay to ensure EventBus listeners above are registered first.
-        const timer = setTimeout(() => {
-            const game = phaserRef.current?.game;
-            if (!game) return;
-            const activeScenes = game.scene.getScenes(true);
-            const targetActive = activeScenes.find((s: Phaser.Scene) => s.scene.key === targetScene);
-            if (targetActive) {
-                // Scene already running — restart it (preserves instance, re-runs preload+create)
-                targetActive.scene.restart();
-            } else {
-                // Scene not active — start it (handles first-time and wrong-scene cases)
-                game.scene.start(targetScene);
-            }
-        }, 50);
-
         return () => {
-            clearTimeout(timer);
             EventBus.removeListener('game-complete', handleComplete);
             EventBus.removeListener('game-exit', handleExit);
             EventBus.removeListener('safety-timer-warning', handleWarning);
@@ -105,11 +92,10 @@ export function GamePage() {
             EventBus.removeListener('timer-tick', handleTick);
             setElapsedMs(null);
         };
-    }, [settings, navigate, gameId]);
+    }, [settings, navigate, gameId, targetScene, startEvent]);
 
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
-            {/* Minimal game overlay header */}
             <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
                     onClick={() => navigate(-1)}
@@ -135,7 +121,7 @@ export function GamePage() {
             </header>
 
             <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
-                <PhaserGame ref={phaserRef} />
+                <PhaserGame key={instanceKey} ref={phaserRef} />
             </div>
 
             {safetyWarning && (
