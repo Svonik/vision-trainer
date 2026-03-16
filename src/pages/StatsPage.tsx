@@ -5,12 +5,8 @@ import { getSessions } from '../modules/storage';
 import { SPEEDS, GAME } from '../modules/constants';
 import { t } from '../modules/i18n';
 import { getGameById } from '../config/games';
-
-function formatDuration(seconds: number): string {
-    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-    const secs = String(seconds % 60).padStart(2, '0');
-    return `${mins}:${secs}`;
-}
+import { formatDuration } from '@/lib/formatTime';
+import { ProgressRing } from '@/components/ProgressRing';
 
 function CountUp({ target }: { target: number }) {
     const [count, setCount] = useState(0);
@@ -21,30 +17,6 @@ function CountUp({ target }: { target: number }) {
         }
     }, [count, target]);
     return <span className="font-[var(--font-display)] text-5xl font-semibold text-[var(--text)]">{count}</span>;
-}
-
-function ProgressRing({ percent }: { percent: number }) {
-    const radius = 40;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (percent / 100) * circumference;
-    const color = percent > 70
-        ? 'var(--success)'
-        : percent > 40
-            ? 'var(--warning)'
-            : 'var(--accent-secondary)';
-    return (
-        <svg width="100" height="100" className="mx-auto">
-            <circle cx="50" cy="50" r={radius} fill="none" stroke="#374151" strokeWidth="8" />
-            <circle cx="50" cy="50" r={radius} fill="none"
-                stroke={color} strokeWidth="8" strokeLinecap="round"
-                strokeDasharray={circumference} strokeDashoffset={offset}
-                transform="rotate(-90 50 50)"
-                className="transition-all duration-1000" />
-            <text x="50" y="50" textAnchor="middle" dy="6" fill="var(--text)" fontSize="18" fontWeight="bold">
-                {percent}%
-            </text>
-        </svg>
-    );
 }
 
 function DeltaIndicator({ current, previous }: { current: number; previous: number }) {

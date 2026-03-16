@@ -4,6 +4,7 @@ import { getSessions } from '../modules/storage';
 import { SPEEDS } from '../modules/constants';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
+import { formatDuration, formatTotalTime } from '@/lib/formatTime';
 
 function formatDate(iso: string): string {
     try {
@@ -12,19 +13,6 @@ function formatDate(iso: string): string {
     } catch {
         return iso;
     }
-}
-
-function formatDuration(seconds: number): string {
-    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-    const secs = String(seconds % 60).padStart(2, '0');
-    return `${mins}:${secs}`;
-}
-
-function formatTotalTime(totalSeconds: number): string {
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    if (hrs > 0) return `${hrs}ч ${mins}м`;
-    return `${mins}м`;
 }
 
 export function ProgressPage() {

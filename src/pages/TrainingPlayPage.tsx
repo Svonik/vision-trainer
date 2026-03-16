@@ -6,43 +6,8 @@ import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
-
-const GAME_SCENE_MAP: Record<string, string> = {
-    catcher: 'GameScene',
-    breakout: 'BreakoutGameScene',
-    tetris: 'TetrisGameScene',
-    invaders: 'InvadersGameScene',
-    pong: 'PongGameScene',
-    snake: 'SnakeGameScene',
-    flappy: 'FlappyGameScene',
-    asteroid: 'AsteroidGameScene',
-    balloonpop: 'BalloonPopGameScene',
-    memorytiles: 'MemoryTilesGameScene',
-    frogger: 'FroggerGameScene',
-    catchmonsters: 'CatchMonstersGameScene',
-};
-
-const START_EVENT_MAP: Record<string, string> = {
-    catcher: 'start-game',
-    breakout: 'start-breakout-game',
-    tetris: 'start-tetris-game',
-    invaders: 'start-invaders-game',
-    pong: 'start-pong-game',
-    snake: 'start-snake-game',
-    flappy: 'start-flappy-game',
-    asteroid: 'start-asteroid-game',
-    balloonpop: 'start-balloonpop-game',
-    memorytiles: 'start-memorytiles-game',
-    frogger: 'start-frogger-game',
-    catchmonsters: 'start-catchmonsters-game',
-};
-
-function formatTime(ms: number): string {
-    const totalSecs = Math.floor(ms / 1000);
-    const mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
-    const secs = String(totalSecs % 60).padStart(2, '0');
-    return `${mins}:${secs}`;
-}
+import { formatTime } from '@/lib/formatTime';
+import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
 
 interface GameResult {
     game: string;

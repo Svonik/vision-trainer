@@ -8,6 +8,7 @@ import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import { TouchControls } from '../vfx/TouchControls';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
