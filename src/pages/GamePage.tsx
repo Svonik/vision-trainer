@@ -14,6 +14,8 @@ const GAME_SCENE_MAP: Record<string, string> = {
     snake: 'SnakeGameScene',
     flappy: 'FlappyGameScene',
     asteroid: 'AsteroidGameScene',
+    balloonpop: 'BalloonPopGameScene',
+    memorytiles: 'MemoryTilesGameScene',
 };
 
 interface GamePageProps {
@@ -39,6 +41,8 @@ export function GamePage({ setElapsedMs }: GamePageProps) {
             snake: 'start-snake-game',
             flappy: 'start-flappy-game',
             asteroid: 'start-asteroid-game',
+            balloonpop: 'start-balloonpop-game',
+            memorytiles: 'start-memorytiles-game',
         };
         const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 

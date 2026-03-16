@@ -269,6 +269,69 @@ export function GameSelectPage() {
                     </Button>
                 </CardContent>
             </Card>
+
+            {/* Balloon Pop */}
+            <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
+                <div className="relative h-16 bg-gray-800 rounded-t overflow-hidden flex items-center justify-center gap-3">
+                    <div className="w-6 h-7 bg-red-400/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <div className="w-5 h-6 bg-cyan-400/50 rounded-full animate-bounce" style={{ animationDelay: '0.25s' }} />
+                    <div className="w-6 h-7 bg-red-400/40 rounded-full animate-bounce" style={{ animationDelay: '0.5s' }} />
+                </div>
+                <CardHeader>
+                    <CardTitle className="text-lg text-white">
+                        {t('gameSelect.balloonpop.title')}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-cyan-400/20 text-cyan-400 px-2 py-0.5 rounded">{t('gameSelect.difficulty.beginner')}</span>
+                        {getGameCount('balloonpop') > 0 && (
+                            <span className="text-xs text-gray-500">Сыграно: {getGameCount('balloonpop')} раз</span>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-gray-300 text-sm">
+                        {t('gameSelect.balloonpop.description')}
+                    </p>
+                    <Button
+                        onClick={() => navigate('/games/balloonpop/settings')}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+                    >
+                        {t('gameSelect.play')}
+                    </Button>
+                </CardContent>
+            </Card>
+
+            {/* Memory Tiles */}
+            <Card className="max-w-md w-full bg-gray-900 border-gray-700 text-white">
+                <div className="relative h-16 bg-gray-800 rounded-t overflow-hidden flex items-center justify-center gap-1.5">
+                    <div className="w-8 h-8 bg-cyan-400/50 rounded-sm" />
+                    <div className="w-8 h-8 bg-gray-600/70 rounded-sm" />
+                    <div className="w-8 h-8 bg-red-400/50 rounded-sm" />
+                    <div className="w-8 h-8 bg-gray-600/70 rounded-sm" />
+                </div>
+                <CardHeader>
+                    <CardTitle className="text-lg text-white">
+                        {t('gameSelect.memorytiles.title')}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-cyan-400/20 text-cyan-400 px-2 py-0.5 rounded">{t('gameSelect.difficulty.medium')}</span>
+                        {getGameCount('memorytiles') > 0 && (
+                            <span className="text-xs text-gray-500">Сыграно: {getGameCount('memorytiles')} раз</span>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-gray-300 text-sm">
+                        {t('gameSelect.memorytiles.description')}
+                    </p>
+                    <Button
+                        onClick={() => navigate('/games/memorytiles/settings')}
+                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white"
+                    >
+                        {t('gameSelect.play')}
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
     );
 }
