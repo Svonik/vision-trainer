@@ -69,11 +69,6 @@ export function GamePage() {
                 scene.scene.start(targetScene);
                 return;
             }
-            // If scene was already used (gameEnded=true), restart it fresh
-            if ((scene as any).gameEnded || (scene as any).gameOver) {
-                scene.scene.restart();
-                return; // restart will re-trigger create() → current-scene-ready → handleReady
-            }
             EventBus.emit(startEvent, settings);
         };
         const handleTick = (ms: number) => { setElapsedMs(ms); };
@@ -83,6 +78,18 @@ export function GamePage() {
         EventBus.on('safety-timer-warning', handleWarning);
         EventBus.on('current-scene-ready', handleReady);
         EventBus.on('timer-tick', handleTick);
+
+        // Force-restart the scene if Phaser is already running (e.g. "Play Again")
+        // current-scene-ready only fires from create(), which doesn't re-fire on navigate
+        const game = phaserRef.current?.game;
+        if (game) {
+            const scene = game.scene.getScene(targetScene);
+            if (scene) {
+                // Scene exists and was already created — restart it to trigger create() again
+                game.scene.stop(targetScene);
+                game.scene.start(targetScene);
+            }
+        }
 
         return () => {
             EventBus.removeListener('game-complete', handleComplete);
