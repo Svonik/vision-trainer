@@ -1,9 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { t } from '@/modules/i18n';
-import { AppButton } from '@/components/AppButton';
 import { GameIllustration } from '@/components/GameIllustration';
-import { getSessions } from '../modules/storage';
+import { getCachedSessions } from '../modules/sessionCache';
 import { GAMES as GAMES_DATA } from '../config/games';
 
 interface GameDisplayConfig {
@@ -49,24 +48,22 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                         )}
                     </div>
                 </div>
-                <p className="hidden sm:block text-sm text-[var(--text-secondary)]">
+                <p className="sr-only sm:not-sr-only text-sm text-[var(--text-secondary)]">
                     {t(game.descriptionKey)}
                 </p>
-                <AppButton
-                    variant="cta"
-                    size="md"
-                    onClick={(e) => { e.stopPropagation(); navigate(game.route); }}
-                    className="w-full sm:w-auto"
+                <span
+                    className="rounded-full inline-flex items-center justify-center gap-2 py-3 px-4 text-base min-h-[44px] bg-[var(--cta)] text-[var(--cta-text)] font-semibold w-full sm:w-auto"
+                    aria-hidden="true"
                 >
                     {t('gameSelect.play')}
-                </AppButton>
+                </span>
             </div>
         </button>
     );
 });
 
 export function GameSelectPage() {
-    const sessions = getSessions();
+    const sessions = getCachedSessions();
     const getGameCount = (gameId: string) => sessions.filter((s: any) => s.game === gameId).length;
 
     return (

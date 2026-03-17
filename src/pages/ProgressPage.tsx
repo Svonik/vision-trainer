@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Star, TrendingUp, Clock, Gamepad2 } from 'lucide-react';
 import { AppButton } from '@/components/AppButton';
-import { getSessions } from '../modules/storage';
+import { getCachedSessions } from '../modules/sessionCache';
 import { SPEEDS } from '../modules/constants';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
@@ -54,7 +54,7 @@ const SessionRow = React.memo(function SessionRow({ session }: { session: any })
 
 export function ProgressPage() {
     const navigate = useNavigate();
-    const sessions = useMemo(() => getSessions(), []);
+    const sessions = useMemo(() => getCachedSessions(), []);
     const sorted = useMemo(() => [...sessions].reverse(), [sessions]);
 
     if (sorted.length === 0) {

@@ -32,6 +32,7 @@ type GameEvents = {
   'safety-finish': void;
   'timer-tick': number;
   'current-scene-ready': Phaser.Scene;
+  'toggle-pause': { source: string };
 };
 
 class TypedEventBus {

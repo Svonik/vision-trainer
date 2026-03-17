@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router';
 import { Target, Gamepad2 } from 'lucide-react';
-import { AppButton } from '@/components/AppButton';
 import { t } from '../modules/i18n';
-import { getSessions } from '../modules/storage';
+import { getCachedSessions } from '../modules/sessionCache';
 import { generateSession, GAME_TITLE_KEYS } from '../modules/sessionEngine';
 
 function GameDot({ gameId }: { gameId: string }) {
@@ -15,7 +14,7 @@ function GameDot({ gameId }: { gameId: string }) {
 
 export function ModeSelectPage() {
     const navigate = useNavigate();
-    const sessions = getSessions();
+    const sessions = getCachedSessions();
     const todayGames = generateSession(sessions);
 
     return (
@@ -75,14 +74,12 @@ export function ModeSelectPage() {
                             </div>
                         </div>
 
-                        <AppButton
-                            variant="cta"
-                            size="md"
-                            onClick={(e) => { e.stopPropagation(); navigate('/training/settings'); }}
-                            className="w-full"
+                        <span
+                            className="rounded-full inline-flex items-center justify-center gap-2 py-3 px-4 text-base min-h-[44px] bg-[var(--cta)] text-[var(--cta-text)] font-semibold w-full"
+                            aria-hidden="true"
                         >
                             {t('mode.startTraining')}
-                        </AppButton>
+                        </span>
                     </div>
                 </button>
 
@@ -107,14 +104,12 @@ export function ModeSelectPage() {
                             {t('mode.freePlayDesc')}
                         </p>
 
-                        <AppButton
-                            variant="outline"
-                            size="md"
-                            onClick={(e) => { e.stopPropagation(); navigate('/games'); }}
-                            className="w-full hover:border-[var(--cyan-soft)]/50 hover:text-[var(--text)]"
+                        <span
+                            className="rounded-full inline-flex items-center justify-center gap-2 py-3 px-4 text-base min-h-[44px] border border-[var(--border)] text-[var(--text-secondary)] w-full"
+                            aria-hidden="true"
                         >
                             {t('mode.chooseGame')}
-                        </AppButton>
+                        </span>
                     </div>
                 </button>
             </div>

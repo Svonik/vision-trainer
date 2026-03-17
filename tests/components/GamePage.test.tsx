@@ -6,16 +6,17 @@ vi.mock('../../src/game/PhaserGame', () => ({
     PhaserGame: () => <div id="game-container" data-testid="phaser-game" />,
 }));
 
-vi.mock('../../src/game/EventBus', () => ({
-    EventBus: {
+vi.mock('../../src/game/TypedEventBus', () => ({
+    typedEventBus: {
         on: vi.fn(),
+        off: vi.fn(),
         removeListener: vi.fn(),
         emit: vi.fn(),
     },
 }));
 
-vi.mock('../../src/modules/storage', () => ({
-    addSession: vi.fn(),
+vi.mock('../../src/modules/sessionCache', () => ({
+    addCachedSession: vi.fn(),
 }));
 
 import { GamePage } from '../../src/pages/GamePage';

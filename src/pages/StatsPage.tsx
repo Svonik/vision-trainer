@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { Star, Hourglass, Grid } from 'lucide-react';
 import { AppButton } from '@/components/AppButton';
-import { getSessions } from '../modules/storage';
+import { getCachedSessions } from '../modules/sessionCache';
 import { SPEEDS, GAME } from '../modules/constants';
 import { t } from '../modules/i18n';
 import { getGameById } from '../config/games';
@@ -37,7 +37,7 @@ export function StatsPage() {
     const { gameId } = useParams();
 
     const result = location.state?.result ?? (() => {
-        const sessions = getSessions();
+        const sessions = getCachedSessions();
         return sessions.length > 0 ? sessions[sessions.length - 1] : null;
     })();
 
@@ -51,7 +51,7 @@ export function StatsPage() {
         ? Math.round(result.hit_rate * 100)
         : 0;
 
-    const sessions = getSessions();
+    const sessions = getCachedSessions();
     const prevSession = sessions.length > 1 ? sessions[sessions.length - 2] : null;
 
     // Settings to pass for "play again" — location.state.settings is passed from GamePage

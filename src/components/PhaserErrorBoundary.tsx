@@ -30,8 +30,8 @@ export class PhaserErrorBoundary extends Component<Props, State> {
         if (this.state.hasError) {
             return (
                 <div style={{
-                    width: 800,
-                    height: 600,
+                    width: '100%',
+                    height: '100%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

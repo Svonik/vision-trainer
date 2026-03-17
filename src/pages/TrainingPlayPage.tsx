@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
-import { EventBus } from '../game/EventBus';
+import { typedEventBus } from '../game/TypedEventBus';
 import { AppButton } from '@/components/AppButton';
-import { addSession } from '../modules/storage';
+import { addCachedSession } from '../modules/sessionCache';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { t } from '../modules/i18n';
@@ -184,7 +184,7 @@ export function TrainingPlayPage() {
         const startEvent = START_EVENT_MAP[currentGameId] ?? 'start-game';
 
         const handleComplete = ({ result }: { result: GameResult }) => {
-            addSession(result);
+            addCachedSession(result);
             const updatedResults = [...completedResults, result];
             setCompletedResults(updatedResults);
             setElapsedMs(null);
@@ -212,25 +212,25 @@ export function TrainingPlayPage() {
                 return;
             }
             setLoading(false);
-            EventBus.emit(startEvent, settings);
+            typedEventBus.emit(startEvent, settings);
         };
 
         const handleTick = (ms: number) => {
             setElapsedMs(ms);
         };
 
-        EventBus.on('game-complete', handleComplete);
-        EventBus.on('game-exit', handleExit);
-        EventBus.on('safety-timer-warning', handleWarning);
-        EventBus.on('current-scene-ready', handleReady);
-        EventBus.on('timer-tick', handleTick);
+        typedEventBus.on('game-complete', handleComplete);
+        typedEventBus.on('game-exit', handleExit);
+        typedEventBus.on('safety-timer-warning', handleWarning);
+        typedEventBus.on('current-scene-ready', handleReady);
+        typedEventBus.on('timer-tick', handleTick);
 
         return () => {
-            EventBus.removeListener('game-complete', handleComplete);
-            EventBus.removeListener('game-exit', handleExit);
-            EventBus.removeListener('safety-timer-warning', handleWarning);
-            EventBus.removeListener('current-scene-ready', handleReady);
-            EventBus.removeListener('timer-tick', handleTick);
+            typedEventBus.removeListener('game-complete', handleComplete);
+            typedEventBus.removeListener('game-exit', handleExit);
+            typedEventBus.removeListener('safety-timer-warning', handleWarning);
+            typedEventBus.removeListener('current-scene-ready', handleReady);
+            typedEventBus.removeListener('timer-tick', handleTick);
             setElapsedMs(null);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,17 +247,17 @@ export function TrainingPlayPage() {
 
     const handlePause = () => {
         setIsPaused(true);
-        EventBus.emit('toggle-pause', { source: 'react' });
+        typedEventBus.emit('toggle-pause', { source: 'react' });
     };
 
     const handleResume = () => {
         setIsPaused(false);
-        EventBus.emit('toggle-pause', { source: 'react' });
+        typedEventBus.emit('toggle-pause', { source: 'react' });
     };
 
     const handleFinishPause = () => {
         setIsPaused(false);
-        EventBus.emit('game-exit');
+        typedEventBus.emit('game-exit');
     };
 
     const nextGameId = sessionGames[currentGameIndex + 1] ?? '';
@@ -350,8 +350,8 @@ export function TrainingPlayPage() {
             {safetyWarning && (
                 <SafetyTimerBanner
                     type={safetyWarning.type}
-                    onExtend={() => { EventBus.emit('safety-extend'); setSafetyWarning(null); }}
-                    onFinish={() => { EventBus.emit('safety-finish'); }}
+                    onExtend={() => { typedEventBus.emit('safety-extend'); setSafetyWarning(null); }}
+                    onFinish={() => { typedEventBus.emit('safety-finish'); }}
                 />
             )}
             <AnimatePresence>

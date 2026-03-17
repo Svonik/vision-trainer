@@ -49,8 +49,7 @@ export function SafetyTimerBanner({ type, onExtend, onFinish }: SafetyTimerBanne
             <div
                 aria-live="assertive"
                 role="alert"
-                className="absolute top-0 left-0 right-0 bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur text-[var(--cta-text)] text-center py-3 px-4 font-semibold z-10 rounded-b-2xl"
-                style={{ animation: 'slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+                className="absolute top-0 left-0 right-0 bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur text-[var(--cta-text)] text-center py-3 px-4 font-semibold z-10 rounded-b-2xl animate-slide-down"
             >
                 {t('safety.breakWarningChild')}
             </div>

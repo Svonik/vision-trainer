@@ -1,4 +1,3 @@
-// @ts-nocheck
 const strings = {
   'app.title': 'Vision Trainer',
   'app.subtitle': 'Дихоптический тренажёр зрения',
@@ -176,6 +175,12 @@ const strings = {
   'game.paused': 'Пауза',
   'settings.saved': 'Настройки сохранены',
   'settings.glassesChanged': 'Тип очков изменён',
-};
+} as const;
 
-export const t = (key) => strings[key] ?? `[${key}]`;
+export type TranslationKey = keyof typeof strings;
+
+export function t(key: TranslationKey): string;
+export function t(key: string): string;
+export function t(key: string): string {
+    return (strings as Record<string, string>)[key] ?? `[${key}]`;
+}

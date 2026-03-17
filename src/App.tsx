@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router';
 import { isDisclaimerAccepted, getCalibration } from './modules/storage';
 import { DisclaimerGuard } from './guards/DisclaimerGuard';
@@ -8,7 +8,9 @@ import { Layout } from './components/Layout';
 import { SuspenseFallback } from './components/SuspenseFallback';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/PageTransition';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
+import { isStorageAvailable } from './modules/storage';
+import { t } from './modules/i18n';
 
 const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 const GameSelectPage = lazy(() => import('./pages/GameSelectPage').then(m => ({ default: m.GameSelectPage })));
@@ -60,6 +62,12 @@ function InnerRoutes() {
 
 function App() {
     const [onboarded] = useState(() => isOnboardingComplete());
+
+    useEffect(() => {
+        if (!isStorageAvailable()) {
+            toast.warning(t('storage.unavailable'), { duration: Infinity });
+        }
+    }, []);
 
     return (
         <HashRouter>

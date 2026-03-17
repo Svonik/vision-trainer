@@ -4,7 +4,7 @@ export function SuspenseFallback() {
     return (
         <div
             className="min-h-screen flex items-center justify-center"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             <motion.div
                 animate={{ opacity: [0.5, 1, 0.5] }}

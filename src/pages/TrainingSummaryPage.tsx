@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { Hourglass } from 'lucide-react';
 import { AppButton } from '@/components/AppButton';
 import { t } from '../modules/i18n';
-import { getSessions } from '../modules/storage';
+import { getCachedSessions } from '../modules/sessionCache';
 import { recommendContrast, GAME_TITLE_KEYS } from '../modules/sessionEngine';
 import { formatDuration } from '@/lib/formatTime';
 import { ProgressRing } from '@/components/ProgressRing';
@@ -41,7 +41,7 @@ export function TrainingSummaryPage() {
         ? Math.round(results.reduce((sum, r) => sum + (r.hit_rate ?? 0), 0) / results.length * 100)
         : 0;
 
-    const sessions = getSessions();
+    const sessions = getCachedSessions();
     const recommendation = recommendContrast(sessions);
 
     return (

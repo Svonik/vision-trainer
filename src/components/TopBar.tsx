@@ -1,4 +1,5 @@
 import { useNavigate, useParams } from 'react-router';
+import { ArrowLeft } from 'lucide-react';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
 
@@ -29,7 +30,7 @@ export function TopBar({ variant }: TopBarProps) {
                         onClick={() => navigate(-1)}
                         className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-sm transition-colors"
                     >
-                        ← {t('nav.back')}
+                        <ArrowLeft size={20} className="inline" /> {t('nav.back')}
                     </button>
                     {currentGame && (
                         <span className="absolute left-1/2 -translate-x-1/2 text-sm font-medium text-[var(--text)] truncate max-w-[60%]">

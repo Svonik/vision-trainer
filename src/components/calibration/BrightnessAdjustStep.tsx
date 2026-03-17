@@ -119,7 +119,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
             {maxAttemptsReached ? (
                 <div className="w-full max-w-sm space-y-3">
-                    <p className="text-[var(--warning)] text-base text-center">
+                    <p role="alert" className="text-[var(--warning)] text-base text-center">
                         {t('calibration.doctorWarning')}
                     </p>
                     <div className="flex gap-2">

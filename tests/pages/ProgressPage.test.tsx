@@ -13,7 +13,12 @@ vi.mock('../../src/modules/storage', () => ({
     getSessions: vi.fn(() => []),
 }));
 
+vi.mock('../../src/modules/sessionCache', () => ({
+    getCachedSessions: vi.fn(() => []),
+}));
+
 import * as storage from '../../src/modules/storage';
+import * as sessionCache from '../../src/modules/sessionCache';
 
 describe('ProgressPage', () => {
     beforeEach(() => {
@@ -22,6 +27,7 @@ describe('ProgressPage', () => {
 
     it('renders empty state when no sessions', () => {
         vi.mocked(storage.getSessions).mockReturnValue([]);
+        vi.mocked(sessionCache.getCachedSessions).mockReturnValue([]);
         render(
             <MemoryRouter>
                 <ProgressPage />
@@ -32,7 +38,7 @@ describe('ProgressPage', () => {
     });
 
     it('renders summary card and session list when sessions exist', () => {
-        vi.mocked(storage.getSessions).mockReturnValue([
+        const sessions = [
             {
                 game: 'binocular-catcher',
                 timestamp: '2026-03-15T10:00:00Z',
@@ -55,7 +61,9 @@ describe('ProgressPage', () => {
                 contrast_right: 90,
                 speed: 'slow',
             },
-        ]);
+        ];
+        vi.mocked(storage.getSessions).mockReturnValue(sessions);
+        vi.mocked(sessionCache.getCachedSessions).mockReturnValue(sessions);
 
         render(
             <MemoryRouter>
@@ -71,7 +79,7 @@ describe('ProgressPage', () => {
     });
 
     it('shows total sessions count in summary', () => {
-        vi.mocked(storage.getSessions).mockReturnValue([
+        const sessions = [
             {
                 game: 'binocular-catcher',
                 timestamp: '2026-03-15T10:00:00Z',
@@ -83,7 +91,9 @@ describe('ProgressPage', () => {
                 contrast_right: 100,
                 speed: 'slow',
             },
-        ]);
+        ];
+        vi.mocked(storage.getSessions).mockReturnValue(sessions);
+        vi.mocked(sessionCache.getCachedSessions).mockReturnValue(sessions);
 
         render(
             <MemoryRouter>

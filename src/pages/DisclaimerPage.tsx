@@ -19,7 +19,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
         if (onComplete) {
             onComplete();
         } else {
-            navigate('/calibration');
+            navigate('/onboarding');
         }
     };
 
