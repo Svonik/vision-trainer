@@ -34,7 +34,7 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
     return (
         <div
             className="min-h-screen flex flex-col items-center justify-center p-6 relative z-20"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 spring-enter text-center">
                 {/* Completed badge */}
@@ -226,7 +226,7 @@ export function TrainingPlayPage() {
     return (
         <div
             className="min-h-screen flex flex-col bg-[var(--bg)]"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             {/* Minimal overlay header */}
             <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
