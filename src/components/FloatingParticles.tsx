@@ -21,7 +21,6 @@ export function FloatingParticles() {
                         top: `${20 + i * 12}%`,
                         animation: `floatUp ${p.duration} ease-in-out infinite`,
                         animationDelay: p.delay,
-                        willChange: 'transform, opacity',
                     }}
                 />
             ))}
