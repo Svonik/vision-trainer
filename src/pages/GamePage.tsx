@@ -9,6 +9,8 @@ import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
 import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
+import { Pause } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function GamePage() {
     const location = useLocation();
@@ -20,6 +22,7 @@ export function GamePage() {
     const phaserRef = useRef<IRefPhaserGame>(null);
 
     const [instanceKey] = useState(() => Date.now());
+    const [isPaused, setIsPaused] = useState(false);
 
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -61,6 +64,21 @@ export function GamePage() {
         };
     }, [settings, navigate, gameId, targetScene, startEvent]);
 
+    const handlePause = () => {
+        setIsPaused(true);
+        EventBus.emit('toggle-pause', { source: 'react' });
+    };
+
+    const handleResume = () => {
+        setIsPaused(false);
+        EventBus.emit('toggle-pause', { source: 'react' });
+    };
+
+    const handleFinish = () => {
+        setIsPaused(false);
+        EventBus.emit('game-exit');
+    };
+
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
             <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
@@ -71,6 +89,13 @@ export function GamePage() {
                     ← {t('nav.back')}
                 </button>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={handlePause}
+                        aria-label={t('game.pause')}
+                        className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors p-1"
+                    >
+                        <Pause size={20} />
+                    </button>
                     {currentGame && (
                         <span className="text-[var(--text-secondary)] text-sm truncate max-w-32">
                             {t(currentGame.titleKey)}
@@ -99,6 +124,34 @@ export function GamePage() {
                 />
             )}
             <LandscapePrompt />
+            <AnimatePresence>
+                {isPaused && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
+                    >
+                        <div className="text-center space-y-6">
+                            <h2 className="text-2xl font-display text-[var(--text)]">{t('game.paused')}</h2>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={handleResume}
+                                    className="w-48 bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
+                                >
+                                    {t('game.resume')}
+                                </button>
+                                <button
+                                    onClick={handleFinish}
+                                    className="w-48 border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
+                                >
+                                    {t('game.quit')}
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
