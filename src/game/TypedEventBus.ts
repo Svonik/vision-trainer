@@ -1,4 +1,4 @@
-import { Events } from 'phaser';
+import { EventBus } from './EventBus';
 
 export type GameSettings = {
   contrastLeft: number;
@@ -36,7 +36,7 @@ type GameEvents = {
 };
 
 class TypedEventBus {
-  private bus = new Events.EventEmitter();
+  private bus = EventBus; // Share the same emitter Phaser scenes use
 
   emit<K extends keyof GameEvents>(
     event: K,
