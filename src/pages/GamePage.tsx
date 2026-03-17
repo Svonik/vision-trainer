@@ -62,7 +62,7 @@ export function GamePage() {
     }, [settings, navigate, gameId, targetScene, startEvent]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
+        <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'var(--bg-gradient)' }}>
             <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
                     onClick={() => navigate(-1)}

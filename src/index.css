@@ -26,6 +26,7 @@ html {
   --text-secondary: #8b7fa0;
   --success: #7dd3a8;
   --warning: #f0c674;
+  --bg-gradient: linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%);
 }
 
 @keyframes fadeSlideUp {

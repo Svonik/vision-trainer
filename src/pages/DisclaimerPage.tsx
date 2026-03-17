@@ -25,7 +25,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
     return (
         <div
             className="min-h-screen flex items-center justify-center p-4"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             <div className="w-full max-w-lg">
                 <p className="text-base text-[var(--text-secondary)] mb-2 text-center">
