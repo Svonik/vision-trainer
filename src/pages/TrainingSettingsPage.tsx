@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Slider } from '@/components/ui/slider';
+import { AppButton } from '@/components/AppButton';
 import { useGameSettings } from '../hooks/useGameSettings';
 import { SPEEDS, CONTRAST } from '../modules/constants';
 import { t } from '../modules/i18n';
@@ -154,17 +155,15 @@ export function TrainingSettingsPage() {
                         <p className="text-base font-semibold text-[var(--text)]">{t('settings.speed')}</p>
                         <div className="grid grid-cols-2 gap-2">
                             {SPEED_KEYS.map((key) => (
-                                <button
+                                <AppButton
                                     key={key}
+                                    variant="toggle"
+                                    size="md"
+                                    selected={settings.speed === key}
                                     onClick={() => updateSettings({ speed: key })}
-                                    className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
-                                        settings.speed === key
-                                            ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
-                                            : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
-                                    }`}
                                 >
                                     {SPEEDS[key].label}
-                                </button>
+                                </AppButton>
                             ))}
                         </div>
                     </div>
@@ -173,43 +172,43 @@ export function TrainingSettingsPage() {
                     <div className="space-y-3">
                         <p className="text-base font-semibold text-[var(--text)]">{t('settings.eyeSelect')}</p>
                         <div className="grid grid-cols-2 gap-2">
-                            <button
+                            <AppButton
+                                variant="toggle"
+                                size="md"
+                                selected={settings.eyeConfig === 'platform_left'}
                                 onClick={() => updateSettings({ eyeConfig: 'platform_left' })}
-                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
-                                    settings.eyeConfig === 'platform_left'
-                                        ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
-                                        : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
-                                }`}
                             >
                                 {t('settings.eyeLeft')}
-                            </button>
-                            <button
+                            </AppButton>
+                            <AppButton
+                                variant="toggle"
+                                size="md"
+                                selected={settings.eyeConfig === 'platform_right'}
                                 onClick={() => updateSettings({ eyeConfig: 'platform_right' })}
-                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
-                                    settings.eyeConfig === 'platform_right'
-                                        ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
-                                        : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
-                                }`}
                             >
                                 {t('settings.eyeRight')}
-                            </button>
+                            </AppButton>
                         </div>
                     </div>
 
                     {/* Start button */}
-                    <button
+                    <AppButton
+                        variant="cta"
+                        size="lg"
                         onClick={handleStart}
-                        className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-4 text-lg btn-press font-[var(--font-display)] font-semibold"
+                        className="w-full font-[var(--font-display)]"
                     >
                         {t('training.startSession')}
-                    </button>
+                    </AppButton>
 
-                    <button
+                    <AppButton
+                        variant="outline"
+                        size="md"
                         onClick={() => navigate('/mode-select')}
-                        className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
+                        className="w-full"
                     >
                         ← {t('nav.back')}
-                    </button>
+                    </AppButton>
                 </div>
             </div>
         </div>
