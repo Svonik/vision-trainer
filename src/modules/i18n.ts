@@ -172,6 +172,8 @@ const strings = {
   'stats.contrastR': 'П',
   'landscape.rotate': 'Поверните устройство горизонтально',
   'landscape.hint': 'Для комфортной игры нужен горизонтальный экран',
+  'game.loading': 'Загрузка игры...',
+  'game.paused': 'Пауза',
   'settings.saved': 'Настройки сохранены',
   'settings.glassesChanged': 'Тип очков изменён',
 };

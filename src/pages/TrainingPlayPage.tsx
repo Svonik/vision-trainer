@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { AppButton } from '@/components/AppButton';
@@ -11,6 +11,8 @@ import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
 import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
 
 interface GameResult {
     game: string;
@@ -34,13 +36,27 @@ interface TransitionScreenProps {
 function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }: TransitionScreenProps) {
     const total = 3;
     return (
-        <div
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="min-h-screen flex flex-col items-center justify-center p-6 relative z-20"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 spring-enter text-center">
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.3, ease: 'easeOut' }}
+                className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 text-center"
+            >
                 {/* Completed badge */}
-                <CheckCircle className="w-12 h-12 text-[var(--success)] mx-auto" />
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+                >
+                    <CheckCircle size={48} className="mx-auto text-[var(--success)]" />
+                </motion.div>
                 <div>
                     <h2 className="font-[var(--font-display)] text-2xl text-[var(--text)]">
                         {t('training.excellent')}
@@ -53,8 +69,10 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                 {/* Progress dots */}
                 <div className="flex justify-center gap-3">
                     {Array.from({ length: total }).map((_, i) => (
-                        <span
+                        <motion.span
                             key={i}
+                            initial={i === completedIndex ? { scale: 0.5 } : false}
+                            animate={i === completedIndex ? { scale: 1 } : undefined}
                             className={`rounded-full transition-all duration-300 ${
                                 i <= completedIndex
                                     ? 'w-4 h-3 bg-[var(--cta)]'
@@ -74,11 +92,21 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                     </p>
                 </div>
 
+                {/* Countdown bar */}
+                <div className="w-full h-1 bg-[var(--border)] rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: '100%' }}
+                        animate={{ width: '0%' }}
+                        transition={{ duration: 5, ease: 'linear' }}
+                        className="h-full bg-[var(--cta)] rounded-full"
+                    />
+                </div>
+
                 <AppButton variant="cta" size="md" onClick={onContinue} className="w-full">
                     {t('training.continue')} ({countdown}s)
                 </AppButton>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }
 
@@ -99,6 +127,8 @@ export function TrainingPlayPage() {
 
     const phaserRef = useRef<IRefPhaserGame>(null);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [isPaused, setIsPaused] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const currentGameId = sessionGames[currentGameIndex] ?? '';
 
@@ -181,6 +211,7 @@ export function TrainingPlayPage() {
                 scene.scene.start(targetScene);
                 return;
             }
+            setLoading(false);
             EventBus.emit(startEvent, settings);
         };
 
@@ -210,19 +241,37 @@ export function TrainingPlayPage() {
             clearInterval(countdownRef.current);
         }
         setShowTransition(false);
+        setLoading(true);
         setCurrentGameIndex(prev => prev + 1);
+    };
+
+    const handlePause = () => {
+        setIsPaused(true);
+        EventBus.emit('toggle-pause', { source: 'react' });
+    };
+
+    const handleResume = () => {
+        setIsPaused(false);
+        EventBus.emit('toggle-pause', { source: 'react' });
+    };
+
+    const handleFinishPause = () => {
+        setIsPaused(false);
+        EventBus.emit('game-exit');
     };
 
     const nextGameId = sessionGames[currentGameIndex + 1] ?? '';
 
     if (showTransition) {
         return (
-            <TransitionScreen
-                completedIndex={currentGameIndex}
-                nextGameId={nextGameId}
-                onContinue={handleAdvance}
-                countdown={transitionCountdown}
-            />
+            <AnimatePresence>
+                <TransitionScreen
+                    completedIndex={currentGameIndex}
+                    nextGameId={nextGameId}
+                    onContinue={handleAdvance}
+                    countdown={transitionCountdown}
+                />
+            </AnimatePresence>
         );
     }
 
@@ -240,6 +289,13 @@ export function TrainingPlayPage() {
                     <ArrowLeft className="w-4 h-4 inline" /> {t('nav.back')}
                 </button>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={handlePause}
+                        aria-label={t('game.pause')}
+                        className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors p-1"
+                    >
+                        <Pause size={18} />
+                    </button>
                     <span className="text-[var(--text-secondary)] text-sm">
                         {t('training.gameOf').replace('{n}', String(currentGameIndex + 1))}
                     </span>
@@ -277,6 +333,18 @@ export function TrainingPlayPage() {
                 <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
                     <PhaserGame key={instanceKey} ref={phaserRef} />
                 </PhaserErrorBoundary>
+                <AnimatePresence>
+                    {loading && (
+                        <motion.div
+                            key="loading-overlay"
+                            className="absolute inset-0 z-20"
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <PhaserLoadingScreen />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {safetyWarning && (
@@ -286,6 +354,34 @@ export function TrainingPlayPage() {
                     onFinish={() => { EventBus.emit('safety-finish'); }}
                 />
             )}
+            <AnimatePresence>
+                {isPaused && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
+                    >
+                        <div className="text-center space-y-6">
+                            <h2 className="text-2xl font-display text-[var(--text)]">{t('game.paused')}</h2>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={handleResume}
+                                    className="w-48 bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
+                                >
+                                    {t('game.resume')}
+                                </button>
+                                <button
+                                    onClick={handleFinishPause}
+                                    className="w-48 border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
+                                >
+                                    {t('game.quit')}
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

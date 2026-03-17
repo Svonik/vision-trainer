@@ -30,12 +30,33 @@ export default class GameScene extends Phaser.Scene {
       }
     };
 
+    this.handleTogglePause = (payload) => {
+      if (payload?.source === 'react') {
+        // React manages pause UI — don't show Phaser overlay
+        this.isPaused = !this.isPaused;
+        if (this.isPaused) {
+          this.physics.pause();
+          if (this.spawnTimer) this.spawnTimer.paused = true;
+          this.safetyTimer.pause();
+          this.input.setDefaultCursor('default');
+        } else {
+          this.physics.resume();
+          if (this.spawnTimer) this.spawnTimer.paused = false;
+          this.safetyTimer.resume();
+          this.input.setDefaultCursor('none');
+        }
+      } else {
+        this.togglePause();
+      }
+    };
+
     SynthSounds.resume();
 
     // Register EventBus listeners
     EventBus.on('start-game', this.startGameHandler);
     EventBus.on('safety-finish', this.safetyFinishHandler);
     EventBus.on('safety-extend', this.safetyExtendHandler);
+    EventBus.on('toggle-pause', this.handleTogglePause);
 
     // Register shutdown cleanup
     this.events.on('shutdown', this.shutdown, this);
@@ -172,6 +193,7 @@ export default class GameScene extends Phaser.Scene {
     EventBus.removeListener('start-game', this.startGameHandler);
     EventBus.removeListener('safety-finish', this.safetyFinishHandler);
     EventBus.removeListener('safety-extend', this.safetyExtendHandler);
+    EventBus.removeListener('toggle-pause', this.handleTogglePause);
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
     this.input.setDefaultCursor('default');

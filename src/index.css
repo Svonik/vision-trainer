@@ -19,8 +19,12 @@
   --radius: 1rem;
 }
 
-/* Safe areas handled per-component: TabBar (bottom), TopBar (top).
-   Do NOT add padding to html — it double-stacks with fixed elements. */
+/* Top/bottom safe areas handled per-component: TabBar (bottom), TopBar (top).
+   Horizontal safe-area insets applied globally (no per-component overlap). */
+html {
+  padding-right: env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
+}
 
 :root {
   --bg: #12101a;
@@ -86,6 +90,12 @@
 /* Tab labels hidden on very narrow screens (<360px) */
 @media (max-width: 359px) {
   .tab-label { display: none; }
+}
+
+@media (display-mode: standalone) {
+  .top-bar {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

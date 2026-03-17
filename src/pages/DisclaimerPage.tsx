@@ -77,6 +77,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
                             size="md"
                             onClick={handleContinue}
                             disabled={!accepted}
+                            title={!accepted ? 'Отметьте согласие чтобы продолжить' : undefined}
                             className="w-full"
                         >
                             {t('disclaimer.continue')}
