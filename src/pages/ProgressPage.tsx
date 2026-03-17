@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Star, TrendingUp, Clock, Gamepad2 } from 'lucide-react';
 import { getSessions } from '../modules/storage';
@@ -58,8 +58,8 @@ const SessionRow = React.memo(function SessionRow({ session }: SessionRowProps) 
 
 export function ProgressPage() {
     const navigate = useNavigate();
-    const sessions = getSessions();
-    const sorted = [...sessions].reverse();
+    const sessions = useMemo(() => getSessions(), []);
+    const sorted = useMemo(() => [...sessions].reverse(), [sessions]);
 
     if (sorted.length === 0) {
         return (
