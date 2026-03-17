@@ -15,6 +15,56 @@ const BRICK_ROWS = 5;
 const MAX_LIVES = 3;
 const WALL_BOUNCE_COOLDOWN_MS = 100;
 
+const POWERUP_CHANCE = 0.20;
+const POWERUP_FALL_SPEED = 100;
+const POWERUP_TYPES = ['wide', 'multi', 'slow', 'life'] as const;
+const POWERUP_LABELS = { wide: '◇', multi: '⊕', slow: '▽', life: '♥' };
+const POWERUP_DURATIONS = { wide: 8000, multi: 0, slow: 6000, life: 0 };
+
+// 5 rows x 8 cols patterns (true = brick exists)
+const BRICK_PATTERNS = [
+  // Level 1: Full grid
+  Array.from({ length: 5 }, () => Array(8).fill(true)),
+
+  // Level 2: Diamond
+  [
+    [false, false, false, true, true, false, false, false],
+    [false, false, true, true, true, true, false, false],
+    [false, true, true, true, true, true, true, false],
+    [false, false, true, true, true, true, false, false],
+    [false, false, false, true, true, false, false, false],
+  ],
+
+  // Level 3: Checkerboard
+  Array.from({ length: 5 }, (_, r) =>
+    Array.from({ length: 8 }, (_, c) => (r + c) % 2 === 0)
+  ),
+
+  // Level 4: V-Shape
+  [
+    [true, false, false, false, false, false, false, true],
+    [true, true, false, false, false, false, true, true],
+    [true, true, true, false, false, true, true, true],
+    [true, true, true, true, true, true, true, true],
+    [true, true, true, true, true, true, true, true],
+  ],
+
+  // Level 5: Walls + top
+  [
+    [true, true, true, true, true, true, true, true],
+    [true, false, false, false, false, false, false, true],
+    [true, false, false, false, false, false, false, true],
+    [true, false, false, false, false, false, false, true],
+    [true, true, true, true, true, true, true, true],
+  ],
+];
+
+function getPattern(level: number): boolean[][] {
+  if (level <= BRICK_PATTERNS.length) return BRICK_PATTERNS[level - 1];
+  // Level 6+: random pattern from the list
+  return BRICK_PATTERNS[Math.floor(Math.random() * BRICK_PATTERNS.length)];
+}
+
 export default class BreakoutGameScene extends Phaser.Scene {
   constructor() {
     super('BreakoutGameScene');
@@ -80,6 +130,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     // Visual glow
     this.platformVisual = GameVisuals.glowRect(this, ccx, py, pw, ph, this.platformColor, this.platformAlpha);
 
+    // Remember original platform width for power-up reset
+    this.originalPlatformWidth = pw;
+
     // Ball — visual glow circle + invisible physics circle
     const ballRadius = fw * 0.0125;
     const ballStartY = py - ph / 2 - ballRadius - 2;
@@ -94,28 +147,13 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
     // Bricks (both eyes — gray)
     this.bricks = this.physics.add.staticGroup();
-    const brickW = (fw * 0.88) / BRICK_COLS;
-    const brickH = (fh * 0.2) / BRICK_ROWS;
-    const brickStartX = fx + (fw - brickW * BRICK_COLS) / 2 + brickW / 2;
-    const brickStartY = fy + 50;
+    this.level = 1;
+    this._spawnBricks();
 
-    for (let row = 0; row < BRICK_ROWS; row++) {
-      for (let col = 0; col < BRICK_COLS; col++) {
-        const bx = brickStartX + col * brickW;
-        const by = brickStartY + row * brickH;
-        const shade = row % 2 === 0 ? 0x909090 : 0x707070;
-        // Invisible physics rect
-        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
-        this.physics.add.existing(brick, true);
-        // Visual glow rect
-        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
-        brick._visual = brickVisual;
-        this.bricks.add(brick);
-      }
-    }
-
-    this.totalBricks = BRICK_COLS * BRICK_ROWS;
-    this.bricksDestroyed = 0;
+    // Power-up state
+    this.powerups = [];
+    this.extraBalls = [];
+    this.activePowerups = { wide: false, slow: false };
 
     // Lives
     this.lives = MAX_LIVES;
@@ -167,7 +205,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
       onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
     });
 
-    this.level = 1;
     this.isPaused = true; // freeze during countdown
     this.gameEnded = false;
     this.pauseOverlay = null;
@@ -187,6 +224,38 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.input.setDefaultCursor('none');
       this.safetyTimer.start();
     });
+  }
+
+  _spawnBricks() {
+    const { x: fx, y: fy, w: fw, h: fh } = this.field;
+    const pattern = getPattern(this.level);
+    const rows = pattern.length;
+    const cols = pattern[0].length;
+    const brickW = (fw * 0.88) / cols;
+    const brickH = (fh * 0.2) / rows;
+    const brickStartX = fx + (fw - brickW * cols) / 2 + brickW / 2;
+    const brickStartY = fy + 50;
+
+    let brickCount = 0;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        if (!pattern[row][col]) continue;
+        const bx = brickStartX + col * brickW;
+        const by = brickStartY + row * brickH;
+        const shade = row % 2 === 0 ? 0x909090 : 0x707070;
+        // Invisible physics rect
+        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
+        this.physics.add.existing(brick, true);
+        // Visual glow rect
+        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
+        brick._visual = brickVisual;
+        this.bricks.add(brick);
+        brickCount++;
+      }
+    }
+
+    this.totalBricks = brickCount;
+    this.bricksDestroyed = 0;
   }
 
   shutdown() {
@@ -243,9 +312,23 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.ballVisual.y = this.ball.y;
     }
 
-    // Ball out of bounds (bottom) — increased margin to 40px
+    // Ball out of bounds (bottom)
     if (this.ball && this.ball.y > this.field.y + this.field.h + 40) {
-      this.loseLife();
+      // Only lose life if no extra balls remain
+      const hasExtraBalls = this.extraBalls && this.extraBalls.length > 0;
+      if (!hasExtraBalls) {
+        this.loseLife();
+      } else {
+        // Just reset main ball without losing life
+        this.ballLaunched = false;
+        this.ball.body.setVelocity(0, 0);
+        this.ball.x = this.platform.x;
+        this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
+        if (this.ballVisual) {
+          this.ballVisual.x = this.ball.x;
+          this.ballVisual.y = this.ball.y;
+        }
+      }
     }
 
     // Ball bouncing off walls (top, left, right)
@@ -278,6 +361,71 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.trailFrameCounter = (this.trailFrameCounter || 0) + 1;
       if (this.trailFrameCounter % 3 === 0) {
         GameVFX.addTrailDot(this, this.ball.x, this.ball.y, this.ballColor, 2);
+      }
+    }
+
+    // Extra ball updates
+    if (this.extraBalls) {
+      const now = this.time.now;
+      for (let i = this.extraBalls.length - 1; i >= 0; i--) {
+        const eb = this.extraBalls[i];
+        if (eb._visual) { eb._visual.x = eb.x; eb._visual.y = eb.y; }
+
+        // Wall bouncing for extra balls
+        const r = eb.radius || this.ball.radius;
+        if (eb.y - r <= this.field.y) {
+          eb.body.setVelocityY(Math.abs(eb.body.velocity.y));
+          if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
+            SynthSounds.tick();
+            this.lastWallBounceTime = now;
+          }
+        }
+        if (eb.x - r <= this.field.x) {
+          eb.body.setVelocityX(Math.abs(eb.body.velocity.x));
+          if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
+            SynthSounds.tick();
+            this.lastWallBounceTime = now;
+          }
+        }
+        if (eb.x + r >= this.field.x + this.field.w) {
+          eb.body.setVelocityX(-Math.abs(eb.body.velocity.x));
+          if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
+            SynthSounds.tick();
+            this.lastWallBounceTime = now;
+          }
+        }
+
+        // Remove if off bottom
+        if (eb.y > this.field.y + this.field.h + 40) {
+          if (eb._visual) eb._visual.destroy();
+          eb.destroy();
+          this.extraBalls.splice(i, 1);
+        }
+      }
+    }
+
+    // Move and check powerups
+    if (this.powerups) {
+      for (let i = this.powerups.length - 1; i >= 0; i--) {
+        const pu = this.powerups[i];
+        pu.container.y += pu.vy * (delta / 1000);
+
+        // Check if caught by platform
+        if (
+          pu.container.y >= this.platform.y - this.platform.height / 2 &&
+          Math.abs(pu.container.x - this.platform.x) < this.platform.width / 2
+        ) {
+          this.activatePowerup(pu.type);
+          pu.container.destroy();
+          this.powerups.splice(i, 1);
+          continue;
+        }
+
+        // Remove if off screen
+        if (pu.container.y > this.field.y + this.field.h + 20) {
+          pu.container.destroy();
+          this.powerups.splice(i, 1);
+        }
       }
     }
 
@@ -334,8 +482,123 @@ export default class BreakoutGameScene extends Phaser.Scene {
     GameVFX.particleBurst(this, brick.x, brick.y, 0x808080, 6);
     GameVFX.scorePopup(this, brick.x, brick.y);
 
+    // Power-up drop chance
+    if (Math.random() < POWERUP_CHANCE) {
+      this.spawnPowerup(brick.x, brick.y);
+    }
+
     if (this.bricksDestroyed >= this.totalBricks) {
       this.nextLevel();
+    }
+  }
+
+  spawnPowerup(x, y) {
+    const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+    const label = POWERUP_LABELS[type];
+
+    // Gray circle with label (both eyes — doesn't break dichoptic)
+    const container = this.add.container(x, y);
+    const bg = this.add.circle(0, 0, 12, 0x808080, 0.6);
+    const text = this.add.text(0, 0, label, { fontSize: '14px', color: '#FFFFFF' }).setOrigin(0.5);
+    container.add([bg, text]);
+
+    this.powerups.push({ container, type, vy: POWERUP_FALL_SPEED });
+  }
+
+  activatePowerup(type) {
+    SynthSounds.score();
+    GameVFX.scorePopup(this, this.platform.x, this.platform.y - 30, type === 'life' ? '+1 ♥' : type.toUpperCase());
+
+    switch (type) {
+      case 'wide': {
+        if (!this.activePowerups.wide) {
+          this.activePowerups.wide = true;
+          const newW = this.originalPlatformWidth * 1.5;
+          this.platform.width = newW;
+          this.platform.body.setSize(newW, this.platform.height);
+          if (this.platformVisual) {
+            this.platformVisual.destroy();
+            this.platformVisual = GameVisuals.glowRect(this, this.platform.x, this.platform.y, newW, this.platform.height, this.platformColor, this.platformAlpha);
+          }
+          this.time.delayedCall(POWERUP_DURATIONS.wide, () => {
+            this.activePowerups.wide = false;
+            this.platform.width = this.originalPlatformWidth;
+            this.platform.body.setSize(this.originalPlatformWidth, this.platform.height);
+            if (this.platformVisual) {
+              this.platformVisual.destroy();
+              this.platformVisual = GameVisuals.glowRect(this, this.platform.x, this.platform.y, this.originalPlatformWidth, this.platform.height, this.platformColor, this.platformAlpha);
+            }
+          });
+        }
+        break;
+      }
+      case 'multi': {
+        // Spawn 2 extra balls from current ball position
+        for (let i = 0; i < 2; i++) {
+          const angle = Phaser.Math.Between(-150, -30);
+          const rad = angle * (Math.PI / 180);
+          const extraBall = this.add.circle(this.ball.x, this.ball.y, this.ball.radius, this.ballColor, 0);
+          this.physics.add.existing(extraBall);
+          extraBall.body.setCircle(this.ball.radius);
+          extraBall.body.setBounce(1, 1);
+          extraBall.body.setCollideWorldBounds(false);
+          extraBall.body.setVelocity(Math.cos(rad) * this.ballSpeed, Math.sin(rad) * this.ballSpeed);
+
+          const visual = GameVisuals.glowCircle(this, extraBall.x, extraBall.y, this.ball.radius, this.ballColor, this.ballAlpha);
+          extraBall._visual = visual;
+
+          this.extraBalls.push(extraBall);
+
+          // Add colliders for extra ball
+          this.physics.add.collider(extraBall, this.platform, this.onBallHitPaddle, null, this);
+          this.physics.add.collider(extraBall, this.bricks, this.onBallHitBrick, null, this);
+        }
+        break;
+      }
+      case 'slow': {
+        if (!this.activePowerups.slow) {
+          this.activePowerups.slow = true;
+          const savedSpeed = this.ballSpeed;
+          this.ballSpeed *= 0.6;
+          // Slow all active balls
+          if (this.ball?.body) {
+            const v = this.ball.body.velocity;
+            const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+            if (speed > 0) {
+              const ratio = this.ballSpeed / savedSpeed;
+              this.ball.body.setVelocity(v.x * ratio, v.y * ratio);
+            }
+          }
+          // Slow extra balls too
+          if (this.extraBalls) {
+            for (const eb of this.extraBalls) {
+              if (eb?.body) {
+                const v = eb.body.velocity;
+                const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+                if (speed > 0) {
+                  const ratio = this.ballSpeed / savedSpeed;
+                  eb.body.setVelocity(v.x * ratio, v.y * ratio);
+                }
+              }
+            }
+          }
+          this.time.delayedCall(POWERUP_DURATIONS.slow, () => {
+            this.activePowerups.slow = false;
+            this.ballSpeed = savedSpeed;
+          });
+        }
+        break;
+      }
+      case 'life': {
+        if (this.lives < 5) {
+          this.lives++;
+          // Add life icon if space
+          if (this.lives <= this.livesIcons.length) {
+            this.livesIcons[this.lives - 1].setFillStyle(0x808080);
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -451,29 +714,40 @@ export default class BreakoutGameScene extends Phaser.Scene {
     });
     this.bricks.clear(true, true);
 
-    // Respawn bricks with extra row (capped at 8 rows)
-    const { x: fx, y: fy, w: fw } = this.field;
-    const rows = Math.min(8, BRICK_ROWS + this.level - 1);
-    const brickW = (fw * 0.88) / BRICK_COLS;
-    const brickH = (this.field.h * 0.2) / BRICK_ROWS;
-    const brickStartX = fx + (fw - brickW * BRICK_COLS) / 2 + brickW / 2;
-    const brickStartY = fy + 50;
-
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < BRICK_COLS; col++) {
-        const bx = brickStartX + col * brickW;
-        const by = brickStartY + row * brickH;
-        const shade = row % 2 === 0 ? 0x909090 : 0x707070;
-        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
-        this.physics.add.existing(brick, true);
-        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
-        brick._visual = brickVisual;
-        this.bricks.add(brick);
+    // Clean up extra balls
+    if (this.extraBalls) {
+      for (const eb of this.extraBalls) {
+        if (eb._visual) eb._visual.destroy();
+        eb.destroy();
       }
+      this.extraBalls = [];
     }
 
-    this.totalBricks = BRICK_COLS * rows;
-    this.bricksDestroyed = 0;
+    // Clean up powerups
+    if (this.powerups) {
+      for (const pu of this.powerups) {
+        pu.container.destroy();
+      }
+      this.powerups = [];
+    }
+
+    // Reset active powerup state
+    this.activePowerups = { wide: false, slow: false };
+
+    // Reset platform width to original
+    this.platform.width = this.originalPlatformWidth;
+    this.platform.body.setSize(this.originalPlatformWidth, this.platform.height);
+    if (this.platformVisual) {
+      this.platformVisual.destroy();
+      this.platformVisual = GameVisuals.glowRect(this, this.platform.x, this.platform.y, this.originalPlatformWidth, this.platform.height, this.platformColor, this.platformAlpha);
+    }
+
+    // Spawn bricks with pattern for this level
+    this._spawnBricks();
+
+    // Re-add collider for main ball against new bricks
+    this.physics.add.collider(this.ball, this.bricks, this.onBallHitBrick, null, this);
+
     if (this.hud) this.hud.scoreText.setText(`★ ${this.bricksDestroyed}/${this.totalBricks}`);
 
     // Speed up ball
@@ -503,6 +777,23 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.gameEnded = true;
 
     this.safetyTimer.stop();
+
+    // Clean up extra balls
+    if (this.extraBalls) {
+      for (const eb of this.extraBalls) {
+        if (eb._visual) eb._visual.destroy();
+        eb.destroy();
+      }
+      this.extraBalls = [];
+    }
+
+    // Clean up powerups
+    if (this.powerups) {
+      for (const pu of this.powerups) {
+        pu.container.destroy();
+      }
+      this.powerups = [];
+    }
 
     const result = {
       game: 'breakout',
