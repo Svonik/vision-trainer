@@ -10,6 +10,7 @@ import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
 import { CheckCircle, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
 
 interface GameResult {
     game: string;
@@ -127,6 +128,7 @@ export function TrainingPlayPage() {
     const phaserRef = useRef<IRefPhaserGame>(null);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [isPaused, setIsPaused] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const currentGameId = sessionGames[currentGameIndex] ?? '';
 
@@ -209,6 +211,7 @@ export function TrainingPlayPage() {
                 scene.scene.start(targetScene);
                 return;
             }
+            setLoading(false);
             EventBus.emit(startEvent, settings);
         };
 
@@ -238,6 +241,7 @@ export function TrainingPlayPage() {
             clearInterval(countdownRef.current);
         }
         setShowTransition(false);
+        setLoading(true);
         setCurrentGameIndex(prev => prev + 1);
     };
 
@@ -327,6 +331,18 @@ export function TrainingPlayPage() {
 
             <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
                 <PhaserGame ref={phaserRef} />
+                <AnimatePresence>
+                    {loading && (
+                        <motion.div
+                            key="loading-overlay"
+                            className="absolute inset-0 z-20"
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <PhaserLoadingScreen />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {safetyWarning && (
