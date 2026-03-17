@@ -22,7 +22,7 @@ export function SuppressionTestStep({ glassesType, onPass, onFail }: Props) {
                         backgroundColor: eyeColors.leftHex,
                         boxShadow: '0 0 20px rgba(255,107,138,0.3)',
                     }}
-                    aria-label="red square"
+                    aria-label="Красный квадрат"
                 />
                 <div
                     className="w-24 h-24 rounded-2xl"
@@ -30,7 +30,7 @@ export function SuppressionTestStep({ glassesType, onPass, onFail }: Props) {
                         backgroundColor: eyeColors.rightHex,
                         boxShadow: '0 0 20px rgba(107,223,255,0.3)',
                     }}
-                    aria-label="cyan square"
+                    aria-label="Голубой квадрат"
                 />
             </div>
             <div className="flex flex-col gap-3 w-full max-w-sm">
