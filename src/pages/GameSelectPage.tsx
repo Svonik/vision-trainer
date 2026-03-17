@@ -32,7 +32,7 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
             aria-label={t(game.titleKey)}
         >
             <GameIllustration gameId={game.id} />
-            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+            <div className="p-5 space-y-4">
                 <div>
                     <h2 className="font-[var(--font-display)] text-lg font-semibold text-[var(--text)]">
                         {t(game.titleKey)}
