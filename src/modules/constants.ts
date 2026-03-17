@@ -1,4 +1,3 @@
-// @ts-nocheck
 export const COLORS = {
   RED: 0xFF0000,
   CYAN: 0x00FFFF,
@@ -9,7 +8,7 @@ export const COLORS = {
   CYAN_HEX: '#00FFFF',
   GRAY_HEX: '#808080',
   WHITE_HEX: '#FFFFFF',
-};
+} as const;
 
 export const GAME = {
   WIDTH: 800,
@@ -26,16 +25,16 @@ export const GAME = {
   MIN_OBJECT_SPACING_RATIO: 0.15,
   SPAWN_X_MIN_RATIO: 0.10,
   SPAWN_X_MAX_RATIO: 0.90,
-};
+} as const;
 
 export const SPEEDS = {
   slow: { fallSpeed: 120, spawnInterval: 3000, label: 'Медленно' },
   normal: { fallSpeed: 240, spawnInterval: 2000, label: 'Нормально' },
   fast: { fallSpeed: 360, spawnInterval: 1500, label: 'Быстро' },
   pro: { fallSpeed: 480, spawnInterval: 1000, label: 'Профи' },
-};
+} as const;
 
-export const PLATFORM_KEYBOARD_SPEED = 400;
+export const PLATFORM_KEYBOARD_SPEED = 400 as const;
 
 export const CONTRAST = {
   MIN: 0,
@@ -46,7 +45,7 @@ export const CONTRAST = {
   DYNAMIC_FLOOR: 50,
   DYNAMIC_TRIGGER_UP: 5,
   DYNAMIC_TRIGGER_DOWN: 3,
-};
+} as const;
 
 export const CALIBRATION = {
   SLIDER_MIN: 0,
@@ -54,14 +53,14 @@ export const CALIBRATION = {
   SLIDER_STEP: 1,
   SLIDER_DEFAULT: 100,
   MAX_ATTEMPTS: 3,
-};
+} as const;
 
 export const SAFETY = {
   BREAK_TIME_MS: 15 * 60 * 1000,
   WARNING_BEFORE_MS: 1 * 60 * 1000,
   EXTENSION_MS: 5 * 60 * 1000,
   MAX_EXTENSIONS: 1,
-};
+} as const;
 
 export const STORAGE_KEYS = {
   VERSION: 'vt_version',
@@ -69,6 +68,6 @@ export const STORAGE_KEYS = {
   CALIBRATION: 'vt_calibration',
   SESSIONS: 'vt_sessions',
   DEFAULT_SETTINGS: 'vt_default_settings',
-};
+} as const;
 
-export const CURRENT_VERSION = '1.0';
+export const CURRENT_VERSION = '1.0' as const;
