@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { DisclaimerPage } from './DisclaimerPage';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
@@ -17,6 +17,12 @@ export function OnboardingWizard() {
     const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>('red-cyan');
     const [adjustAttempts, setAdjustAttempts] = useState(0);
     const { save, setGlassesType: saveGlassesType } = useCalibration();
+    const stepRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Focus the step container when step changes (for screen readers)
+        stepRef.current?.focus();
+    }, [step]);
 
     const handleDisclaimerComplete = () => {
         setStep('glasses');
@@ -51,8 +57,7 @@ export function OnboardingWizard() {
     const currentStepIndex = STEP_ORDER.indexOf(step);
 
     return (
-        <div
-            className="min-h-screen relative"
+        <div ref={stepRef} tabIndex={-1} className="outline-none min-h-screen relative"
             style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
         >
             {step === 'disclaimer' && (
@@ -87,6 +92,7 @@ export function OnboardingWizard() {
                     <span
                         key={s}
                         data-dot={s}
+                        aria-label={`Шаг ${i + 1} из ${STEP_ORDER.length}`}
                         className={`w-2 h-2 rounded-full transition-all ${
                             i < currentStepIndex
                                 ? 'bg-[var(--cta)] opacity-60'
