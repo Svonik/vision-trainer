@@ -1,4 +1,4 @@
-import { Slider } from '@/components/ui/slider';
+import { ColoredSlider } from '@/components/ColoredSlider';
 import { AppButton } from '@/components/AppButton';
 import { useCalibration } from '../../hooks/useCalibration';
 import { getEyeColors } from '../../modules/glassesColors';
@@ -66,7 +66,8 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         >
                             −
                         </button>
-                        <Slider
+                        <ColoredSlider
+                            channel="red"
                             value={[redBrightness]}
                             min={CALIBRATION.SLIDER_MIN}
                             max={CALIBRATION.SLIDER_MAX}
@@ -95,7 +96,8 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         >
                             −
                         </button>
-                        <Slider
+                        <ColoredSlider
+                            channel="cyan"
                             value={[cyanBrightness]}
                             min={CALIBRATION.SLIDER_MIN}
                             max={CALIBRATION.SLIDER_MAX}
