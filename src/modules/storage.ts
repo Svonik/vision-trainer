@@ -10,10 +10,13 @@ const read = (key) => {
   }
 };
 
-const write = (key, value) => {
+const write = (key: string, value: unknown): void => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch {
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      window.dispatchEvent(new CustomEvent('storage-quota-exceeded'));
+    }
     console.warn(`Failed to write to localStorage key: ${key}`);
   }
 };
@@ -61,6 +64,10 @@ export const getCalibration = () =>
 export const saveCalibration = (cal) => write(STORAGE_KEYS.CALIBRATION, cal);
 
 export const getSessions = () => read(STORAGE_KEYS.SESSIONS) || [];
+
+export const writeSessions = (sessions: unknown[]): void => {
+    write(STORAGE_KEYS.SESSIONS, sessions);
+};
 
 export const addSession = (session) => {
   const sessions = getSessions();
