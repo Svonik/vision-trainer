@@ -49,7 +49,7 @@ export function TabBar() {
                         aria-current={active ? 'page' : undefined}
                     >
                         <Icon size={22} />
-                        <span className="text-xs leading-none" style={{ display: 'var(--tab-label-display, inline)' }}>{t(labelKey)}</span>
+                        <span className="text-xs leading-none tab-label">{t(labelKey)}</span>
                     </button>
                 );
             })}

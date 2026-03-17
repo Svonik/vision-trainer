@@ -5,12 +5,8 @@
   --font-display: 'Fredoka', system-ui, sans-serif;
 }
 
-html {
-  padding-top: env(safe-area-inset-top);
-  padding-right: env(safe-area-inset-right);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-}
+/* Safe areas handled per-component: TabBar (bottom), TopBar (top).
+   Do NOT add padding to html — it double-stacks with fixed elements. */
 
 :root {
   --bg: #12101a;
@@ -64,10 +60,9 @@ html {
   animation: fadeSlideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* Tab labels hidden on very narrow screens (<360px) */
 @media (max-width: 359px) {
-  :root {
-    --tab-label-display: none;
-  }
+  .tab-label { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

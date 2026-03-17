@@ -168,12 +168,10 @@ const strings = {
   'disclaimer.point2': 'Рекомендуется использовать под наблюдением офтальмолога.',
   'disclaimer.point3': 'При возникновении двоения, головной боли или дискомфорта — прекратите использование.',
   'progress.unknownGame': 'Игра',
-  'settings.glassesTypeLabel': 'Тип очков',
-  'settings.defaultSettingsLabel': 'Настройки по умолчанию',
-  'settings.leftEyeLabel': 'Левый глаз',
-  'settings.rightEyeLabel': 'Правый глаз',
   'stats.contrastL': 'Л',
   'stats.contrastR': 'П',
+  'landscape.rotate': 'Поверните устройство горизонтально',
+  'landscape.hint': 'Для комфортной игры нужен горизонтальный экран',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

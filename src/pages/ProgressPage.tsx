@@ -16,12 +16,7 @@ function formatDate(iso: string): string {
     }
 }
 
-interface SessionRowProps {
-    session: any;
-    index: number;
-}
-
-const SessionRow = React.memo(function SessionRow({ session }: SessionRowProps) {
+const SessionRow = React.memo(function SessionRow({ session }: { session: any }) {
     const game = session.game ? getGameById(session.game) : undefined;
     const gameName = game ? t(game.titleKey) : (session.game ?? t('progress.unknownGame'));
     const hitPct = session.hit_rate != null ? Math.round(session.hit_rate * 100) : 0;
@@ -113,7 +108,7 @@ export function ProgressPage() {
             {/* Session list */}
             <div className="space-y-3">
                 {sorted.map((session, idx) => (
-                    <SessionRow key={idx} session={session} index={idx} />
+                    <SessionRow key={session.timestamp ?? idx} session={session} />
                 ))}
             </div>
 

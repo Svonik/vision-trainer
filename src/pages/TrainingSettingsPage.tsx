@@ -119,7 +119,7 @@ export function TrainingSettingsPage() {
                         <div className="space-y-3">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.leftHex }}>{`${t('settings.leftEyeLabel')} (${eyeColors.leftLabel})`}</span>
+                                    <span style={{ color: eyeColors.leftHex }}>{`${t('settings.leftEye')} (${eyeColors.leftLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastLeft}%</span>
                                 </div>
                                 <Slider
@@ -134,7 +134,7 @@ export function TrainingSettingsPage() {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.rightHex }}>{`${t('settings.rightEyeLabel')} (${eyeColors.rightLabel})`}</span>
+                                    <span style={{ color: eyeColors.rightHex }}>{`${t('settings.rightEye')} (${eyeColors.rightLabel})`}</span>
                                     <span className="text-[var(--text-secondary)]">{settings.contrastRight}%</span>
                                 </div>
                                 <Slider
