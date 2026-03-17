@@ -8,6 +8,7 @@ import { useCalibration } from '../hooks/useCalibration';
 import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SPEEDS, CALIBRATION, CONTRAST } from '../modules/constants';
 import { t } from '../modules/i18n';
+import { toast } from 'sonner';
 
 type CalibrationMode = 'view' | 'glasses' | 'suppression' | 'adjust';
 
@@ -34,6 +35,7 @@ export function SettingsHub() {
             speed: defaultSpeed,
             eyeConfig: defaultEyeConfig,
         });
+        toast.success(t('settings.saved'));
     };
 
     const handleGlassesSelect = (type: 'red-cyan' | 'cyan-red') => {
@@ -163,6 +165,7 @@ export function SettingsHub() {
                         onClick={() => {
                             setGlassesType('red-cyan');
                             save({ suppression_passed: passed, glasses_type: 'red-cyan' });
+                            toast.info(t('settings.glassesChanged'));
                         }}
                         className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
                             glassesType === 'red-cyan'
@@ -176,6 +179,7 @@ export function SettingsHub() {
                         onClick={() => {
                             setGlassesType('cyan-red');
                             save({ suppression_passed: passed, glasses_type: 'cyan-red' });
+                            toast.info(t('settings.glassesChanged'));
                         }}
                         className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
                             glassesType === 'cyan-red'

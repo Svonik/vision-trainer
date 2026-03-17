@@ -8,6 +8,7 @@ import { Layout } from './components/Layout';
 import { SuspenseFallback } from './components/SuspenseFallback';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/PageTransition';
+import { Toaster } from 'sonner';
 
 const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 const GameSelectPage = lazy(() => import('./pages/GameSelectPage').then(m => ({ default: m.GameSelectPage })));
@@ -76,6 +77,16 @@ function App() {
                     } />
                 </Routes>
             </Suspense>
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    style: {
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                    },
+                }}
+            />
         </HashRouter>
     );
 }
