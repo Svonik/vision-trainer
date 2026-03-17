@@ -52,7 +52,7 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                     {t(game.descriptionKey)}
                 </p>
                 <span
-                    className="rounded-full inline-flex items-center justify-center gap-2 py-3 px-4 text-base min-h-[44px] bg-[var(--cta)] text-[var(--cta-text)] font-semibold w-full"
+                    className="rounded-full flex items-center justify-center gap-2 py-3 px-4 text-base min-h-[44px] bg-[var(--cta)] text-[var(--cta-text)] font-semibold w-full mt-4"
                     aria-hidden="true"
                 >
                     {t('gameSelect.play')}
