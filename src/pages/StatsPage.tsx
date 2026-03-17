@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { Star, Hourglass, Grid } from 'lucide-react';
+import { AppButton } from '@/components/AppButton';
 import { getSessions } from '../modules/storage';
 import { SPEEDS, GAME } from '../modules/constants';
 import { t } from '../modules/i18n';
@@ -124,33 +125,21 @@ export function StatsPage() {
                     <div className="flex flex-col gap-3 pt-2">
                         {result ? (
                             <>
-                                <button
-                                    onClick={handlePlayAgain}
-                                    className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
-                                >
+                                <AppButton variant="cta" size="md" onClick={handlePlayAgain} className="w-full">
                                     {t('stats.playAgain')}
-                                </button>
-                                <button
-                                    onClick={() => navigate(`/games/${gameId}/settings`)}
-                                    className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
-                                >
+                                </AppButton>
+                                <AppButton variant="outline" size="md" onClick={() => navigate(`/games/${gameId}/settings`)} className="w-full">
                                     {t('stats.changeSettings')}
-                                </button>
-                                <button
-                                    onClick={() => navigate('/games')}
-                                    className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 btn-press hover:bg-[var(--surface)] flex items-center justify-center gap-2"
-                                >
+                                </AppButton>
+                                <AppButton variant="outline" size="md" onClick={() => navigate('/games')} className="w-full">
                                     <Grid className="w-4 h-4" />
                                     {t('nav.otherGame')}
-                                </button>
+                                </AppButton>
                             </>
                         ) : (
-                            <button
-                                onClick={() => navigate(`/games/${gameId}/settings`)}
-                                className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
-                            >
+                            <AppButton variant="cta" size="md" onClick={() => navigate(`/games/${gameId}/settings`)} className="w-full">
                                 {t('stats.startGame')}
-                            </button>
+                            </AppButton>
                         )}
                     </div>
                 </div>

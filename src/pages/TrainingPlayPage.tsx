@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
+import { AppButton } from '@/components/AppButton';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { t } from '../modules/i18n';
@@ -71,12 +72,9 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                     </p>
                 </div>
 
-                <button
-                    onClick={onContinue}
-                    className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
-                >
+                <AppButton variant="cta" size="md" onClick={onContinue} className="w-full">
                     {t('training.continue')} ({countdown}s)
-                </button>
+                </AppButton>
             </div>
         </div>
     );

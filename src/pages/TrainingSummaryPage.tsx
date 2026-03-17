@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Hourglass } from 'lucide-react';
+import { AppButton } from '@/components/AppButton';
 import { t } from '../modules/i18n';
 import { getSessions } from '../modules/storage';
 import { recommendContrast, GAME_TITLE_KEYS } from '../modules/sessionEngine';
@@ -136,12 +137,14 @@ export function TrainingSummaryPage() {
                     </div>
 
                     {/* Finish button */}
-                    <button
+                    <AppButton
+                        variant="cta"
+                        size="lg"
                         onClick={() => navigate('/mode-select')}
-                        className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-4 text-lg btn-press font-[var(--font-display)] font-semibold"
+                        className="w-full font-[var(--font-display)]"
                     >
                         {t('training.finish')}
-                    </button>
+                    </AppButton>
                 </div>
             </div>
         </div>

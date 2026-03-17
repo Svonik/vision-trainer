@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { Star, TrendingUp, Clock, Gamepad2 } from 'lucide-react';
+import { AppButton } from '@/components/AppButton';
 import { getSessions } from '../modules/storage';
 import { SPEEDS } from '../modules/constants';
 import { getGameById } from '../config/games';
@@ -71,13 +72,10 @@ export function ProgressPage() {
                 <p className="text-[var(--text-secondary)] text-base max-w-xs">
                     {t('progress.historyHint')}
                 </p>
-                <button
-                    onClick={() => navigate('/games')}
-                    className="bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 px-8 font-semibold btn-press font-[var(--font-display)]"
-                >
-                    <Gamepad2 className="inline w-5 h-5 mr-2" />
+                <AppButton variant="cta" size="md" onClick={() => navigate('/games')}>
+                    <Gamepad2 className="w-5 h-5" />
                     {t('progress.chooseGame')}
-                </button>
+                </AppButton>
             </div>
         );
     }
