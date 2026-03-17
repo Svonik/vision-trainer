@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { AppButton } from '@/components/AppButton';
@@ -38,7 +39,7 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
         >
             <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 spring-enter text-center">
                 {/* Completed badge */}
-                <div className="text-4xl">✓</div>
+                <CheckCircle className="w-12 h-12 text-[var(--success)] mx-auto" />
                 <div>
                     <h2 className="font-[var(--font-display)] text-2xl text-[var(--text)]">
                         {t('training.excellent')}
@@ -234,7 +235,7 @@ export function TrainingPlayPage() {
                     onClick={() => navigate('/mode-select')}
                     className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-sm transition-colors"
                 >
-                    ← {t('nav.back')}
+                    <ArrowLeft className="w-4 h-4 inline" /> {t('nav.back')}
                 </button>
                 <div className="flex items-center gap-3">
                     <span className="text-[var(--text-secondary)] text-sm">

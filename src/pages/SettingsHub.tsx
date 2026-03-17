@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
 import { AppButton } from '@/components/AppButton';
@@ -76,7 +76,7 @@ export function SettingsHub() {
                     onClick={() => setCalibMode('view')}
                     className="mb-4"
                 >
-                    ← {t('nav.back')}
+                    <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                 </AppButton>
                 <GlassesTypeStep glassesType={recalibGlassesType} onSelect={handleGlassesSelect} />
             </div>
@@ -92,7 +92,7 @@ export function SettingsHub() {
                     onClick={() => setCalibMode('glasses')}
                     className="mb-4"
                 >
-                    ← {t('nav.back')}
+                    <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                 </AppButton>
                 <SuppressionTestStep
                     glassesType={recalibGlassesType}
@@ -112,7 +112,7 @@ export function SettingsHub() {
                     onClick={() => setCalibMode('suppression')}
                     className="mb-4"
                 >
-                    ← {t('nav.back')}
+                    <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                 </AppButton>
                 <BrightnessAdjustStep
                     glassesType={recalibGlassesType}

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { ArrowLeft } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { AppButton } from '@/components/AppButton';
 import { useGameSettings } from '../hooks/useGameSettings';
@@ -207,7 +208,7 @@ export function TrainingSettingsPage() {
                         onClick={() => navigate('/mode-select')}
                         className="w-full"
                     >
-                        ← {t('nav.back')}
+                        <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                     </AppButton>
                 </div>
             </div>
