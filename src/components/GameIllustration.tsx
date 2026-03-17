@@ -4,7 +4,7 @@ interface GameIllustrationProps {
 
 export function GameIllustration({ gameId }: GameIllustrationProps) {
     return (
-        <div className="relative h-16 sm:h-28 bg-[var(--surface)] rounded-t-3xl overflow-hidden flex items-center justify-center">
+        <div className="h-24 bg-[var(--surface)] rounded-t-3xl overflow-hidden flex items-center justify-center">
             <svg viewBox="0 0 120 60" className="h-full w-full" aria-hidden="true">
                 {renderIllustration(gameId)}
             </svg>
@@ -17,10 +17,11 @@ function renderIllustration(gameId: string): JSX.Element | null {
         case 'binocular-catcher':
             return (
                 <>
-                    {/* Falling star + platform */}
-                    <circle cx="45" cy="12" r="4" fill="var(--cyan-soft)" opacity="0.6" />
-                    <circle cx="70" cy="18" r="3" fill="var(--cyan-soft)" opacity="0.4" />
-                    <rect x="40" y="50" width="40" height="4" rx="2" fill="var(--red-soft)" opacity="0.7" />
+                    {/* Falling objects + platform */}
+                    <circle cx="30" cy="10" r="4" fill="var(--cyan-soft)" opacity="0.5" />
+                    <circle cx="55" cy="16" r="4" fill="var(--cyan-soft)" opacity="0.6" />
+                    <circle cx="78" cy="8" r="3" fill="var(--warning)" opacity="0.5" />
+                    <rect x="25" y="50" width="70" height="5" rx="2.5" fill="var(--red-soft)" opacity="0.7" />
                 </>
             );
         case 'breakout':
@@ -50,11 +51,15 @@ function renderIllustration(gameId: string): JSX.Element | null {
         case 'invaders':
             return (
                 <>
-                    {/* Pixel invader + shield */}
-                    <rect x="35" y="12" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.6" />
-                    <rect x="50" y="12" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.4" />
-                    <rect x="65" y="12" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.6" />
-                    <rect x="50" y="48" width="20" height="6" rx="2" fill="white" opacity="0.6" />
+                    {/* Pixel invaders row */}
+                    <rect x="28" y="10" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.6" />
+                    <rect x="44" y="10" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.4" />
+                    <rect x="60" y="10" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.6" />
+                    <rect x="76" y="10" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.4" />
+                    {/* Shield */}
+                    <rect x="46" y="36" width="28" height="6" rx="3" fill="white" opacity="0.4" />
+                    {/* Player ship */}
+                    <polygon points="60,52 54,58 66,58" fill="var(--cyan-soft)" opacity="0.7" />
                 </>
             );
         case 'pong':
@@ -91,9 +96,10 @@ function renderIllustration(gameId: string): JSX.Element | null {
             return (
                 <>
                     {/* Ship + asteroids */}
-                    <circle cx="36" cy="18" r="8" fill="var(--border)" opacity="0.5" />
-                    <circle cx="80" cy="24" r="5" fill="var(--border)" opacity="0.4" />
-                    <polygon points="60,46 56,54 64,54" fill="white" opacity="0.7" />
+                    <circle cx="28" cy="16" r="8" fill="var(--border)" opacity="0.5" />
+                    <circle cx="82" cy="22" r="6" fill="var(--border)" opacity="0.4" />
+                    <circle cx="58" cy="12" r="4" fill="var(--border)" opacity="0.45" />
+                    <polygon points="60,46 55,56 65,56" fill="white" opacity="0.7" />
                 </>
             );
         case 'balloonpop':
