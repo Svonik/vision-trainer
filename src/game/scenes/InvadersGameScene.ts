@@ -37,9 +37,21 @@ const ALIEN_STEP_INTERVALS = {
 const ENEMY_FIRE_MIN_MS = 2000;
 const ENEMY_FIRE_MAX_MS = 3000;
 
+const ALIEN_SPRITE_KEYS = ['alien1', 'alien2', 'alien3', 'alien4', 'alien1'];
+
 export default class InvadersGameScene extends Phaser.Scene {
   constructor() {
     super('InvadersGameScene');
+  }
+
+  preload() {
+    this.load.image('ship', 'assets/sprites/ship.png');
+    this.load.image('alien1', 'assets/sprites/alien1.png');
+    this.load.image('alien2', 'assets/sprites/alien2.png');
+    this.load.image('alien3', 'assets/sprites/alien3.png');
+    this.load.image('alien4', 'assets/sprites/alien4.png');
+    this.load.image('laser', 'assets/sprites/laser.png');
+    this.load.image('laser-red', 'assets/sprites/laser-red.png');
   }
 
   create() {
@@ -107,17 +119,27 @@ export default class InvadersGameScene extends Phaser.Scene {
     const ccy = fy + fh / 2;
     GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
-    // Ship (platformColor — one eye) — invisible physics rect + visual glow rect
+    // Ship (platformColor — one eye)
     const shipW = fw * SHIP_WIDTH_RATIO;
-    const shipH = fh * SHIP_HEIGHT_RATIO;
+    const shipH = fh * SHIP_HEIGHT_RATIO * 3; // taller to match sprite aspect ratio
     const shipY = fy + fh - shipH / 2 - 10;
-    this.ship = this.add.rectangle(ccx, shipY, shipW, shipH, this.platformColor, 0);
-    this.physics.add.existing(this.ship, false);
-    this.ship.body.setImmovable(false);
-    this.shipVisual = GameVisuals.glowRect(this, ccx, shipY, shipW, shipH, this.platformColor, this.platformAlpha);
+
+    if (this.textures.exists('ship')) {
+      this.ship = this.add.image(ccx, shipY, 'ship');
+      this.ship.setTint(this.platformColor);
+      this.ship.setAlpha(this.platformAlpha);
+      this.ship.setDisplaySize(shipW, shipH);
+      this.physics.add.existing(this.ship, false);
+      this.ship.body.setImmovable(false);
+    } else {
+      // Fallback: rectangle
+      this.ship = this.add.rectangle(ccx, shipY, shipW, shipH, this.platformColor, 0);
+      this.physics.add.existing(this.ship, false);
+      this.ship.body.setImmovable(false);
+      this.shipVisual = GameVisuals.glowRect(this, ccx, shipY, shipW, shipH, this.platformColor, this.platformAlpha);
+    }
 
     // Aliens grid (alienColor — other eye)
-    // Each alien entry: { body: rect, notchL: rect, notchR: rect }
     this.aliens = [];
     this.alienGroup = this.physics.add.staticGroup();
     const totalGridW = ALIEN_COLS * ALIEN_W + (ALIEN_COLS - 1) * 8;
@@ -128,18 +150,29 @@ export default class InvadersGameScene extends Phaser.Scene {
       for (let col = 0; col < ALIEN_COLS; col++) {
         const ax = alienStartX + col * (ALIEN_W + 8);
         const ay = alienStartY + row * (ALIEN_H + 8);
-        // Invisible physics rect
-        const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor, 0);
-        // Visual glow rect
-        const alienVisual = GameVisuals.glowRect(this, ax, ay, ALIEN_W, ALIEN_H, this.alienColor, this.alienAlpha, 3);
-        // small "eye" notches
-        const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
-          .setAlpha(this.alienAlpha * 0.8);
-        const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
-          .setAlpha(this.alienAlpha * 0.8);
-        this.physics.add.existing(alien, true);
-        this.aliens.push({ body: alien, alienVisual, notchL, notchR });
-        this.alienGroup.add(alien);
+        const spriteKey = ALIEN_SPRITE_KEYS[row % ALIEN_SPRITE_KEYS.length];
+
+        let alienSprite;
+        if (this.textures.exists(spriteKey)) {
+          alienSprite = this.add.image(ax, ay, spriteKey);
+          alienSprite.setTint(this.alienColor);
+          alienSprite.setAlpha(this.alienAlpha);
+          alienSprite.setDisplaySize(ALIEN_W, ALIEN_H);
+          this.physics.add.existing(alienSprite, true);
+          this.aliens.push({ body: alienSprite, alienVisual: null, notchL: null, notchR: null });
+          this.alienGroup.add(alienSprite);
+        } else {
+          // Fallback: rectangle + notch decorations
+          const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor, 0);
+          const alienVisual = GameVisuals.glowRect(this, ax, ay, ALIEN_W, ALIEN_H, this.alienColor, this.alienAlpha, 3);
+          const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
+            .setAlpha(this.alienAlpha * 0.8);
+          const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
+            .setAlpha(this.alienAlpha * 0.8);
+          this.physics.add.existing(alien, true);
+          this.aliens.push({ body: alien, alienVisual, notchL, notchR });
+          this.alienGroup.add(alien);
+        }
       }
     }
 
@@ -231,7 +264,7 @@ export default class InvadersGameScene extends Phaser.Scene {
       this.field.x + this.ship.width / 2,
       this.field.x + this.field.w - this.ship.width / 2,
     );
-    // Sync ship visual
+    // Sync ship visual (fallback rectangle mode)
     if (this.shipVisual) { this.shipVisual.x = this.ship.x; this.shipVisual.y = this.ship.y; }
 
     // Space to fire, or touch fire button (one-shot cooldown)
@@ -340,7 +373,7 @@ export default class InvadersGameScene extends Phaser.Scene {
       for (const a of liveAliens) {
         a.body.y += ALIEN_STEP_DOWN;
         if (a.body.body) a.body.body.reset(a.body.x, a.body.y);
-        // Move notches with the body
+        // Move notches with the body (fallback mode only)
         if (a.notchL) { a.notchL.x = a.body.x - 8; a.notchL.y = a.body.y - 4; }
         if (a.notchR) { a.notchR.x = a.body.x + 8; a.notchR.y = a.body.y - 4; }
         if (a.alienVisual) { a.alienVisual.x = a.body.x; a.alienVisual.y = a.body.y; }
@@ -350,7 +383,7 @@ export default class InvadersGameScene extends Phaser.Scene {
       for (const a of liveAliens) {
         a.body.x += step * this.alienDirection;
         if (a.body.body) a.body.body.reset(a.body.x, a.body.y);
-        // Move notches with the body
+        // Move notches with the body (fallback mode only)
         if (a.notchL) { a.notchL.x = a.body.x - 8; a.notchL.y = a.body.y - 4; }
         if (a.notchR) { a.notchR.x = a.body.x + 8; a.notchR.y = a.body.y - 4; }
         if (a.alienVisual) { a.alienVisual.x = a.body.x; a.alienVisual.y = a.body.y; }
@@ -372,13 +405,25 @@ export default class InvadersGameScene extends Phaser.Scene {
 
     SynthSounds.launch();
 
-    const bullet = this.add.rectangle(
-      this.ship.x,
-      this.ship.y - this.ship.height / 2 - BULLET_H / 2,
-      BULLET_W,
-      BULLET_H,
-      this.platformColor,
-    ).setAlpha(this.platformAlpha);
+    let bullet;
+    if (this.textures.exists('laser')) {
+      bullet = this.add.image(
+        this.ship.x,
+        this.ship.y - this.ship.height / 2 - BULLET_H / 2,
+        'laser',
+      );
+      bullet.setTint(this.platformColor);
+      bullet.setAlpha(this.platformAlpha);
+      bullet.setDisplaySize(BULLET_W * 2, BULLET_H * 1.5);
+    } else {
+      bullet = this.add.rectangle(
+        this.ship.x,
+        this.ship.y - this.ship.height / 2 - BULLET_H / 2,
+        BULLET_W,
+        BULLET_H,
+        this.platformColor,
+      ).setAlpha(this.platformAlpha);
+    }
     this.playerBullets.push(bullet);
   }
 
@@ -397,13 +442,26 @@ export default class InvadersGameScene extends Phaser.Scene {
     const shooters = Object.values(byColumn);
     const shooter = shooters[Math.floor(Math.random() * shooters.length)];
 
-    const bullet = this.add.rectangle(
-      shooter.body.x,
-      shooter.body.y + ALIEN_H / 2 + BULLET_H / 2,
-      BULLET_W,
-      BULLET_H,
-      this.alienColor,
-    ).setAlpha(this.alienAlpha);
+    let bullet;
+    const laserKey = this.textures.exists('laser-red') ? 'laser-red' : (this.textures.exists('laser') ? 'laser' : null);
+    if (laserKey) {
+      bullet = this.add.image(
+        shooter.body.x,
+        shooter.body.y + ALIEN_H / 2 + BULLET_H / 2,
+        laserKey,
+      );
+      bullet.setTint(this.alienColor);
+      bullet.setAlpha(this.alienAlpha);
+      bullet.setDisplaySize(BULLET_W * 2, BULLET_H * 1.5);
+    } else {
+      bullet = this.add.rectangle(
+        shooter.body.x,
+        shooter.body.y + ALIEN_H / 2 + BULLET_H / 2,
+        BULLET_W,
+        BULLET_H,
+        this.alienColor,
+      ).setAlpha(this.alienAlpha);
+    }
     this.enemyBullets.push(bullet);
   }
 
@@ -419,7 +477,7 @@ export default class InvadersGameScene extends Phaser.Scene {
       onComplete: () => flash.destroy(),
     });
 
-    // Destroy notches and visual together with the alien body
+    // Destroy notches and visual together with the alien body (fallback mode)
     if (alienEntry.notchL) { alienEntry.notchL.destroy(); alienEntry.notchL = null; }
     if (alienEntry.notchR) { alienEntry.notchR.destroy(); alienEntry.notchR = null; }
     if (alienEntry.alienVisual) { alienEntry.alienVisual.destroy(); alienEntry.alienVisual = null; }
@@ -458,14 +516,21 @@ export default class InvadersGameScene extends Phaser.Scene {
       delay: BLINK_INTERVAL_MS,
       repeat: totalBlinks - 1,
       callback: () => {
+        blinkCount++;
+        const visible = blinkCount % 2 === 0;
+        // Sprite mode
+        if (this.ship && this.ship.setAlpha) {
+          this.ship.setAlpha(visible ? this.platformAlpha : 0);
+        }
+        // Fallback visual mode
         if (this.shipVisual) {
-          blinkCount++;
-          this.shipVisual.setAlpha(blinkCount % 2 === 0 ? this.platformAlpha : 0);
+          this.shipVisual.setAlpha(visible ? this.platformAlpha : 0);
         }
       },
     });
     this.time.delayedCall(INVINCIBILITY_DURATION_MS, () => {
       this.invincible = false;
+      if (this.ship && this.ship.setAlpha) this.ship.setAlpha(this.platformAlpha);
       if (this.shipVisual) this.shipVisual.setAlpha(this.platformAlpha);
       if (this.blinkTimer) { this.blinkTimer.remove(); this.blinkTimer = null; }
     });
@@ -578,15 +643,27 @@ export default class InvadersGameScene extends Phaser.Scene {
       for (let col = 0; col < ALIEN_COLS; col++) {
         const ax = alienStartX + col * (ALIEN_W + 8);
         const ay = alienStartY + row * (ALIEN_H + 8);
-        const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor, 0);
-        const alienVisual = GameVisuals.glowRect(this, ax, ay, ALIEN_W, ALIEN_H, this.alienColor, this.alienAlpha, 3);
-        const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
-          .setAlpha(this.alienAlpha * 0.8);
-        const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
-          .setAlpha(this.alienAlpha * 0.8);
-        this.physics.add.existing(alien, true);
-        this.aliens.push({ body: alien, alienVisual, notchL, notchR });
-        this.alienGroup.add(alien);
+        const spriteKey = ALIEN_SPRITE_KEYS[row % ALIEN_SPRITE_KEYS.length];
+
+        if (this.textures.exists(spriteKey)) {
+          const alienSprite = this.add.image(ax, ay, spriteKey);
+          alienSprite.setTint(this.alienColor);
+          alienSprite.setAlpha(this.alienAlpha);
+          alienSprite.setDisplaySize(ALIEN_W, ALIEN_H);
+          this.physics.add.existing(alienSprite, true);
+          this.aliens.push({ body: alienSprite, alienVisual: null, notchL: null, notchR: null });
+          this.alienGroup.add(alienSprite);
+        } else {
+          const alien = this.add.rectangle(ax, ay, ALIEN_W, ALIEN_H, this.alienColor, 0);
+          const alienVisual = GameVisuals.glowRect(this, ax, ay, ALIEN_W, ALIEN_H, this.alienColor, this.alienAlpha, 3);
+          const notchL = this.add.rectangle(ax - 8, ay - 4, 6, 6, this.alienColor)
+            .setAlpha(this.alienAlpha * 0.8);
+          const notchR = this.add.rectangle(ax + 8, ay - 4, 6, 6, this.alienColor)
+            .setAlpha(this.alienAlpha * 0.8);
+          this.physics.add.existing(alien, true);
+          this.aliens.push({ body: alien, alienVisual, notchL, notchR });
+          this.alienGroup.add(alien);
+        }
       }
     }
 

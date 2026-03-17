@@ -19,6 +19,7 @@ const SHIP_THRUST = 220;
 const SHIP_FRICTION = 0.985;
 const BULLET_SPEED = 480;
 const BULLET_LIFETIME_MS = 1600;
+const SHIP_SPRITE_SIZE = 32;
 
 const ASTEROID_SIZES = {
   large:  { radius: 30, speed: 1.0, score: 1 },
@@ -33,9 +34,25 @@ const ASTEROID_SPEED_MULTIPLIERS = {
   pro: 1.8,
 };
 
+const ASTEROID_SPRITE_KEYS = {
+  large: 'asteroid-large',
+  medium: 'asteroid-medium',
+  small: 'asteroid-small',
+};
+
+const ASTEROID_ROT_SPEED = 45; // degrees per second, base rotation for sprites
+
 export default class AsteroidGameScene extends Phaser.Scene {
   constructor() {
     super('AsteroidGameScene');
+  }
+
+  preload() {
+    this.load.image('ship2', 'assets/sprites/ship2.png');
+    this.load.image('asteroid-large', 'assets/sprites/asteroid-large.png');
+    this.load.image('asteroid-medium', 'assets/sprites/asteroid-medium.png');
+    this.load.image('asteroid-small', 'assets/sprites/asteroid-small.png');
+    this.load.image('laser', 'assets/sprites/laser.png');
   }
 
   create() {
@@ -99,10 +116,21 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.asteroids = [];
     this.bullets = [];
 
-    // Graphics objects — redrawn each frame
-    this.shipGraphics = this.add.graphics();
+    // Ship sprite (or fallback graphics)
+    if (this.textures.exists('ship2')) {
+      this.shipSprite = this.add.image(this.shipX, this.shipY, 'ship2');
+      this.shipSprite.setTint(this.platformColor);
+      this.shipSprite.setAlpha(this.platformAlpha);
+      this.shipSprite.setDisplaySize(SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE);
+      this.shipGraphics = null;
+    } else {
+      // Fallback: draw with graphics
+      this.shipSprite = null;
+      this.shipGraphics = this.add.graphics();
+    }
+
+    // Bullets graphics — only used in fallback bullet mode
     this.bulletsGraphics = this.add.graphics();
-    this.asteroidsGraphics = this.add.graphics();
 
     // Field frame (both eyes — gray)
     GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
@@ -182,6 +210,21 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (this.safetyTimer) this.safetyTimer.stop();
     if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
     this.input.setDefaultCursor('default');
+
+    // Destroy all asteroid sprites
+    if (this.asteroids) {
+      for (const a of this.asteroids) {
+        if (a.sprite) { a.sprite.destroy(); a.sprite = null; }
+      }
+    }
+    // Destroy all bullet sprites
+    if (this.bullets) {
+      for (const b of this.bullets) {
+        if (b.sprite) { b.sprite.destroy(); b.sprite = null; }
+      }
+    }
+    // Destroy ship sprite
+    if (this.shipSprite) { this.shipSprite.destroy(); this.shipSprite = null; }
   }
 
   // ---- Asteroid spawning ----
@@ -215,12 +258,26 @@ export default class AsteroidGameScene extends Phaser.Scene {
     const vx = Math.cos(rad) * baseSpeed;
     const vy = Math.sin(rad) * baseSpeed;
 
-    // Distortion factors for irregular shape (slight ellipse)
+    // Distortion factors for irregular shape (slight ellipse) — kept for fallback graphics
     const scaleX = 0.85 + Math.random() * 0.3;
     const scaleY = 0.85 + Math.random() * 0.3;
     const rotOffset = Math.random() * 360;
+    // Per-asteroid rotation speed for sprites (varies by size, random direction)
+    const rotDir = Math.random() < 0.5 ? 1 : -1;
+    const rotSpeed = rotDir * ASTEROID_ROT_SPEED * (0.5 + Math.random()) * (size === 'small' ? 2 : size === 'medium' ? 1.4 : 1);
 
-    const asteroid = { x: ax, y: ay, vx, vy, size, radius: def.radius, scaleX, scaleY, rotOffset, active: true };
+    // Create sprite if texture available
+    let sprite = null;
+    const spriteKey = ASTEROID_SPRITE_KEYS[size];
+    if (this.textures.exists(spriteKey)) {
+      sprite = this.add.image(ax, ay, spriteKey);
+      sprite.setTint(this.ballColor);
+      sprite.setAlpha(this.ballAlpha);
+      sprite.setDisplaySize(def.radius * 2, def.radius * 2);
+      sprite.setAngle(rotOffset); // random start angle
+    }
+
+    const asteroid = { x: ax, y: ay, vx, vy, size, radius: def.radius, scaleX, scaleY, rotOffset, active: true, sprite, rotSpeed };
     this.asteroids.push(asteroid);
     this.totalAsteroids++;
   }
@@ -230,7 +287,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
   update(time, delta) {
     if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
     if (this.isPaused || this.gameOver) return;
-    if (!this.shipGraphics) return;
+    if (!this.shipSprite && !this.shipGraphics) return;
 
     const dt = delta / 1000;
     const { x: fx, y: fy, w: fw, h: fh } = this.field;
@@ -264,6 +321,22 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (this.shipY < fy - margin) this.shipY = fy + fh + margin;
     if (this.shipY > fy + fh + margin) this.shipY = fy - margin;
 
+    // Update ship sprite position and rotation
+    if (this.shipSprite) {
+      this.shipSprite.x = this.shipX;
+      this.shipSprite.y = this.shipY;
+      this.shipSprite.setAngle(this.shipAngleDeg);
+
+      // Invulnerability blink
+      if (time < this.invulnerableUntilMs) {
+        this.shipSprite.visible = Math.floor(time / 150) % 2 === 0;
+      } else {
+        this.shipSprite.visible = true;
+      }
+    } else if (this.shipGraphics) {
+      this.renderShip(time);
+    }
+
     // Fire on Space key or touch fire button (one-shot cooldown for touch)
     const touchFireNow = this.touchFire?.isDown && !this._touchFireFired;
     if (touchFireNow) this._touchFireFired = true;
@@ -286,7 +359,15 @@ export default class AsteroidGameScene extends Phaser.Scene {
       if (b.y > fy + fh + 20) b.y = fy - 20;
 
       if (b.age < BULLET_LIFETIME_MS) {
+        // Update bullet sprite position if present
+        if (b.sprite) {
+          b.sprite.x = b.x;
+          b.sprite.y = b.y;
+        }
         aliveBullets.push(b);
+      } else {
+        // Expired — destroy sprite
+        if (b.sprite) { b.sprite.destroy(); b.sprite = null; }
       }
     }
     this.bullets = aliveBullets;
@@ -301,7 +382,20 @@ export default class AsteroidGameScene extends Phaser.Scene {
       }
     }
 
-    // Move asteroids
+    // Render fallback bullets (graphics mode)
+    if (this.bulletsGraphics) {
+      this.bulletsGraphics.clear();
+      for (const b of this.bullets) {
+        if (!b.sprite && b.age < BULLET_LIFETIME_MS) {
+          this.bulletsGraphics.fillStyle(this.platformColor, this.platformAlpha * 0.3);
+          this.bulletsGraphics.fillCircle(b.x, b.y, 4);
+          this.bulletsGraphics.fillStyle(this.platformColor, this.platformAlpha);
+          this.bulletsGraphics.fillCircle(b.x, b.y, 3);
+        }
+      }
+    }
+
+    // Move asteroids and update sprites
     for (const a of this.asteroids) {
       if (!a.active) continue;
       a.x += a.vx * dt;
@@ -312,6 +406,19 @@ export default class AsteroidGameScene extends Phaser.Scene {
       if (a.x > fx + fw + a.radius) a.x = fx - a.radius;
       if (a.y < fy - a.radius) a.y = fy + fh + a.radius;
       if (a.y > fy + fh + a.radius) a.y = fy - a.radius;
+
+      // Update asteroid sprite
+      if (a.sprite) {
+        a.sprite.x = a.x;
+        a.sprite.y = a.y;
+        a.sprite.setAngle(a.sprite.angle + a.rotSpeed * dt);
+      }
+    }
+
+    // Render fallback asteroids (graphics mode — only for asteroids without sprites)
+    const hasGraphicsAsteroids = this.asteroids.some((a) => a.active && !a.sprite);
+    if (hasGraphicsAsteroids) {
+      this.renderAsteroidsFallback();
     }
 
     // Bullet-asteroid collisions
@@ -321,6 +428,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
         const dist = Math.hypot(b.x - a.x, b.y - a.y);
         if (dist < a.radius + 3) {
           b.age = BULLET_LIFETIME_MS; // mark bullet as expired
+          if (b.sprite) { b.sprite.destroy(); b.sprite = null; }
           this.hitAsteroid(a);
           break;
         }
@@ -348,18 +456,13 @@ export default class AsteroidGameScene extends Phaser.Scene {
       return;
     }
 
-    // Render
-    this.renderShip(time);
-    this.renderBullets();
-    this.renderAsteroids();
-
     // HUD update
     if (this.safetyTimer && this.hud) {
       GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.asteroidsDestroyed}`);
     }
   }
 
-  // ---- Rendering ----
+  // ---- Rendering (fallback graphics mode) ----
 
   renderShip(time) {
     const g = this.shipGraphics;
@@ -371,10 +474,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
       if (!blinkOn) return;
     }
 
-    const heading = (this.shipAngleDeg - 90) * (Math.PI / 180); // direction ship points
+    const heading = (this.shipAngleDeg - 90) * (Math.PI / 180);
     const size = 16;
 
-    // Triangle points: tip forward, two rear corners at ±140° from heading
     const tipX = this.shipX + Math.cos(heading) * size;
     const tipY = this.shipY + Math.sin(heading) * size;
     const leftX = this.shipX + Math.cos(heading + Math.PI * 0.78) * size;
@@ -382,7 +484,6 @@ export default class AsteroidGameScene extends Phaser.Scene {
     const rightX = this.shipX + Math.cos(heading - Math.PI * 0.78) * size;
     const rightY = this.shipY + Math.sin(heading - Math.PI * 0.78) * size;
 
-    // Glow halo around ship
     g.lineStyle(6, this.platformColor, this.platformAlpha * 0.06);
     g.beginPath();
     g.moveTo(tipX, tipY);
@@ -399,7 +500,6 @@ export default class AsteroidGameScene extends Phaser.Scene {
     g.closePath();
     g.strokePath();
 
-    // Core ship outline
     g.lineStyle(2, this.platformColor, this.platformAlpha);
     g.beginPath();
     g.moveTo(tipX, tipY);
@@ -409,32 +509,20 @@ export default class AsteroidGameScene extends Phaser.Scene {
     g.strokePath();
   }
 
-  renderBullets() {
-    const g = this.bulletsGraphics;
-    g.clear();
-    for (const b of this.bullets) {
-      if (b.age < BULLET_LIFETIME_MS) {
-        // Glow around bullet
-        g.fillStyle(this.platformColor, this.platformAlpha * 0.15);
-        g.fillCircle(b.x, b.y, 6);
-        g.fillStyle(this.platformColor, this.platformAlpha * 0.3);
-        g.fillCircle(b.x, b.y, 4);
-        // Core bullet
-        g.fillStyle(this.platformColor, this.platformAlpha);
-        g.fillCircle(b.x, b.y, 3);
-      }
+  renderAsteroidsFallback() {
+    // Render only asteroids that don't have a sprite (fallback case)
+    // We use a temporary graphics object so we don't clear the shared bulletsGraphics
+    if (!this._asteroidsFallbackGraphics) {
+      this._asteroidsFallbackGraphics = this.add.graphics();
     }
-  }
-
-  renderAsteroids() {
-    const g = this.asteroidsGraphics;
+    const g = this._asteroidsFallbackGraphics;
     g.clear();
+
     for (const a of this.asteroids) {
-      if (!a.active) continue;
+      if (!a.active || a.sprite) continue;
 
       const numPoints = 10;
 
-      // Outer glow layer
       g.fillStyle(this.ballColor, this.ballAlpha * 0.06);
       g.beginPath();
       for (let i = 0; i <= numPoints; i++) {
@@ -448,21 +536,6 @@ export default class AsteroidGameScene extends Phaser.Scene {
       g.closePath();
       g.fillPath();
 
-      // Mid glow layer
-      g.fillStyle(this.ballColor, this.ballAlpha * 0.12);
-      g.beginPath();
-      for (let i = 0; i <= numPoints; i++) {
-        const theta = (i / numPoints) * Math.PI * 2;
-        const wobble = 0.85 + 0.15 * Math.sin(theta * 3 + a.rotOffset);
-        const px = a.x + Math.cos(theta) * a.radius * a.scaleX * wobble * 1.2;
-        const py = a.y + Math.sin(theta) * a.radius * a.scaleY * wobble * 1.2;
-        if (i === 0) g.moveTo(px, py);
-        else g.lineTo(px, py);
-      }
-      g.closePath();
-      g.fillPath();
-
-      // Core fill
       g.fillStyle(this.ballColor, this.ballAlpha);
       g.lineStyle(1.5, this.ballColor, this.ballAlpha);
       g.beginPath();
@@ -490,18 +563,29 @@ export default class AsteroidGameScene extends Phaser.Scene {
     SynthSounds.launch();
 
     const heading = (this.shipAngleDeg - 90) * (Math.PI / 180);
-    const bullet = {
-      x: this.shipX + Math.cos(heading) * 18,
-      y: this.shipY + Math.sin(heading) * 18,
-      vx: Math.cos(heading) * BULLET_SPEED + this.shipVX,
-      vy: Math.sin(heading) * BULLET_SPEED + this.shipVY,
-      age: 0,
-    };
+    const tipX = this.shipX + Math.cos(heading) * 18;
+    const tipY = this.shipY + Math.sin(heading) * 18;
+    const vx = Math.cos(heading) * BULLET_SPEED + this.shipVX;
+    const vy = Math.sin(heading) * BULLET_SPEED + this.shipVY;
+
+    let sprite = null;
+    if (this.textures.exists('laser')) {
+      sprite = this.add.image(tipX, tipY, 'laser');
+      sprite.setTint(this.platformColor);
+      sprite.setAlpha(this.platformAlpha);
+      sprite.setDisplaySize(6, 20);
+      sprite.setAngle(this.shipAngleDeg);
+    }
+
+    const bullet = { x: tipX, y: tipY, vx, vy, age: 0, sprite };
     this.bullets.push(bullet);
   }
 
   hitAsteroid(asteroid) {
     asteroid.active = false;
+    // Destroy sprite
+    if (asteroid.sprite) { asteroid.sprite.destroy(); asteroid.sprite = null; }
+
     this.asteroidsDestroyed++;
     if (this.hud) this.hud.scoreText.setText(`★ ${this.asteroidsDestroyed}`);
 
@@ -645,6 +729,18 @@ export default class AsteroidGameScene extends Phaser.Scene {
       SynthSounds.victory();
     } else {
       SynthSounds.gameOver();
+    }
+
+    // Clean up sprites
+    if (this.asteroids) {
+      for (const a of this.asteroids) {
+        if (a.sprite) { a.sprite.destroy(); a.sprite = null; }
+      }
+    }
+    if (this.bullets) {
+      for (const b of this.bullets) {
+        if (b.sprite) { b.sprite.destroy(); b.sprite = null; }
+      }
     }
 
     const result = {
