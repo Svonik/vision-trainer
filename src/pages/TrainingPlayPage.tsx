@@ -8,7 +8,7 @@ import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
 import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
-import { Pause } from 'lucide-react';
+import { CheckCircle, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface GameResult {
@@ -33,13 +33,27 @@ interface TransitionScreenProps {
 function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }: TransitionScreenProps) {
     const total = 3;
     return (
-        <div
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="min-h-screen flex flex-col items-center justify-center p-6 relative z-20"
             style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
         >
-            <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 spring-enter text-center">
-                {/* Completed badge */}
-                <div className="text-4xl">✓</div>
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.3, ease: 'easeOut' }}
+                className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 text-center"
+            >
+                {/* Completed badge — CheckCircle */}
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+                >
+                    <CheckCircle size={48} className="mx-auto text-[var(--success)]" />
+                </motion.div>
                 <div>
                     <h2 className="font-[var(--font-display)] text-2xl text-[var(--text)]">
                         {t('training.excellent')}
@@ -52,8 +66,10 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                 {/* Progress dots */}
                 <div className="flex justify-center gap-3">
                     {Array.from({ length: total }).map((_, i) => (
-                        <span
+                        <motion.span
                             key={i}
+                            initial={i === completedIndex ? { scale: 0.5 } : false}
+                            animate={i === completedIndex ? { scale: 1 } : undefined}
                             className={`rounded-full transition-all duration-300 ${
                                 i <= completedIndex
                                     ? 'w-4 h-3 bg-[var(--cta)]'
@@ -73,14 +89,24 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                     </p>
                 </div>
 
+                {/* Countdown bar */}
+                <div className="w-full h-1 bg-[var(--border)] rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: '100%' }}
+                        animate={{ width: '0%' }}
+                        transition={{ duration: 5, ease: 'linear' }}
+                        className="h-full bg-[var(--cta)] rounded-full"
+                    />
+                </div>
+
                 <button
                     onClick={onContinue}
                     className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                 >
                     {t('training.continue')} ({countdown}s)
                 </button>
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }
 
@@ -234,12 +260,14 @@ export function TrainingPlayPage() {
 
     if (showTransition) {
         return (
-            <TransitionScreen
-                completedIndex={currentGameIndex}
-                nextGameId={nextGameId}
-                onContinue={handleAdvance}
-                countdown={transitionCountdown}
-            />
+            <AnimatePresence>
+                <TransitionScreen
+                    completedIndex={currentGameIndex}
+                    nextGameId={nextGameId}
+                    onContinue={handleAdvance}
+                    countdown={transitionCountdown}
+                />
+            </AnimatePresence>
         );
     }
 
