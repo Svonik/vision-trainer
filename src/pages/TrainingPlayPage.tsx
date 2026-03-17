@@ -83,7 +83,7 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                 </div>
 
                 {/* Next game info */}
-                <div className="rounded-xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-1">
+                <div className="rounded-3xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-1">
                     <p className="text-sm text-[var(--text-secondary)] uppercase tracking-wide">
                         {t('training.next')}
                     </p>
@@ -367,13 +367,13 @@ export function TrainingPlayPage() {
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={handleResume}
-                                    className="w-48 bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
+                                    className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                                 >
                                     {t('game.resume')}
                                 </button>
                                 <button
                                     onClick={handleFinishPause}
-                                    className="w-48 border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
+                                    className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
                                 >
                                     {t('game.quit')}
                                 </button>

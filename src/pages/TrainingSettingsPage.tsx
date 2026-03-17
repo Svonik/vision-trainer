@@ -70,7 +70,7 @@ export function TrainingSettingsPage() {
                     </h2>
 
                     {/* Session game list */}
-                    <div className="rounded-2xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-4 space-y-3">
+                    <div className="rounded-3xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-4 space-y-3">
                         <p className="text-sm text-[var(--text-secondary)] font-medium uppercase tracking-wide">
                             {t('training.todaySession')}
                         </p>
@@ -83,7 +83,7 @@ export function TrainingSettingsPage() {
 
                     {/* Contrast recommendation hint */}
                     {recommendation.suggestion !== 'keep' && (
-                        <div className="rounded-xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-sm text-[var(--accent)]">
+                        <div className="rounded-3xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-sm text-[var(--accent)]">
                             {t('training.contrastRecommendation')}:{' '}
                             {recommendation.suggestion === 'decrease'
                                 ? t('training.suggestDecrease')

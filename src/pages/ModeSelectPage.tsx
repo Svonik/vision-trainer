@@ -58,7 +58,7 @@ export function ModeSelectPage() {
                         </p>
 
                         {/* Today's session preview */}
-                        <div className="rounded-xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-2">
+                        <div className="rounded-3xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-2">
                             <p className="text-sm text-[var(--text-secondary)] font-medium uppercase tracking-wide">
                                 {t('training.todaySession')}
                             </p>

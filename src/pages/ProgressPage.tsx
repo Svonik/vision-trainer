@@ -26,7 +26,7 @@ const SessionRow = React.memo(function SessionRow({ session }: { session: any })
         : session.speed ?? '—';
 
     return (
-        <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-2xl p-4 flex items-center justify-between">
+        <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-4 flex items-center justify-between">
             <div className="space-y-1">
                 <p className="text-[var(--text)] text-base font-medium truncate max-w-[180px]">
                     {gameName}

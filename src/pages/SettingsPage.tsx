@@ -55,7 +55,7 @@ export function SettingsPage() {
                         <p className="text-base font-semibold text-[var(--text)]">{t('settings.contrastBalance')}</p>
 
                         {/* Hint box */}
-                        <div className="rounded-xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-base text-[var(--accent)]">
+                        <div className="rounded-3xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-base text-[var(--accent)]">
                             {t('settings.contrastHint')}
                         </div>
 
