@@ -58,7 +58,7 @@ export function OnboardingWizard() {
 
     return (
         <div ref={stepRef} tabIndex={-1} className="outline-none min-h-screen relative"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             {step === 'disclaimer' && (
                 <DisclaimerPage onComplete={handleDisclaimerComplete} />

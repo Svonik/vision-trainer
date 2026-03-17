@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router';
 import { isDisclaimerAccepted, getCalibration } from './modules/storage';
 import { DisclaimerGuard } from './guards/DisclaimerGuard';
@@ -23,6 +23,8 @@ function isOnboardingComplete() {
 }
 
 function App() {
+    const [onboarded] = useState(() => isOnboardingComplete());
+
     return (
         <HashRouter>
             <Suspense fallback={<div className="min-h-screen bg-[var(--bg)]" />}>
@@ -38,7 +40,7 @@ function App() {
                         <Layout>
                             <Routes>
                                 <Route path="/" element={
-                                    <Navigate to={isOnboardingComplete() ? '/mode-select' : '/onboarding'} replace />
+                                    <Navigate to={onboarded ? '/mode-select' : '/onboarding'} replace />
                                 } />
                                 <Route path="/mode-select" element={
                                     <DisclaimerGuard><CalibrationGuard><ModeSelectPage /></CalibrationGuard></DisclaimerGuard>

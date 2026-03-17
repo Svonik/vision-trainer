@@ -43,15 +43,27 @@ const playSweep = (startFreq: number, endFreq: number, duration: number, type: O
   osc.stop(ctx.currentTime + duration);
 };
 
-const playNoise = (duration: number, volume: number = 0.15) => {
-  const ctx = getCtx();
-  if (!ctx) return;
-  const bufferSize = ctx.sampleRate * duration;
+const noiseCache = new Map<number, AudioBuffer>();
+
+const getNoiseBuffer = (ctx: AudioContext, duration: number): AudioBuffer => {
+  const key = Math.round(duration * 1000); // ms precision
+  const cached = noiseCache.get(key);
+  if (cached && cached.sampleRate === ctx.sampleRate) return cached;
+
+  const bufferSize = Math.round(ctx.sampleRate * duration);
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
     data[i] = (Math.random() * 2 - 1) * 0.5;
   }
+  noiseCache.set(key, buffer);
+  return buffer;
+};
+
+const playNoise = (duration: number, volume: number = 0.15) => {
+  const ctx = getCtx();
+  if (!ctx) return;
+  const buffer = getNoiseBuffer(ctx, duration);
   const source = ctx.createBufferSource();
   source.buffer = buffer;
   const gain = ctx.createGain();

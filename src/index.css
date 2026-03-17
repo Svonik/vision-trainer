@@ -22,6 +22,7 @@
   --text-secondary: #a094b8;
   --success: #7dd3a8;
   --warning: #f0c674;
+  --bg-gradient: linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%);
 }
 
 @media (prefers-reduced-motion: no-preference) {

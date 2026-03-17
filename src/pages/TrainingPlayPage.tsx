@@ -4,6 +4,7 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
 import { formatTime } from '@/lib/formatTime';
@@ -33,7 +34,7 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
     return (
         <div
             className="min-h-screen flex flex-col items-center justify-center p-6 relative z-20"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-8 space-y-6 spring-enter text-center">
                 {/* Completed badge */}
@@ -95,6 +96,7 @@ export function TrainingPlayPage() {
     const [transitionCountdown, setTransitionCountdown] = useState(5);
     const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(null);
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
+    const [instanceKey, setInstanceKey] = useState(() => Date.now());
 
     const phaserRef = useRef<IRefPhaserGame>(null);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -228,7 +230,7 @@ export function TrainingPlayPage() {
     return (
         <div
             className="min-h-screen flex flex-col bg-[var(--bg)]"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             {/* Minimal overlay header */}
             <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
@@ -273,7 +275,9 @@ export function TrainingPlayPage() {
             </header>
 
             <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
-                <PhaserGame ref={phaserRef} />
+                <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
+                    <PhaserGame key={instanceKey} ref={phaserRef} />
+                </PhaserErrorBoundary>
             </div>
 
             {safetyWarning && (

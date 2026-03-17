@@ -4,6 +4,7 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { LandscapePrompt } from '../components/LandscapePrompt';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
@@ -19,7 +20,7 @@ export function GamePage() {
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const phaserRef = useRef<IRefPhaserGame>(null);
 
-    const [instanceKey] = useState(() => Date.now());
+    const [instanceKey, setInstanceKey] = useState(() => Date.now());
 
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -62,7 +63,7 @@ export function GamePage() {
     }, [settings, navigate, gameId, targetScene, startEvent]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}>
+        <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'var(--bg-gradient)' }}>
             <header className="hidden md:flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
                     onClick={() => navigate(-1)}
@@ -88,7 +89,9 @@ export function GamePage() {
             </header>
 
             <div className="flex-1 flex items-center justify-center md:pt-10 relative z-10">
-                <PhaserGame key={instanceKey} ref={phaserRef} />
+                <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
+                    <PhaserGame key={instanceKey} ref={phaserRef} />
+                </PhaserErrorBoundary>
             </div>
 
             {safetyWarning && (

@@ -1,14 +1,18 @@
-// @ts-nocheck
 import { useRef, useEffect } from 'react';
-import { createSafetyTimer } from '../modules/safetyTimer';
+import { createSafetyTimer, SafetyTimer } from '../modules/safetyTimer';
 
-export function useSafetyTimer({ onWarning, onBreak }) {
+interface SafetyTimerCallbacks {
+    onWarning: () => void;
+    onBreak: () => void;
+}
+
+export function useSafetyTimer({ onWarning, onBreak }: SafetyTimerCallbacks): SafetyTimer {
     const onWarningRef = useRef(onWarning);
     const onBreakRef = useRef(onBreak);
     onWarningRef.current = onWarning;
     onBreakRef.current = onBreak;
 
-    const timerRef = useRef(null);
+    const timerRef = useRef<SafetyTimer | null>(null);
 
     if (!timerRef.current) {
         timerRef.current = createSafetyTimer({

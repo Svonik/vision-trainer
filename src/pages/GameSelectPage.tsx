@@ -198,7 +198,7 @@ export function GameSelectPage() {
     return (
         <div
             className="min-h-screen flex flex-col items-center p-4 py-8 relative z-10"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-6">
                 {t('gameSelect.title')}

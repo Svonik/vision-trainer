@@ -38,7 +38,7 @@ export function SettingsPage() {
     return (
         <div
             className="min-h-screen flex items-center justify-center p-4"
-            style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
+            style={{ background: 'var(--bg-gradient)' }}
         >
             <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
                 {/* Game illustration bar */}
