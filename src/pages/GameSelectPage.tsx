@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { t } from '@/modules/i18n';
+import { AppButton } from '@/components/AppButton';
 import { getSessions } from '../modules/storage';
 import { GAMES as GAMES_DATA } from '../config/games';
 
@@ -182,12 +183,14 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                 <p className="hidden sm:block text-sm text-[var(--text-secondary)]">
                     {t(game.descriptionKey)}
                 </p>
-                <button
+                <AppButton
+                    variant="cta"
+                    size="md"
                     onClick={(e) => { e.stopPropagation(); navigate(game.route); }}
-                    className="w-full sm:w-auto bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 px-6 font-semibold btn-press"
+                    className="w-full sm:w-auto"
                 >
                     {t('gameSelect.play')}
-                </button>
+                </AppButton>
             </div>
         </div>
     );
