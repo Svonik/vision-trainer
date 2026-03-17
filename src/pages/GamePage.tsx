@@ -11,6 +11,7 @@ import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
 import { Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
 
 export function GamePage() {
     const location = useLocation();
@@ -23,6 +24,7 @@ export function GamePage() {
 
     const [instanceKey] = useState(() => Date.now());
     const [isPaused, setIsPaused] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -44,6 +46,7 @@ export function GamePage() {
                 scene.scene.start(targetScene);
                 return;
             }
+            setLoading(false);
             EventBus.emit(startEvent, settings);
         };
         const handleTick = (ms: number) => { setElapsedMs(ms); };
@@ -114,6 +117,18 @@ export function GamePage() {
 
             <div className="flex-1 flex items-center justify-center md:pt-10 relative z-10">
                 <PhaserGame key={instanceKey} ref={phaserRef} />
+                <AnimatePresence>
+                    {loading && (
+                        <motion.div
+                            key="loading-overlay"
+                            className="absolute inset-0 z-20"
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <PhaserLoadingScreen />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {safetyWarning && (
