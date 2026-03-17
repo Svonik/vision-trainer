@@ -24,6 +24,11 @@ export default class PongGameScene extends Phaser.Scene {
     super('PongGameScene');
   }
 
+  preload() {
+    this.load.image('paddle', 'assets/sprites/paddle.png');
+    this.load.image('ball', 'assets/sprites/ball.png');
+  }
+
   create() {
     SynthSounds.resume();
 
@@ -141,34 +146,58 @@ export default class PongGameScene extends Phaser.Scene {
     const ph = fh * PADDLE_H_RATIO;
     const ccy = fy + fh / 2;
     const edgeOffset = fw * PADDLE_EDGE_RATIO;
+    // Store paddle dimensions for later reference (Image.width/height = texture, not display)
+    this.paddleW = pw;
+    this.paddleH = ph;
+    const usePaddleSprite = this.textures.exists('paddle');
 
     // Left paddle — player — platformColor (one eye)
     const lx = fx + edgeOffset + pw / 2;
-    this.playerPaddle = this.add.rectangle(lx, ccy, pw, ph, this.platformColor, 0);
+    if (usePaddleSprite) {
+      this.playerPaddle = this.add.image(lx, ccy, 'paddle');
+      this.playerPaddle.setTint(this.platformColor);
+      this.playerPaddle.setAlpha(this.platformAlpha);
+      this.playerPaddle.setAngle(90);
+      this.playerPaddle.setDisplaySize(ph, pw); // rotated: long axis = ph, short axis = pw
+    } else {
+      this.playerPaddle = this.add.rectangle(lx, ccy, pw, ph, this.platformColor, this.platformAlpha);
+    }
     this.physics.add.existing(this.playerPaddle, false);
     this.playerPaddle.body.setImmovable(true);
-    this.playerPaddleVisual = GameVisuals.glowRect(this, lx, ccy, pw, ph, this.platformColor, this.platformAlpha);
 
     // Right paddle — AI — ballColor (other eye)
     const rx = fx + fw - edgeOffset - pw / 2;
-    this.aiPaddle = this.add.rectangle(rx, ccy, pw, ph, this.ballColor, 0);
+    if (usePaddleSprite) {
+      this.aiPaddle = this.add.image(rx, ccy, 'paddle');
+      this.aiPaddle.setTint(this.ballColor);
+      this.aiPaddle.setAlpha(this.ballAlpha);
+      this.aiPaddle.setAngle(90);
+      this.aiPaddle.setDisplaySize(ph, pw); // rotated: long axis = ph, short axis = pw
+    } else {
+      this.aiPaddle = this.add.rectangle(rx, ccy, pw, ph, this.ballColor, this.ballAlpha);
+    }
     this.physics.add.existing(this.aiPaddle, false);
     this.aiPaddle.body.setImmovable(true);
-    this.aiPaddleVisual = GameVisuals.glowRect(this, rx, ccy, pw, ph, this.ballColor, this.ballAlpha);
   }
 
   buildBall() {
     const { x: fx, y: fy, w: fw, h: fh } = this.field;
     const ballR = fw * 0.015;
+    this.ballR = ballR;
     const ccx = fx + fw / 2;
     const ccy = fy + fh / 2;
 
-    // Ball — WHITE (both eyes) — invisible physics + glow visual
-    this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE, 0);
+    // Ball — WHITE (both eyes) — sprite IS the visual, with physics circle
+    if (this.textures.exists('ball')) {
+      this.ball = this.add.image(ccx, ccy, 'ball');
+      this.ball.setTint(COLORS.WHITE);
+      this.ball.setDisplaySize(ballR * 2, ballR * 2);
+    } else {
+      this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE, 1);
+    }
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballR);
     this.ball.body.setCollideWorldBounds(false);
-    this.ballVisual = GameVisuals.glowCircle(this, ccx, ccy, ballR, COLORS.WHITE, 1);
 
     // Colliders
     this.physics.add.collider(this.ball, this.playerPaddle, this.onBallHitPlayer, null, this);
@@ -176,7 +205,7 @@ export default class PongGameScene extends Phaser.Scene {
   }
 
   buildUI() {
-    const { x: fx, y: fy, w: fw } = this.field;
+    const { x: fx, y: fy, w: fw, h: fh } = this.field;
     const ccx = fx + fw / 2;
     const scoreY = fy + 20;
 
@@ -190,12 +219,12 @@ export default class PongGameScene extends Phaser.Scene {
 
     this.hud = GameVisuals.createHUD(this, this.field);
 
-    const pauseBtn = this.add.text(fx + 10, fy2 + fh - 20, t('game.pause'), {
+    const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
       fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
     }).setInteractive({ useHandCursor: true });
     pauseBtn.on('pointerup', () => this.togglePause());
 
-    this.serveHint = this.add.text(ccx, fy2 + fh / 2 + 50, t('pong.serveHint') || 'Подача…', {
+    this.serveHint = this.add.text(ccx, fy + fh / 2 + 50, t('pong.serveHint') || 'Подача…', {
       fontSize: '13px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
     }).setOrigin(0.5);
   }
@@ -209,8 +238,8 @@ export default class PongGameScene extends Phaser.Scene {
       if (!this.isPaused) {
         this.playerPaddle.y = Phaser.Math.Clamp(
           pointer.y,
-          this.field.y + this.playerPaddle.height / 2,
-          this.field.y + this.field.h - this.playerPaddle.height / 2,
+          this.field.y + this.paddleH / 2,
+          this.field.y + this.field.h - this.paddleH / 2,
         );
       }
     });
@@ -249,7 +278,7 @@ export default class PongGameScene extends Phaser.Scene {
   onBallHitPlayer(ball, paddle) {
     this.volleyCount++;
     const currentSpeed = this.ballSpeed + this.volleyCount * BALL_SPEED_INCREMENT;
-    const hitFraction = (ball.y - paddle.y) / (paddle.height / 2);
+    const hitFraction = (ball.y - paddle.y) / (this.paddleH / 2);
     const angleDeg = Phaser.Math.Clamp(hitFraction * 60, -60, 60);
     const rad = angleDeg * (Math.PI / 180);
     ball.body.setVelocity(
@@ -262,7 +291,7 @@ export default class PongGameScene extends Phaser.Scene {
   onBallHitAI(ball, paddle) {
     this.volleyCount++;
     const currentSpeed = this.ballSpeed + this.volleyCount * BALL_SPEED_INCREMENT;
-    const hitFraction = (ball.y - paddle.y) / (paddle.height / 2);
+    const hitFraction = (ball.y - paddle.y) / (this.paddleH / 2);
     const angleDeg = Phaser.Math.Clamp(hitFraction * 60, -60, 60);
     const rad = angleDeg * (Math.PI / 180);
     ball.body.setVelocity(
@@ -275,7 +304,7 @@ export default class PongGameScene extends Phaser.Scene {
   updateAI(delta) {
     if (!this.aiPaddle || !this.ball) return;
     const { y: fy, h: fh } = this.field;
-    const ph = this.aiPaddle.height;
+    const ph = this.paddleH;
     const lerp = this.aiTracking;
     const targetY = this.ball.y;
     const newY = Phaser.Math.Linear(this.aiPaddle.y, targetY, lerp * (delta / 1000) * 6);
@@ -286,7 +315,7 @@ export default class PongGameScene extends Phaser.Scene {
   checkBallOutOfBounds() {
     if (!this.ballActive) return;
     const { x: fx, y: fy, w: fw, h: fh } = this.field;
-    const r = this.ball.radius;
+    const r = this.ballR;
 
     // Top / bottom wall bounce (gray border)
     if (this.ball.y - r <= fy) {
@@ -389,7 +418,7 @@ export default class PongGameScene extends Phaser.Scene {
     if (!this.playerPaddle) return;
 
     // Keyboard movement for player paddle (up/down arrows)
-    const ph = this.playerPaddle.height;
+    const ph = this.paddleH;
     const { y: fy, h: fh } = this.field;
     if (this.cursors.up.isDown) {
       this.playerPaddle.y -= PLATFORM_KEYBOARD_SPEED * (delta / 1000);
@@ -405,12 +434,6 @@ export default class PongGameScene extends Phaser.Scene {
 
     // AI update
     this.updateAI(delta);
-
-    // Sync paddle visuals
-    if (this.playerPaddleVisual) { this.playerPaddleVisual.x = this.playerPaddle.x; this.playerPaddleVisual.y = this.playerPaddle.y; }
-    if (this.aiPaddleVisual) { this.aiPaddleVisual.x = this.aiPaddle.x; this.aiPaddleVisual.y = this.aiPaddle.y; }
-    // Sync ball visual
-    if (this.ballVisual && this.ball) { this.ballVisual.x = this.ball.x; this.ballVisual.y = this.ball.y; }
 
     // Ball boundary checks (walls + scoring)
     this.checkBallOutOfBounds();

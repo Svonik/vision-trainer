@@ -70,6 +70,17 @@ export default class BreakoutGameScene extends Phaser.Scene {
     super('BreakoutGameScene');
   }
 
+  preload() {
+    this.load.image('paddle', 'assets/sprites/paddle.png');
+    this.load.image('ball', 'assets/sprites/ball.png');
+    this.load.image('brick-grey', 'assets/sprites/brick-grey.png');
+    this.load.image('brick-blue', 'assets/sprites/brick-blue.png');
+    this.load.image('brick-green', 'assets/sprites/brick-green.png');
+    this.load.image('brick-purple', 'assets/sprites/brick-purple.png');
+    this.load.image('brick-red', 'assets/sprites/brick-red.png');
+    this.load.image('powerup-bg', 'assets/sprites/powerup-bg.png');
+  }
+
   create() {
     SynthSounds.resume();
 
@@ -123,25 +134,39 @@ export default class BreakoutGameScene extends Phaser.Scene {
     const pw = fw * GAME.PLATFORM_WIDTH_RATIO;
     const ph = fh * GAME.PLATFORM_HEIGHT_RATIO;
     const py = fy + fh - ph / 2 - 10;
-    // Physics body (invisible)
-    this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor, 0);
+    // Sprite (IS the visual) with physics body
+    if (this.textures.exists('paddle')) {
+      this.platform = this.add.image(ccx, py, 'paddle');
+      this.platform.setTint(this.platformColor);
+      this.platform.setAlpha(this.platformAlpha);
+      this.platform.setDisplaySize(pw, ph);
+    } else {
+      this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor, this.platformAlpha);
+    }
     this.physics.add.existing(this.platform, false);
     this.platform.body.setImmovable(true);
-    // Visual glow
-    this.platformVisual = GameVisuals.glowRect(this, ccx, py, pw, ph, this.platformColor, this.platformAlpha);
 
-    // Remember original platform width for power-up reset
+    // Remember original platform dimensions and ball radius for later reference
     this.originalPlatformWidth = pw;
+    this.platformW = pw;
+    this.platformH = ph;
 
-    // Ball — visual glow circle + invisible physics circle
+    // Ball — sprite (IS the visual) with invisible physics circle
     const ballRadius = fw * 0.0125;
+    this.ballRadius = ballRadius;
     const ballStartY = py - ph / 2 - ballRadius - 2;
-    this.ball = this.add.circle(ccx, ballStartY, ballRadius, this.ballColor, 0);
+    if (this.textures.exists('ball')) {
+      this.ball = this.add.image(ccx, ballStartY, 'ball');
+      this.ball.setTint(this.ballColor);
+      this.ball.setAlpha(this.ballAlpha);
+      this.ball.setDisplaySize(ballRadius * 2, ballRadius * 2);
+    } else {
+      this.ball = this.add.circle(ccx, ballStartY, ballRadius, this.ballColor, this.ballAlpha);
+    }
     this.physics.add.existing(this.ball);
     this.ball.body.setCircle(ballRadius);
     this.ball.body.setBounce(1, 1);
     this.ball.body.setCollideWorldBounds(false);
-    this.ballVisual = GameVisuals.glowCircle(this, ccx, ballStartY, ballRadius, this.ballColor, this.ballAlpha);
     this.ballSpeed = BALL_SPEEDS[this.settings.speed] || 200;
     this.ballLaunched = false;
 
@@ -189,8 +214,8 @@ export default class BreakoutGameScene extends Phaser.Scene {
       if (!this.isPaused) {
         this.platform.x = Phaser.Math.Clamp(
           pointer.x,
-          this.field.x + this.platform.width / 2,
-          this.field.x + this.field.w - this.platform.width / 2,
+          this.field.x + this.platformW / 2,
+          this.field.x + this.field.w - this.platformW / 2,
         );
         this.platform.body.reset(this.platform.x, this.platform.y);
       }
@@ -236,6 +261,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     const brickStartX = fx + (fw - brickW * cols) / 2 + brickW / 2;
     const brickStartY = fy + 50;
 
+    const BRICK_SPRITES = ['brick-grey', 'brick-blue', 'brick-green', 'brick-purple', 'brick-red'];
+    const useBrickSprites = this.textures.exists('brick-grey');
+
     let brickCount = 0;
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
@@ -243,12 +271,19 @@ export default class BreakoutGameScene extends Phaser.Scene {
         const bx = brickStartX + col * brickW;
         const by = brickStartY + row * brickH;
         const shade = row % 2 === 0 ? 0x909090 : 0x707070;
-        // Invisible physics rect
-        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
+        let brick;
+        if (useBrickSprites) {
+          const spriteKey = BRICK_SPRITES[row % BRICK_SPRITES.length];
+          brick = this.add.image(bx, by, spriteKey);
+          brick.setTint(shade);
+          brick.setDisplaySize(brickW - 4, brickH - 4);
+        } else {
+          // Invisible physics rect + visual glow rect fallback
+          brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
+          const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
+          brick._visual = brickVisual;
+        }
         this.physics.add.existing(brick, true);
-        // Visual glow rect
-        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
-        brick._visual = brickVisual;
         this.bricks.add(brick);
         brickCount++;
       }
@@ -284,8 +319,8 @@ export default class BreakoutGameScene extends Phaser.Scene {
     }
     this.platform.x = Phaser.Math.Clamp(
       this.platform.x,
-      this.field.x + this.platform.width / 2,
-      this.field.x + this.field.w - this.platform.width / 2,
+      this.field.x + this.platformW / 2,
+      this.field.x + this.field.w - this.platformW / 2,
     );
     this.platform.body.reset(this.platform.x, this.platform.y);
 
@@ -294,22 +329,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.launchBall();
     }
 
-    // Sync platform visual
-    if (this.platformVisual) {
-      this.platformVisual.x = this.platform.x;
-      this.platformVisual.y = this.platform.y;
-    }
-
     // Ball follows platform before launch
     if (!this.ballLaunched && this.ball) {
       this.ball.x = this.platform.x;
-      this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
-    }
-
-    // Sync ball visual
-    if (this.ballVisual && this.ball) {
-      this.ballVisual.x = this.ball.x;
-      this.ballVisual.y = this.ball.y;
+      this.ball.y = this.platform.y - this.platformH / 2 - this.ballRadius - 2;
     }
 
     // Ball out of bounds (bottom)
@@ -323,17 +346,13 @@ export default class BreakoutGameScene extends Phaser.Scene {
         this.ballLaunched = false;
         this.ball.body.setVelocity(0, 0);
         this.ball.x = this.platform.x;
-        this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
-        if (this.ballVisual) {
-          this.ballVisual.x = this.ball.x;
-          this.ballVisual.y = this.ball.y;
-        }
+        this.ball.y = this.platform.y - this.platformH / 2 - this.ballRadius - 2;
       }
     }
 
     // Ball bouncing off walls (top, left, right)
     if (this.ball && this.ballLaunched) {
-      const r = this.ball.radius;
+      const r = this.ballRadius;
       const now = this.time.now;
       if (this.ball.y - r <= this.field.y) {
         this.ball.body.setVelocityY(Math.abs(this.ball.body.velocity.y));
@@ -372,7 +391,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
         if (eb._visual) { eb._visual.x = eb.x; eb._visual.y = eb.y; }
 
         // Wall bouncing for extra balls
-        const r = eb.radius || this.ball.radius;
+        const r = eb._ballRadius || this.ballRadius;
         if (eb.y - r <= this.field.y) {
           eb.body.setVelocityY(Math.abs(eb.body.velocity.y));
           if (now - this.lastWallBounceTime > WALL_BOUNCE_COOLDOWN_MS) {
@@ -412,8 +431,8 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
         // Check if caught by platform
         if (
-          pu.container.y >= this.platform.y - this.platform.height / 2 &&
-          Math.abs(pu.container.x - this.platform.x) < this.platform.width / 2
+          pu.container.y >= this.platform.y - this.platformH / 2 &&
+          Math.abs(pu.container.x - this.platform.x) < this.platformW / 2
         ) {
           this.activatePowerup(pu.type);
           pu.container.destroy();
@@ -453,7 +472,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
   onBallHitPaddle(ball, paddle) {
     // Angle depends on where ball hits paddle: -1 to 1
-    const hitPoint = (ball.x - paddle.x) / (paddle.width / 2);
+    const hitPoint = (ball.x - paddle.x) / (this.platformW / 2);
     const angleDeg = Phaser.Math.Clamp(hitPoint * 60, -60, 60);
     const rad = (angleDeg - 90) * (Math.PI / 180);
     ball.body.setVelocity(
@@ -496,9 +515,16 @@ export default class BreakoutGameScene extends Phaser.Scene {
     const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
     const label = POWERUP_LABELS[type];
 
-    // Gray circle with label (both eyes — doesn't break dichoptic)
+    // Diamond sprite with label (both eyes — doesn't break dichoptic)
     const container = this.add.container(x, y);
-    const bg = this.add.circle(0, 0, 12, 0x808080, 0.6);
+    let bg;
+    if (this.textures.exists('powerup-bg')) {
+      bg = this.add.image(0, 0, 'powerup-bg');
+      bg.setTint(0xFFFFFF);
+      bg.setDisplaySize(24, 24);
+    } else {
+      bg = this.add.circle(0, 0, 12, 0x808080, 0.6);
+    }
     const text = this.add.text(0, 0, label, { fontSize: '14px', color: '#FFFFFF' }).setOrigin(0.5);
     container.add([bg, text]);
 
@@ -514,20 +540,14 @@ export default class BreakoutGameScene extends Phaser.Scene {
         if (!this.activePowerups.wide) {
           this.activePowerups.wide = true;
           const newW = this.originalPlatformWidth * 1.5;
-          this.platform.width = newW;
-          this.platform.body.setSize(newW, this.platform.height);
-          if (this.platformVisual) {
-            this.platformVisual.destroy();
-            this.platformVisual = GameVisuals.glowRect(this, this.platform.x, this.platform.y, newW, this.platform.height, this.platformColor, this.platformAlpha);
-          }
+          this.platformW = newW;
+          this.platform.setDisplaySize(newW, this.platformH);
+          this.platform.body.setSize(newW, this.platformH);
           this.time.delayedCall(POWERUP_DURATIONS.wide, () => {
             this.activePowerups.wide = false;
-            this.platform.width = this.originalPlatformWidth;
-            this.platform.body.setSize(this.originalPlatformWidth, this.platform.height);
-            if (this.platformVisual) {
-              this.platformVisual.destroy();
-              this.platformVisual = GameVisuals.glowRect(this, this.platform.x, this.platform.y, this.originalPlatformWidth, this.platform.height, this.platformColor, this.platformAlpha);
-            }
+            this.platformW = this.originalPlatformWidth;
+            this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
+            this.platform.body.setSize(this.originalPlatformWidth, this.platformH);
           });
         }
         break;
@@ -537,14 +557,15 @@ export default class BreakoutGameScene extends Phaser.Scene {
         for (let i = 0; i < 2; i++) {
           const angle = Phaser.Math.Between(-150, -30);
           const rad = angle * (Math.PI / 180);
-          const extraBall = this.add.circle(this.ball.x, this.ball.y, this.ball.radius, this.ballColor, 0);
+          const extraBall = this.add.circle(this.ball.x, this.ball.y, this.ballRadius, this.ballColor, 0);
           this.physics.add.existing(extraBall);
-          extraBall.body.setCircle(this.ball.radius);
+          extraBall.body.setCircle(this.ballRadius);
           extraBall.body.setBounce(1, 1);
           extraBall.body.setCollideWorldBounds(false);
           extraBall.body.setVelocity(Math.cos(rad) * this.ballSpeed, Math.sin(rad) * this.ballSpeed);
+          extraBall._ballRadius = this.ballRadius;
 
-          const visual = GameVisuals.glowCircle(this, extraBall.x, extraBall.y, this.ball.radius, this.ballColor, this.ballAlpha);
+          const visual = GameVisuals.glowCircle(this, extraBall.x, extraBall.y, this.ballRadius, this.ballColor, this.ballAlpha);
           extraBall._visual = visual;
 
           this.extraBalls.push(extraBall);
@@ -620,11 +641,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.ballLaunched = false;
     this.ball.body.setVelocity(0, 0);
     this.ball.x = this.platform.x;
-    this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
-    if (this.ballVisual) {
-      this.ballVisual.x = this.ball.x;
-      this.ballVisual.y = this.ball.y;
-    }
+    this.ball.y = this.platform.y - this.platformH / 2 - this.ballRadius - 2;
 
     if (!this.launchHint) {
       const ccx = this.field.x + this.field.w / 2;
@@ -735,12 +752,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.activePowerups = { wide: false, slow: false };
 
     // Reset platform width to original
-    this.platform.width = this.originalPlatformWidth;
-    this.platform.body.setSize(this.originalPlatformWidth, this.platform.height);
-    if (this.platformVisual) {
-      this.platformVisual.destroy();
-      this.platformVisual = GameVisuals.glowRect(this, this.platform.x, this.platform.y, this.originalPlatformWidth, this.platform.height, this.platformColor, this.platformAlpha);
-    }
+    this.platformW = this.originalPlatformWidth;
+    this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
+    this.platform.body.setSize(this.originalPlatformWidth, this.platformH);
 
     // Spawn bricks with pattern for this level
     this._spawnBricks();
@@ -757,11 +771,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.ballLaunched = false;
     this.ball.body.setVelocity(0, 0);
     this.ball.x = this.platform.x;
-    this.ball.y = this.platform.y - this.platform.height / 2 - this.ball.radius - 2;
-    if (this.ballVisual) {
-      this.ballVisual.x = this.ball.x;
-      this.ballVisual.y = this.ball.y;
-    }
+    this.ball.y = this.platform.y - this.platformH / 2 - this.ballRadius - 2;
 
     if (!this.launchHint) {
       const ccx = this.field.x + this.field.w / 2;
