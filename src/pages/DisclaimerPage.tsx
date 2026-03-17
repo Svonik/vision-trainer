@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Info, BookOpen, Eye, Heart } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { AppButton } from '@/components/AppButton';
 import { acceptDisclaimer } from '@/modules/storage';
 import { t } from '@/modules/i18n';
 
@@ -71,13 +72,15 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
                         </label>
                     </CardContent>
                     <CardFooter>
-                        <button
+                        <AppButton
+                            variant="cta"
+                            size="md"
                             onClick={handleContinue}
                             disabled={!accepted}
-                            className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 font-semibold btn-press disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-full"
                         >
                             {t('disclaimer.continue')}
-                        </button>
+                        </AppButton>
                     </CardFooter>
                 </Card>
             </div>
