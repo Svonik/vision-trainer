@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { AppButton } from '@/components/AppButton';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
@@ -67,12 +68,14 @@ export function SettingsHub() {
     if (calibMode === 'glasses') {
         return (
             <div className="p-4 max-w-lg mx-auto">
-                <button
+                <AppButton
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setCalibMode('view')}
-                    className="text-[var(--text-secondary)] text-base mb-4 btn-press hover:text-[var(--accent)]"
+                    className="mb-4"
                 >
                     ← {t('nav.back')}
-                </button>
+                </AppButton>
                 <GlassesTypeStep glassesType={recalibGlassesType} onSelect={handleGlassesSelect} />
             </div>
         );
@@ -81,12 +84,14 @@ export function SettingsHub() {
     if (calibMode === 'suppression') {
         return (
             <div className="p-4 max-w-lg mx-auto">
-                <button
+                <AppButton
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setCalibMode('glasses')}
-                    className="text-[var(--text-secondary)] text-base mb-4 btn-press hover:text-[var(--accent)]"
+                    className="mb-4"
                 >
                     ← {t('nav.back')}
-                </button>
+                </AppButton>
                 <SuppressionTestStep
                     glassesType={recalibGlassesType}
                     onPass={handleSuppressionPass}
@@ -99,12 +104,14 @@ export function SettingsHub() {
     if (calibMode === 'adjust') {
         return (
             <div className="p-4 max-w-lg mx-auto">
-                <button
+                <AppButton
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setCalibMode('suppression')}
-                    className="text-[var(--text-secondary)] text-base mb-4 btn-press hover:text-[var(--accent)]"
+                    className="mb-4"
                 >
                     ← {t('nav.back')}
-                </button>
+                </AppButton>
                 <BrightnessAdjustStep
                     glassesType={recalibGlassesType}
                     onRetry={handleAdjustRetry}
@@ -141,12 +148,13 @@ export function SettingsHub() {
                             {passed ? t('settings.calibrationStatus') : t('settings.calibrationNotPassed')}
                         </span>
                     </div>
-                    <button
+                    <AppButton
+                        variant="cta"
+                        size="sm"
                         onClick={() => setCalibMode('glasses')}
-                        className="text-base bg-[var(--cta)] text-[var(--cta-text)] rounded-full px-4 py-2 btn-press font-semibold"
                     >
                         {t('settings.recalibrate')}
-                    </button>
+                    </AppButton>
                 </div>
             </section>
 
@@ -159,32 +167,38 @@ export function SettingsHub() {
                     {t('settings.glassesSection')}
                 </h2>
                 <div className="flex gap-2">
-                    <button
+                    <AppButton
+                        variant="toggle"
+                        size="md"
+                        selected={glassesType === 'red-cyan'}
                         onClick={() => {
                             setGlassesType('red-cyan');
                             save({ suppression_passed: passed, glasses_type: 'red-cyan' });
                         }}
-                        className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
+                        className={`flex-1 ${
                             glassesType === 'red-cyan'
-                                ? 'bg-[var(--red-soft)]/20 text-[var(--red-soft)] border-[var(--red-soft)]'
-                                : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50'
+                                ? 'bg-[var(--red-soft)]/20 !text-[var(--red-soft)] !border-[var(--red-soft)]'
+                                : ''
                         }`}
                     >
                         {t('calibration.glassesRed')}
-                    </button>
-                    <button
+                    </AppButton>
+                    <AppButton
+                        variant="toggle"
+                        size="md"
+                        selected={glassesType === 'cyan-red'}
                         onClick={() => {
                             setGlassesType('cyan-red');
                             save({ suppression_passed: passed, glasses_type: 'cyan-red' });
                         }}
-                        className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
+                        className={`flex-1 ${
                             glassesType === 'cyan-red'
-                                ? 'bg-[var(--cyan-soft)]/20 text-[var(--cyan-soft)] border-[var(--cyan-soft)]'
-                                : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50'
+                                ? 'bg-[var(--cyan-soft)]/20 !text-[var(--cyan-soft)] !border-[var(--cyan-soft)]'
+                                : ''
                         }`}
                     >
                         {t('calibration.glassesCyan')}
-                    </button>
+                    </AppButton>
                 </div>
             </section>
 
@@ -234,17 +248,15 @@ export function SettingsHub() {
                     <p className="text-base text-[var(--text-secondary)]">{t('settings.speed')}</p>
                     <div className="grid grid-cols-2 gap-2">
                         {SPEED_KEYS.map((key) => (
-                            <button
+                            <AppButton
                                 key={key}
+                                variant="toggle"
+                                size="md"
+                                selected={defaultSpeed === key}
                                 onClick={() => setDefaultSpeed(key)}
-                                className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
-                                    defaultSpeed === key
-                                        ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
-                                        : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
-                                }`}
                             >
                                 {SPEEDS[key].label}
-                            </button>
+                            </AppButton>
                         ))}
                     </div>
                 </div>
@@ -253,35 +265,33 @@ export function SettingsHub() {
                 <div className="space-y-2">
                     <p className="text-base text-[var(--text-secondary)]">{t('settings.eyeSelect')}</p>
                     <div className="grid grid-cols-2 gap-2">
-                        <button
+                        <AppButton
+                            variant="toggle"
+                            size="md"
+                            selected={defaultEyeConfig === 'platform_left'}
                             onClick={() => setDefaultEyeConfig('platform_left')}
-                            className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
-                                defaultEyeConfig === 'platform_left'
-                                    ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
-                                    : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
-                            }`}
                         >
                             {t('settings.eyeLeft')}
-                        </button>
-                        <button
+                        </AppButton>
+                        <AppButton
+                            variant="toggle"
+                            size="md"
+                            selected={defaultEyeConfig === 'platform_right'}
                             onClick={() => setDefaultEyeConfig('platform_right')}
-                            className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
-                                defaultEyeConfig === 'platform_right'
-                                    ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
-                                    : 'bg-transparent text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--accent)]/50'
-                            }`}
                         >
                             {t('settings.eyeRight')}
-                        </button>
+                        </AppButton>
                     </div>
                 </div>
 
-                <button
+                <AppButton
+                    variant="cta"
+                    size="md"
                     onClick={handleSaveDefaults}
-                    className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
+                    className="w-full"
                 >
                     {t('settings.saveDefaults')}
-                </button>
+                </AppButton>
             </section>
         </div>
     );
