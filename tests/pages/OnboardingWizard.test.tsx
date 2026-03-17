@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { OnboardingWizard } from '../../src/pages/OnboardingWizard';
 import { initStorage } from '../../src/modules/storage';
@@ -23,6 +23,23 @@ vi.mock('../../src/modules/storage', async () => {
             last_calibrated: null,
             glasses_type: 'red-cyan',
         })),
+    };
+});
+
+// Mock framer-motion to avoid animation timing issues in tests
+vi.mock('framer-motion', async () => {
+    const actual = await vi.importActual('framer-motion');
+    return {
+        ...actual,
+        AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+        motion: {
+            ...actual.motion,
+            div: ({ children, ...props }: any) => {
+                const { initial, animate, exit, transition, custom, ...domProps } = props;
+                return <div {...domProps}>{children}</div>;
+            },
+        },
+        useReducedMotion: () => false,
     };
 });
 

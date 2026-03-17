@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { DisclaimerPage } from './DisclaimerPage';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
@@ -14,17 +15,21 @@ const STEP_ORDER: WizardStep[] = ['disclaimer', 'glasses', 'suppression', 'adjus
 export function OnboardingWizard() {
     const navigate = useNavigate();
     const [step, setStep] = useState<WizardStep>('disclaimer');
+    const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
+    const reducedMotion = useReducedMotion();
     const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>('red-cyan');
     const [adjustAttempts, setAdjustAttempts] = useState(0);
     const { save, setGlassesType: saveGlassesType } = useCalibration();
 
     const handleDisclaimerComplete = () => {
+        setDirection(1);
         setStep('glasses');
     };
 
     const handleGlassesSelect = (type: 'red-cyan' | 'cyan-red') => {
         setGlassesType(type);
         saveGlassesType(type);
+        setDirection(1);
         setStep('suppression');
     };
 
@@ -35,11 +40,13 @@ export function OnboardingWizard() {
 
     const handleSuppressionFail = () => {
         setAdjustAttempts(prev => prev + 1);
+        setDirection(1);
         setStep('adjust');
     };
 
     const handleAdjustRetry = () => {
         setAdjustAttempts(prev => prev + 1);
+        setDirection(-1);
         setStep('suppression');
     };
 
@@ -55,31 +62,43 @@ export function OnboardingWizard() {
             className="min-h-screen relative"
             style={{ background: 'linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%)' }}
         >
-            {step === 'disclaimer' && (
-                <DisclaimerPage onComplete={handleDisclaimerComplete} />
-            )}
-            {step === 'glasses' && (
-                <GlassesTypeStep
-                    glassesType={glassesType}
-                    onSelect={handleGlassesSelect}
-                />
-            )}
-            {step === 'suppression' && (
-                <SuppressionTestStep
-                    glassesType={glassesType}
-                    onPass={handleSuppressionPass}
-                    onFail={handleSuppressionFail}
-                />
-            )}
-            {step === 'adjust' && (
-                <BrightnessAdjustStep
-                    glassesType={glassesType}
-                    onRetry={handleAdjustRetry}
-                    onComplete={handleAdjustComplete}
-                    attempts={adjustAttempts}
-                    maxAttempts={CALIBRATION.MAX_ATTEMPTS}
-                />
-            )}
+            <AnimatePresence mode="wait" custom={direction}>
+                <motion.div
+                    key={step}
+                    custom={direction}
+                    initial={reducedMotion ? false : { opacity: 0, x: direction * 60 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={reducedMotion ? undefined : { opacity: 0, x: direction * -60 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="min-h-screen"
+                >
+                    {step === 'disclaimer' && (
+                        <DisclaimerPage onComplete={handleDisclaimerComplete} />
+                    )}
+                    {step === 'glasses' && (
+                        <GlassesTypeStep
+                            glassesType={glassesType}
+                            onSelect={handleGlassesSelect}
+                        />
+                    )}
+                    {step === 'suppression' && (
+                        <SuppressionTestStep
+                            glassesType={glassesType}
+                            onPass={handleSuppressionPass}
+                            onFail={handleSuppressionFail}
+                        />
+                    )}
+                    {step === 'adjust' && (
+                        <BrightnessAdjustStep
+                            glassesType={glassesType}
+                            onRetry={handleAdjustRetry}
+                            onComplete={handleAdjustComplete}
+                            attempts={adjustAttempts}
+                            maxAttempts={CALIBRATION.MAX_ATTEMPTS}
+                        />
+                    )}
+                </motion.div>
+            </AnimatePresence>
 
             {/* Dot step indicators */}
             <div className="fixed bottom-6 left-0 right-0 flex justify-center gap-2 z-50">
