@@ -56,7 +56,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
             <div className="w-full max-w-sm space-y-4">
                 {/* Red channel slider */}
                 <div className="space-y-2">
-                    <label className="text-base" style={{ color: '#ff6666' }}>
+                    <label className="text-base" style={{ color: 'var(--red-soft)' }}>
                         {t('calibration.red')}: {redBrightness}
                     </label>
                     <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
                 {/* Cyan channel slider */}
                 <div className="space-y-2">
-                    <label className="text-base" style={{ color: '#00e5e5' }}>
+                    <label className="text-base" style={{ color: 'var(--cyan-soft)' }}>
                         {t('calibration.cyan')}: {cyanBrightness}
                     </label>
                     <div className="flex items-center gap-3">

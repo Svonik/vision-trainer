@@ -13,7 +13,7 @@ export function ProgressRing({ percent, size = 100 }: ProgressRingProps) {
             : 'var(--accent-secondary)';
     return (
         <svg width={size} height={size} className="mx-auto">
-            <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#374151" strokeWidth="8" />
+            <circle cx={cx} cy={cy} r={radius} fill="none" stroke="var(--border)" strokeWidth="8" />
             <circle
                 cx={cx} cy={cy} r={radius}
                 fill="none"
