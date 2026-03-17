@@ -74,6 +74,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
                         <button
                             onClick={handleContinue}
                             disabled={!accepted}
+                            title={!accepted ? 'Отметьте согласие чтобы продолжить' : undefined}
                             className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 font-semibold btn-press disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             {t('disclaimer.continue')}
