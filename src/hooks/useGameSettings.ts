@@ -1,11 +1,10 @@
-// @ts-nocheck
 import { useState, useCallback } from 'react';
-import { createGameSettings } from '../modules/gameState';
+import { createGameSettings, GameSettings } from '../modules/gameState';
 
-export function useGameSettings(initial = {}) {
+export function useGameSettings(initial: Partial<GameSettings> = {}) {
     const [settings, setSettings] = useState(() => createGameSettings(initial));
 
-    const updateSettings = useCallback((overrides) => {
+    const updateSettings = useCallback((overrides: Partial<GameSettings>) => {
         setSettings(prev => createGameSettings({ ...prev, ...overrides }));
     }, []);
 
