@@ -5,6 +5,7 @@ import { DisclaimerGuard } from './guards/DisclaimerGuard';
 import { CalibrationGuard } from './guards/CalibrationGuard';
 import { GameSettingsGuard } from './guards/GameSettingsGuard';
 import { Layout } from './components/Layout';
+import { SuspenseFallback } from './components/SuspenseFallback';
 
 const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 const GameSelectPage = lazy(() => import('./pages/GameSelectPage').then(m => ({ default: m.GameSelectPage })));
@@ -25,7 +26,7 @@ function isOnboardingComplete() {
 function App() {
     return (
         <HashRouter>
-            <Suspense fallback={<div className="min-h-screen bg-[var(--bg)]" />}>
+            <Suspense fallback={<SuspenseFallback />}>
                 <Routes>
                     <Route path="/onboarding" element={<OnboardingWizard />} />
                     <Route path="/games/:gameId/play" element={
