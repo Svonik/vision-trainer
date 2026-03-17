@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
-@theme {
+@theme inline {
   --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-display: 'Fredoka', system-ui, sans-serif;
+  --color-background: #12101a;
+  --color-foreground: #e8e0f0;
+  --color-card: #1e1a2e;
+  --color-card-foreground: #e8e0f0;
+  --color-primary: #c9a0dc;
+  --color-primary-foreground: #12101a;
+  --color-muted: #1e1a2e;
+  --color-muted-foreground: #a094b8;
+  --color-accent: #c9a0dc;
+  --color-accent-foreground: #12101a;
+  --color-border: #2d2640;
+  --color-destructive: #ff6b8a;
+  --color-ring: #c9a0dc;
+  --radius: 1rem;
 }
 
 html {
@@ -26,6 +40,7 @@ html {
   --text-secondary: #8b7fa0;
   --success: #7dd3a8;
   --warning: #f0c674;
+  --bg-gradient: linear-gradient(160deg, #12101a 0%, #1e1a2e 50%, #1a1225 100%);
 }
 
 @keyframes fadeSlideUp {
