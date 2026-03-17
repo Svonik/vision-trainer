@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
+import { ArrowLeft } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
@@ -69,7 +70,7 @@ export function GamePage() {
                     onClick={() => navigate(-1)}
                     className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-base transition-colors"
                 >
-                    ← {t('nav.back')}
+                    <ArrowLeft className="w-4 h-4 inline" /> {t('nav.back')}
                 </button>
                 <div className="flex items-center gap-3">
                     {currentGame && (

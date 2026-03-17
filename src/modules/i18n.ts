@@ -172,6 +172,8 @@ const strings = {
   'stats.contrastR': 'П',
   'landscape.rotate': 'Поверните устройство горизонтально',
   'landscape.hint': 'Для комфортной игры нужен горизонтальный экран',
+  'settings.saved': 'Настройки сохранены',
+  'settings.glassesChanged': 'Тип очков изменён',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router';
 import { Target, Gamepad2 } from 'lucide-react';
+import { AppButton } from '@/components/AppButton';
 import { t } from '../modules/i18n';
 import { getSessions } from '../modules/storage';
 import { generateSession, GAME_TITLE_KEYS } from '../modules/sessionEngine';
@@ -74,9 +75,14 @@ export function ModeSelectPage() {
                             </div>
                         </div>
 
-                        <span className="block w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold text-center">
+                        <AppButton
+                            variant="cta"
+                            size="md"
+                            onClick={(e) => { e.stopPropagation(); navigate('/training/settings'); }}
+                            className="w-full"
+                        >
                             {t('mode.startTraining')}
-                        </span>
+                        </AppButton>
                     </div>
                 </button>
 
@@ -101,9 +107,14 @@ export function ModeSelectPage() {
                             {t('mode.freePlayDesc')}
                         </p>
 
-                        <span className="block w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold text-center">
+                        <AppButton
+                            variant="outline"
+                            size="md"
+                            onClick={(e) => { e.stopPropagation(); navigate('/games'); }}
+                            className="w-full hover:border-[var(--cyan-soft)]/50 hover:text-[var(--text)]"
+                        >
                             {t('mode.chooseGame')}
-                        </span>
+                        </AppButton>
                     </div>
                 </button>
             </div>

@@ -1,4 +1,5 @@
-import { Slider } from '@/components/ui/slider';
+import { ColoredSlider } from '@/components/ColoredSlider';
+import { AppButton } from '@/components/AppButton';
 import { useCalibration } from '../../hooks/useCalibration';
 import { getEyeColors } from '../../modules/glassesColors';
 import { CALIBRATION } from '../../modules/constants';
@@ -65,7 +66,8 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         >
                             −
                         </button>
-                        <Slider
+                        <ColoredSlider
+                            channel="red"
                             value={[redBrightness]}
                             min={CALIBRATION.SLIDER_MIN}
                             max={CALIBRATION.SLIDER_MAX}
@@ -95,7 +97,8 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         >
                             −
                         </button>
-                        <Slider
+                        <ColoredSlider
+                            channel="cyan"
                             value={[cyanBrightness]}
                             min={CALIBRATION.SLIDER_MIN}
                             max={CALIBRATION.SLIDER_MAX}
@@ -120,34 +123,22 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         {t('calibration.doctorWarning')}
                     </p>
                     <div className="flex gap-2">
-                        <button
-                            onClick={onComplete}
-                            className="flex-1 rounded-full border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 py-2 btn-press"
-                        >
+                        <AppButton variant="outline" size="md" onClick={onComplete} className="flex-1">
                             {t('calibration.continueAnyway')}
-                        </button>
-                        <button
-                            onClick={onRetry}
-                            className="flex-1 rounded-full bg-[var(--cta)] text-[var(--cta-text)] py-2 font-semibold btn-press"
-                        >
+                        </AppButton>
+                        <AppButton variant="cta" size="md" onClick={onRetry} className="flex-1">
                             {t('calibration.recalibrate')}
-                        </button>
+                        </AppButton>
                     </div>
                 </div>
             ) : (
                 <div className="w-full max-w-sm flex gap-2">
-                    <button
-                        onClick={onRetry}
-                        className="flex-1 rounded-full border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 py-2 btn-press"
-                    >
+                    <AppButton variant="outline" size="md" onClick={onRetry} className="flex-1">
                         {t('calibration.retry')}
-                    </button>
-                    <button
-                        onClick={onComplete}
-                        className="flex-1 rounded-full bg-[var(--cta)] text-[var(--cta-text)] py-2 font-semibold btn-press"
-                    >
+                    </AppButton>
+                    <AppButton variant="cta" size="md" onClick={onComplete} className="flex-1">
                         {t('calibration.save')}
-                    </button>
+                    </AppButton>
                 </div>
             )}
         </div>
