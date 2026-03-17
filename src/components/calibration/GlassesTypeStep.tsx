@@ -7,7 +7,7 @@ interface Props {
 
 function GlassesIllustration({ leftColor, rightColor }: { leftColor: string; rightColor: string }) {
     return (
-        <svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[210px] mx-auto">
+        <svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" className="w-full max-w-[210px] mx-auto" aria-hidden="true">
             <defs>
                 <linearGradient id={`frame-${leftColor}`} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#d1d5db"/>

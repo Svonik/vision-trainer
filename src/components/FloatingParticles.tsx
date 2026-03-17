@@ -1,4 +1,21 @@
-import { useReducedMotion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+
+function useReducedMotion(): boolean {
+    const [prefersReduced, setPrefersReduced] = useState(() =>
+        typeof window !== 'undefined'
+            ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            : false
+    );
+
+    useEffect(() => {
+        const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
+        mql.addEventListener('change', handler);
+        return () => mql.removeEventListener('change', handler);
+    }, []);
+
+    return prefersReduced;
+}
 
 const particles = [
     { size: 3, left: '15%', duration: '12s', delay: '0s' },
