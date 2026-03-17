@@ -23,7 +23,7 @@ html {
   --red-soft: #ff6b8a;
   --cyan-soft: #6bdfff;
   --text: #e8e0f0;
-  --text-secondary: #8b7fa0;
+  --text-secondary: #a094b8;
   --success: #7dd3a8;
   --warning: #f0c674;
 }
@@ -64,6 +64,12 @@ html {
   .spring-enter {
     animation: fadeSlideUp 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
+}
+
+:focus-visible {
+  outline: 3px solid var(--cta);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 @media (max-width: 359px) {
