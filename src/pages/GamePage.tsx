@@ -4,6 +4,7 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { LandscapePrompt } from '../components/LandscapePrompt';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
@@ -19,7 +20,7 @@ export function GamePage() {
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const phaserRef = useRef<IRefPhaserGame>(null);
 
-    const [instanceKey] = useState(() => Date.now());
+    const [instanceKey, setInstanceKey] = useState(() => Date.now());
 
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -88,7 +89,9 @@ export function GamePage() {
             </header>
 
             <div className="flex-1 flex items-center justify-center md:pt-10 relative z-10">
-                <PhaserGame key={instanceKey} ref={phaserRef} />
+                <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
+                    <PhaserGame key={instanceKey} ref={phaserRef} />
+                </PhaserErrorBoundary>
             </div>
 
             {safetyWarning && (

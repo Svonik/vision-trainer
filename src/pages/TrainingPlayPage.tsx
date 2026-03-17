@@ -4,6 +4,7 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { EventBus } from '../game/EventBus';
 import { addSession } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
 import { formatTime } from '@/lib/formatTime';
@@ -95,6 +96,7 @@ export function TrainingPlayPage() {
     const [transitionCountdown, setTransitionCountdown] = useState(5);
     const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(null);
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
+    const [instanceKey, setInstanceKey] = useState(() => Date.now());
 
     const phaserRef = useRef<IRefPhaserGame>(null);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -273,7 +275,9 @@ export function TrainingPlayPage() {
             </header>
 
             <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
-                <PhaserGame ref={phaserRef} />
+                <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
+                    <PhaserGame key={instanceKey} ref={phaserRef} />
+                </PhaserErrorBoundary>
             </div>
 
             {safetyWarning && (
