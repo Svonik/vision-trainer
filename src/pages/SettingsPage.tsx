@@ -95,6 +95,7 @@ export function SettingsPage() {
                                     value={[settings.contrastLeft]}
                                     onValueChange={([val]) => updateSettings({ contrastLeft: val })}
                                     className="w-full"
+                                    aria-label="Контраст левого глаза"
                                 />
                             </div>
 
@@ -110,6 +111,7 @@ export function SettingsPage() {
                                     value={[settings.contrastRight]}
                                     onValueChange={([val]) => updateSettings({ contrastRight: val })}
                                     className="w-full"
+                                    aria-label="Контраст правого глаза"
                                 />
                             </div>
                         </div>
@@ -123,6 +125,7 @@ export function SettingsPage() {
                                 <button
                                     key={key}
                                     onClick={() => updateSettings({ speed: key })}
+                                    aria-pressed={settings.speed === key}
                                     className={`min-h-[48px] py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                         settings.speed === key
                                             ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
@@ -141,6 +144,7 @@ export function SettingsPage() {
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => updateSettings({ eyeConfig: 'platform_left' })}
+                                aria-pressed={settings.eyeConfig === 'platform_left'}
                                 className={`min-h-[48px] py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     settings.eyeConfig === 'platform_left'
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
@@ -151,6 +155,7 @@ export function SettingsPage() {
                             </button>
                             <button
                                 onClick={() => updateSettings({ eyeConfig: 'platform_right' })}
+                                aria-pressed={settings.eyeConfig === 'platform_right'}
                                 className={`min-h-[48px] py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     settings.eyeConfig === 'platform_right'
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'

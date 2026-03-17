@@ -31,10 +31,11 @@ export function ModeSelectPage() {
 
             <div className="flex flex-col gap-5 max-w-sm w-full">
                 {/* Training card */}
-                <div
-                    className="group bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter"
+                <button
+                    className="group bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter text-left w-full"
                     style={{ animationDelay: '0ms' }}
                     onClick={() => navigate('/training/settings')}
+                    aria-label={t('mode.training')}
                 >
                     <div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)]" />
                     <div className="p-6 space-y-4">
@@ -73,20 +74,18 @@ export function ModeSelectPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); navigate('/training/settings'); }}
-                            className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
-                        >
+                        <span className="block w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold text-center">
                             {t('mode.startTraining')}
-                        </button>
+                        </span>
                     </div>
-                </div>
+                </button>
 
                 {/* Free play card */}
-                <div
-                    className="group bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter"
+                <button
+                    className="group bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter text-left w-full"
                     style={{ animationDelay: '80ms' }}
                     onClick={() => navigate('/games')}
+                    aria-label={t('mode.freePlay')}
                 >
                     <div className="p-6 space-y-4">
                         <div className="flex items-center gap-3">
@@ -102,14 +101,11 @@ export function ModeSelectPage() {
                             {t('mode.freePlayDesc')}
                         </p>
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); navigate('/games'); }}
-                            className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:border-[var(--cyan-soft)]/50 hover:text-[var(--text)] transition-colors"
-                        >
+                        <span className="block w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold text-center">
                             {t('mode.chooseGame')}
-                        </button>
+                        </span>
                     </div>
-                </div>
+                </button>
             </div>
         </div>
     );

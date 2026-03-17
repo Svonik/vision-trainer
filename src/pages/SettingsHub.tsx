@@ -164,6 +164,7 @@ export function SettingsHub() {
                             setGlassesType('red-cyan');
                             save({ suppression_passed: passed, glasses_type: 'red-cyan' });
                         }}
+                        aria-pressed={glassesType === 'red-cyan'}
                         className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
                             glassesType === 'red-cyan'
                                 ? 'bg-[var(--red-soft)]/20 text-[var(--red-soft)] border-[var(--red-soft)]'
@@ -177,6 +178,7 @@ export function SettingsHub() {
                             setGlassesType('cyan-red');
                             save({ suppression_passed: passed, glasses_type: 'cyan-red' });
                         }}
+                        aria-pressed={glassesType === 'cyan-red'}
                         className={`flex-1 rounded-full border py-2 btn-press font-medium transition-colors ${
                             glassesType === 'cyan-red'
                                 ? 'bg-[var(--cyan-soft)]/20 text-[var(--cyan-soft)] border-[var(--cyan-soft)]'
@@ -211,6 +213,7 @@ export function SettingsHub() {
                             value={[defaultContrast.left]}
                             onValueChange={([val]) => setDefaultContrast(prev => ({ ...prev, left: val }))}
                             className="w-full"
+                            aria-label="Контраст левого глаза"
                         />
                     </div>
                     <div className="space-y-2">
@@ -225,6 +228,7 @@ export function SettingsHub() {
                             value={[defaultContrast.right]}
                             onValueChange={([val]) => setDefaultContrast(prev => ({ ...prev, right: val }))}
                             className="w-full"
+                            aria-label="Контраст правого глаза"
                         />
                     </div>
                 </div>
@@ -237,6 +241,7 @@ export function SettingsHub() {
                             <button
                                 key={key}
                                 onClick={() => setDefaultSpeed(key)}
+                                aria-pressed={defaultSpeed === key}
                                 className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                     defaultSpeed === key
                                         ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
@@ -255,6 +260,7 @@ export function SettingsHub() {
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => setDefaultEyeConfig('platform_left')}
+                            aria-pressed={defaultEyeConfig === 'platform_left'}
                             className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                 defaultEyeConfig === 'platform_left'
                                     ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'
@@ -265,6 +271,7 @@ export function SettingsHub() {
                         </button>
                         <button
                             onClick={() => setDefaultEyeConfig('platform_right')}
+                            aria-pressed={defaultEyeConfig === 'platform_right'}
                             className={`py-2 px-4 rounded-full border text-base transition-colors btn-press ${
                                 defaultEyeConfig === 'platform_right'
                                     ? 'bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]'

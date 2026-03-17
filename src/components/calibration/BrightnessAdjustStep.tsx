@@ -32,7 +32,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         opacity: redBrightness / 100,
                         boxShadow: '0 0 20px rgba(255,107,138,0.3)',
                     }}
-                    aria-label="red square"
+                    aria-label="Красный квадрат"
                 />
                 <div
                     className="w-24 h-24 rounded-2xl"
@@ -41,7 +41,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                         opacity: cyanBrightness / 100,
                         boxShadow: '0 0 20px rgba(107,223,255,0.3)',
                     }}
-                    aria-label="cyan square"
+                    aria-label="Голубой квадрат"
                 />
             </div>
 
@@ -55,7 +55,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
             <div className="w-full max-w-sm space-y-4">
                 {/* Red channel slider */}
                 <div className="space-y-2">
-                    <label className="text-base" style={{ color: '#ff6666' }}>
+                    <label className="text-base" style={{ color: 'var(--red-soft)' }}>
                         {t('calibration.red')}: {redBrightness}
                     </label>
                     <div className="flex items-center gap-3">
@@ -72,6 +72,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                             step={CALIBRATION.SLIDER_STEP}
                             onValueChange={([val]) => setRedBrightness(val)}
                             className="flex-1"
+                            aria-label="Яркость красного канала"
                         />
                         <button
                             onClick={() => setRedBrightness(Math.min(100, redBrightness + 5))}
@@ -84,7 +85,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
                 {/* Cyan channel slider */}
                 <div className="space-y-2">
-                    <label className="text-base" style={{ color: '#00e5e5' }}>
+                    <label className="text-base" style={{ color: 'var(--cyan-soft)' }}>
                         {t('calibration.cyan')}: {cyanBrightness}
                     </label>
                     <div className="flex items-center gap-3">
@@ -101,6 +102,7 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                             step={CALIBRATION.SLIDER_STEP}
                             onValueChange={([val]) => setCyanBrightness(val)}
                             className="flex-1"
+                            aria-label="Яркость голубого канала"
                         />
                         <button
                             onClick={() => setCyanBrightness(Math.min(100, cyanBrightness + 5))}
