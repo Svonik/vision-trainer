@@ -156,11 +156,12 @@ const GAMES: GameDisplayConfig[] = GAMES_DATA.map(g => ({
 const GameCard = React.memo(function GameCard({ game, index, count }: { game: GameDisplayConfig; index: number; count: number }) {
     const navigate = useNavigate();
     return (
-        <div
+        <button
             key={game.id}
-            className="group bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter"
+            className="group bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter text-left w-full"
             style={{ animationDelay: `${index * 60}ms` }}
             onClick={() => navigate(game.route)}
+            aria-label={t(game.titleKey)}
         >
             <GameIllustration gameId={game.id} />
             <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
@@ -182,14 +183,11 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                 <p className="hidden sm:block text-sm text-[var(--text-secondary)]">
                     {t(game.descriptionKey)}
                 </p>
-                <button
-                    onClick={(e) => { e.stopPropagation(); navigate(game.route); }}
-                    className="w-full sm:w-auto bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 px-6 font-semibold btn-press"
-                >
+                <span className="block w-full sm:w-auto bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-2.5 px-6 font-semibold text-center">
                     {t('gameSelect.play')}
-                </button>
+                </span>
             </div>
-        </div>
+        </button>
     );
 });
 
