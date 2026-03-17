@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
 import { AppButton } from '@/components/AppButton';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
@@ -35,6 +36,7 @@ export function SettingsHub() {
             speed: defaultSpeed,
             eyeConfig: defaultEyeConfig,
         });
+        toast.success(t('settings.saved'));
     };
 
     const handleGlassesSelect = (type: 'red-cyan' | 'cyan-red') => {
@@ -174,6 +176,7 @@ export function SettingsHub() {
                         onClick={() => {
                             setGlassesType('red-cyan');
                             save({ suppression_passed: passed, glasses_type: 'red-cyan' });
+                            toast.info(t('settings.glassesChanged'));
                         }}
                         className={`flex-1 ${
                             glassesType === 'red-cyan'
@@ -190,6 +193,7 @@ export function SettingsHub() {
                         onClick={() => {
                             setGlassesType('cyan-red');
                             save({ suppression_passed: passed, glasses_type: 'cyan-red' });
+                            toast.info(t('settings.glassesChanged'));
                         }}
                         className={`flex-1 ${
                             glassesType === 'cyan-red'

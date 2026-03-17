@@ -174,6 +174,8 @@ const strings = {
   'settings.rightEyeLabel': 'Правый глаз',
   'stats.contrastL': 'Л',
   'stats.contrastR': 'П',
+  'settings.saved': 'Настройки сохранены',
+  'settings.glassesChanged': 'Тип очков изменён',
 };
 
 export const t = (key) => strings[key] ?? `[${key}]`;
