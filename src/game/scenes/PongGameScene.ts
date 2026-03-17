@@ -158,7 +158,9 @@ export default class PongGameScene extends Phaser.Scene {
       this.playerPaddle.setTint(this.platformColor);
       this.playerPaddle.setAlpha(this.platformAlpha);
       this.playerPaddle.setAngle(90);
-      this.playerPaddle.setDisplaySize(ph, pw); // rotated: long axis = ph, short axis = pw
+      // Proportional scale from long axis (ph), sprite is rotated 90°
+      const pScale = ph / this.playerPaddle.width;
+      this.playerPaddle.setScale(pScale);
     } else {
       this.playerPaddle = this.add.rectangle(lx, ccy, pw, ph, this.platformColor, this.platformAlpha);
     }
@@ -172,7 +174,8 @@ export default class PongGameScene extends Phaser.Scene {
       this.aiPaddle.setTint(this.ballColor);
       this.aiPaddle.setAlpha(this.ballAlpha);
       this.aiPaddle.setAngle(90);
-      this.aiPaddle.setDisplaySize(ph, pw); // rotated: long axis = ph, short axis = pw
+      const aiScale = ph / this.aiPaddle.width;
+      this.aiPaddle.setScale(aiScale);
     } else {
       this.aiPaddle = this.add.rectangle(rx, ccy, pw, ph, this.ballColor, this.ballAlpha);
     }
@@ -191,7 +194,8 @@ export default class PongGameScene extends Phaser.Scene {
     if (this.textures.exists('ball')) {
       this.ball = this.add.image(ccx, ccy, 'ball');
       this.ball.setTint(COLORS.WHITE);
-      this.ball.setDisplaySize(ballR * 2, ballR * 2);
+      const ballScale = (ballR * 2) / this.ball.width;
+      this.ball.setScale(ballScale);
     } else {
       this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE, 1);
     }

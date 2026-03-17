@@ -139,7 +139,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.platform = this.add.image(ccx, py, 'paddle');
       this.platform.setTint(this.platformColor);
       this.platform.setAlpha(this.platformAlpha);
-      this.platform.setDisplaySize(pw, ph);
+      // Scale proportionally from width, preserve sprite aspect ratio
+      const paddleScale = pw / this.platform.width;
+      this.platform.setScale(paddleScale);
     } else {
       this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor, this.platformAlpha);
     }
@@ -159,7 +161,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.ball = this.add.image(ccx, ballStartY, 'ball');
       this.ball.setTint(this.ballColor);
       this.ball.setAlpha(this.ballAlpha);
-      this.ball.setDisplaySize(ballRadius * 2, ballRadius * 2);
+      // Proportional scale from diameter
+      const ballScale = (ballRadius * 2) / this.ball.width;
+      this.ball.setScale(ballScale);
     } else {
       this.ball = this.add.circle(ccx, ballStartY, ballRadius, this.ballColor, this.ballAlpha);
     }
@@ -276,7 +280,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
           const spriteKey = BRICK_SPRITES[row % BRICK_SPRITES.length];
           brick = this.add.image(bx, by, spriteKey);
           brick.setTint(shade);
-          brick.setDisplaySize(brickW - 4, brickH - 4);
+          // Scale proportionally from width to avoid distortion blur
+          const scale = (brickW - 4) / brick.width;
+          brick.setScale(scale);
         } else {
           // Invisible physics rect + visual glow rect fallback
           brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
@@ -541,12 +547,22 @@ export default class BreakoutGameScene extends Phaser.Scene {
           this.activePowerups.wide = true;
           const newW = this.originalPlatformWidth * 1.5;
           this.platformW = newW;
-          this.platform.setDisplaySize(newW, this.platformH);
+          const wideScale = newW / (this.platform.texture?.key === '__DEFAULT' ? newW : this.platform.texture.getSourceImage().width || newW);
+          if (this.platform.texture?.key !== '__DEFAULT') {
+            this.platform.setScale(wideScale);
+          } else {
+            this.platform.setDisplaySize(newW, this.platformH);
+          }
           this.platform.body.setSize(newW, this.platformH);
           this.time.delayedCall(POWERUP_DURATIONS.wide, () => {
             this.activePowerups.wide = false;
             this.platformW = this.originalPlatformWidth;
-            this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
+            if (this.platform.texture?.key !== '__DEFAULT') {
+              const origScale = this.originalPlatformWidth / this.platform.texture.getSourceImage().width;
+              this.platform.setScale(origScale);
+            } else {
+              this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
+            }
             this.platform.body.setSize(this.originalPlatformWidth, this.platformH);
           });
         }
@@ -753,7 +769,12 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
     // Reset platform width to original
     this.platformW = this.originalPlatformWidth;
-    this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
+    if (this.platform.texture?.key !== '__DEFAULT') {
+      const origScale = this.originalPlatformWidth / this.platform.texture.getSourceImage().width;
+      this.platform.setScale(origScale);
+    } else {
+      this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
+    }
     this.platform.body.setSize(this.originalPlatformWidth, this.platformH);
 
     // Spawn bricks with pattern for this level

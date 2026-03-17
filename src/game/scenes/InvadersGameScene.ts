@@ -128,7 +128,8 @@ export default class InvadersGameScene extends Phaser.Scene {
       this.ship = this.add.image(ccx, shipY, 'ship');
       this.ship.setTint(this.platformColor);
       this.ship.setAlpha(this.platformAlpha);
-      this.ship.setDisplaySize(shipW, shipH);
+      const shipScale = shipW / this.ship.width;
+      this.ship.setScale(shipScale);
       this.physics.add.existing(this.ship, false);
       this.ship.body.setImmovable(false);
     } else {
@@ -157,7 +158,8 @@ export default class InvadersGameScene extends Phaser.Scene {
           alienSprite = this.add.image(ax, ay, spriteKey);
           alienSprite.setTint(this.alienColor);
           alienSprite.setAlpha(this.alienAlpha);
-          alienSprite.setDisplaySize(ALIEN_W, ALIEN_H);
+          const alienScale = ALIEN_W / alienSprite.width;
+          alienSprite.setScale(alienScale);
           this.physics.add.existing(alienSprite, true);
           this.aliens.push({ body: alienSprite, alienVisual: null, notchL: null, notchR: null });
           this.alienGroup.add(alienSprite);
@@ -414,7 +416,8 @@ export default class InvadersGameScene extends Phaser.Scene {
       );
       bullet.setTint(this.platformColor);
       bullet.setAlpha(this.platformAlpha);
-      bullet.setDisplaySize(BULLET_W * 2, BULLET_H * 1.5);
+      const bulletScale = (BULLET_H * 1.5) / bullet.height;
+      bullet.setScale(bulletScale);
     } else {
       bullet = this.add.rectangle(
         this.ship.x,
@@ -452,7 +455,8 @@ export default class InvadersGameScene extends Phaser.Scene {
       );
       bullet.setTint(this.alienColor);
       bullet.setAlpha(this.alienAlpha);
-      bullet.setDisplaySize(BULLET_W * 2, BULLET_H * 1.5);
+      const bulletScale = (BULLET_H * 1.5) / bullet.height;
+      bullet.setScale(bulletScale);
     } else {
       bullet = this.add.rectangle(
         shooter.body.x,
@@ -649,7 +653,8 @@ export default class InvadersGameScene extends Phaser.Scene {
           const alienSprite = this.add.image(ax, ay, spriteKey);
           alienSprite.setTint(this.alienColor);
           alienSprite.setAlpha(this.alienAlpha);
-          alienSprite.setDisplaySize(ALIEN_W, ALIEN_H);
+          const alienScale = ALIEN_W / alienSprite.width;
+          alienSprite.setScale(alienScale);
           this.physics.add.existing(alienSprite, true);
           this.aliens.push({ body: alienSprite, alienVisual: null, notchL: null, notchR: null });
           this.alienGroup.add(alienSprite);

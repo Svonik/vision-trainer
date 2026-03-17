@@ -121,7 +121,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
       this.shipSprite = this.add.image(this.shipX, this.shipY, 'ship2');
       this.shipSprite.setTint(this.platformColor);
       this.shipSprite.setAlpha(this.platformAlpha);
-      this.shipSprite.setDisplaySize(SHIP_SPRITE_SIZE, SHIP_SPRITE_SIZE);
+      const shipScale = SHIP_SPRITE_SIZE / Math.max(this.shipSprite.width, this.shipSprite.height);
+      this.shipSprite.setScale(shipScale);
       this.shipGraphics = null;
     } else {
       // Fallback: draw with graphics
@@ -273,7 +274,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
       sprite = this.add.image(ax, ay, spriteKey);
       sprite.setTint(this.ballColor);
       sprite.setAlpha(this.ballAlpha);
-      sprite.setDisplaySize(def.radius * 2, def.radius * 2);
+      const astScale = (def.radius * 2) / Math.max(sprite.width, sprite.height);
+      sprite.setScale(astScale);
       sprite.setAngle(rotOffset); // random start angle
     }
 
@@ -573,7 +575,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
       sprite = this.add.image(tipX, tipY, 'laser');
       sprite.setTint(this.platformColor);
       sprite.setAlpha(this.platformAlpha);
-      sprite.setDisplaySize(6, 20);
+      const laserScale = 20 / sprite.height;
+      sprite.setScale(laserScale);
       sprite.setAngle(this.shipAngleDeg);
     }
 
