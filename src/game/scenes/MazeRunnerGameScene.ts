@@ -197,8 +197,14 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
         SynthSounds.resume();
 
         this.startGameHandler = (settings) => {
-            this.settings = createGameSettings(settings || {});
-            this.startGameplay();
+            console.log('[MazeRunner] start-mazerunner-game received');
+            try {
+                this.settings = createGameSettings(settings || {});
+                this.startGameplay();
+                console.log('[MazeRunner] startGameplay completed OK');
+            } catch (err) {
+                console.error('[MazeRunner] startGameplay CRASHED:', err);
+            }
         };
         this.safetyFinishHandler = () => {
             this.endGame(false);
@@ -216,6 +222,9 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
 
         this.events.on('shutdown', this.shutdown, this);
 
+        console.log(
+            '[MazeRunner] create() called, emitting current-scene-ready',
+        );
         EventBus.emit('current-scene-ready', this);
     }
 

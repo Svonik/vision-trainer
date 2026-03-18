@@ -107,8 +107,17 @@ export default class PacmanGameScene extends Phaser.Scene {
         SynthSounds.resume();
 
         this.startGameHandler = (settings) => {
-            this.settings = createGameSettings(settings || {});
-            this.startGameplay();
+            console.log(
+                '[PacmanScene] start-pacman-game received, settings:',
+                settings,
+            );
+            try {
+                this.settings = createGameSettings(settings || {});
+                this.startGameplay();
+                console.log('[PacmanScene] startGameplay completed OK');
+            } catch (err) {
+                console.error('[PacmanScene] startGameplay CRASHED:', err);
+            }
         };
         this.safetyFinishHandler = () => {
             this.endGame(false);
@@ -126,10 +135,14 @@ export default class PacmanGameScene extends Phaser.Scene {
 
         this.events.on('shutdown', this.shutdown, this);
 
+        console.log(
+            '[PacmanScene] create() called, emitting current-scene-ready',
+        );
         EventBus.emit('current-scene-ready', this);
     }
 
     startGameplay() {
+        console.log('[PacmanScene] startGameplay() called');
         const fw = GAME.WIDTH * GAME.FIELD_WIDTH_RATIO;
         const fh = GAME.HEIGHT * GAME.FIELD_HEIGHT_RATIO;
         const fx = (GAME.WIDTH - fw) / 2;
