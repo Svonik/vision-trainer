@@ -537,6 +537,9 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
     }
 
     update(_time, delta) {
+        // Guard: update() can fire before startGameplay() completes
+        if (!this.renderGrid) return;
+
         if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
             this.togglePause();
             return;

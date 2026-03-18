@@ -558,6 +558,9 @@ export default class PacmanGameScene extends Phaser.Scene {
     }
 
     update(_time, delta) {
+        // Guard: update() can fire before startGameplay() completes
+        if (!this.ghostObjs) return;
+
         if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
             this.togglePause();
             return;
