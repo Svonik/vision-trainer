@@ -1,57 +1,65 @@
-import { Gamepad2, Target } from 'lucide-react';
+import { Clock, Gamepad2, Target } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { AppButton } from '@/components/AppButton';
+import { SessionStepper } from '@/components/SessionStepper';
 import { Card, CardContent } from '@/components/ui/card';
+import { WeeklyProgress } from '@/components/WeeklyProgress';
 import { t } from '../modules/i18n';
 import { getCachedSessions } from '../modules/sessionCache';
-import { GAME_TITLE_KEYS, generateSession } from '../modules/sessionEngine';
-
-function GameDot({ gameId }: { gameId: string }) {
-    return (
-        <span className="inline-flex items-center gap-1 bg-[var(--accent)]/20 text-[var(--accent)] text-sm px-2 py-0.5 rounded-full font-medium">
-            {t(GAME_TITLE_KEYS[gameId] ?? 'app.title')}
-        </span>
-    );
-}
+import { generateSession } from '../modules/sessionEngine';
+import { getCalibration } from '../modules/storage';
+import { getProtocol } from '../modules/therapyProtocol';
 
 export function ModeSelectPage() {
     const navigate = useNavigate();
     const sessions = getCachedSessions();
     const todayGames = generateSession(sessions);
+    const calibration = getCalibration();
+    const protocol = getProtocol(calibration.age_group);
+    const sessionMinutes = Math.round(protocol.sessionDurationMs / 60_000);
 
     return (
         <div
-            className="min-h-screen flex flex-col items-center justify-center p-4 py-8 relative z-10"
+            className="min-h-screen flex flex-col items-center justify-center p-4 pb-24 relative z-10"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-2 text-center text-balance">
+            <h1 className="font-[var(--font-display)] text-4xl text-[var(--text)] mb-2 text-center text-balance">
                 {t('mode.title')}
             </h1>
-            <p className="text-[var(--text-secondary)] text-base mb-8 text-center max-w-xs">
+            <p className="text-[var(--text-secondary)] text-base mb-5 text-center max-w-xs">
                 {t('mode.subtitle')}
             </p>
 
-            <div className="flex flex-col gap-5 max-w-sm w-full">
+            <WeeklyProgress sessions={sessions} />
+
+            <div className="flex flex-col gap-5 max-w-md w-full">
                 {/* Training card */}
                 <button
-                    className="group hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer spring-enter text-left w-full rounded-xl"
+                    type="button"
+                    className="group hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer spring-enter text-left w-full rounded-3xl"
                     style={{ animationDelay: '0ms' }}
                     onClick={() => navigate('/training/settings')}
                     aria-label={t('mode.training')}
                 >
                     <Card className="rounded-3xl overflow-hidden gap-0">
-                        <div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)]" />
                         <CardContent className="p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-11 h-11 rounded-2xl bg-[var(--accent)]/20 flex items-center justify-center flex-shrink-0">
-                                    <Target className="w-6 h-6 text-[var(--accent)]" />
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 rounded-2xl bg-[var(--accent)]/30 flex items-center justify-center flex-shrink-0">
+                                        <Target className="w-6 h-6 text-[var(--accent)]" />
+                                    </div>
+                                    <div>
+                                        <h2 className="font-[var(--font-display)] text-xl font-semibold text-[var(--text)]">
+                                            {t('mode.training')}
+                                        </h2>
+                                        <span className="text-sm bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full">
+                                            {t('mode.trainingRecommended')}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className="font-[var(--font-display)] text-xl font-semibold text-[var(--text)]">
-                                        {t('mode.training')}
-                                    </h2>
-                                    <span className="text-sm bg-[var(--success)]/20 text-[var(--success)] px-2 py-0.5 rounded-full">
-                                        {t('mode.trainingRecommended')}
+                                <div className="flex items-center gap-1 text-[var(--text-secondary)] text-sm tabular-nums">
+                                    <Clock className="w-4 h-4" />
+                                    <span>
+                                        ~{sessionMinutes} {t('stats.min')}
                                     </span>
                                 </div>
                             </div>
@@ -60,43 +68,26 @@ export function ModeSelectPage() {
                                 {t('mode.trainingDesc')}
                             </p>
 
-                            {/* Today's session preview */}
-                            <div className="rounded-3xl bg-[var(--bg)]/50 border border-[var(--border)]/40 p-3 space-y-2">
+                            {/* Session timeline */}
+                            <div className="rounded-2xl bg-[var(--bg)]/50 ring-1 ring-white/[0.05] p-4 space-y-3">
                                 <p className="text-sm text-[var(--text-secondary)] font-medium uppercase tracking-wide">
                                     {t('training.todaySession')}
                                 </p>
-                                <div className="flex flex-wrap gap-1.5 items-center">
-                                    {todayGames.map((gameId, i) => (
-                                        <span
-                                            key={gameId}
-                                            className="flex items-center gap-1"
-                                        >
-                                            <GameDot gameId={gameId} />
-                                            {i < todayGames.length - 1 && (
-                                                <span className="text-[var(--text-secondary)] text-sm">
-                                                    →
-                                                </span>
-                                            )}
-                                        </span>
-                                    ))}
-                                </div>
+                                <SessionStepper gameIds={todayGames} />
                             </div>
 
-                            <AppButton
-                                variant="cta"
-                                size="md"
-                                className="w-full"
-                                aria-hidden="true"
-                            >
+                            {/* Visual CTA (span, not button — avoids nested interactive) */}
+                            <span className="rounded-full bg-[var(--cta)] text-[var(--cta-text)] font-semibold py-3 px-4 text-base min-h-[44px] inline-flex items-center justify-center w-full transition-[filter,transform] group-hover:brightness-110 group-active:scale-[0.98]">
                                 {t('mode.startTraining')}
-                            </AppButton>
+                            </span>
                         </CardContent>
                     </Card>
                 </button>
 
                 {/* Free play card */}
                 <button
-                    className="group hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer spring-enter text-left w-full rounded-xl"
+                    type="button"
+                    className="group hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer spring-enter text-left w-full rounded-3xl"
                     style={{ animationDelay: '80ms' }}
                     onClick={() => navigate('/games')}
                     aria-label={t('mode.freePlay')}
@@ -116,14 +107,9 @@ export function ModeSelectPage() {
                                 {t('mode.freePlayDesc')}
                             </p>
 
-                            <AppButton
-                                variant="outline"
-                                size="md"
-                                className="w-full"
-                                aria-hidden="true"
-                            >
+                            <span className="rounded-full ring-1 ring-white/[0.08] text-[var(--text-secondary)] py-3 px-4 text-base min-h-[44px] inline-flex items-center justify-center w-full transition-[filter,transform] group-hover:brightness-125 group-active:scale-[0.98]">
                                 {t('mode.chooseGame')}
-                            </AppButton>
+                            </span>
                         </CardContent>
                     </Card>
                 </button>
