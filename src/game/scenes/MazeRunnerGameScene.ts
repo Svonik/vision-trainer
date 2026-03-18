@@ -466,16 +466,17 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
         );
         GameVisuals.pulse(this, this.exitGlow, 0.7, 1.3, 1000);
 
-        // Player (platformColor — one eye)
+        // Player (platformColor — one eye) — use glow for visibility
         const startX = this.cellToX(this.startRC.c);
         const startY = this.cellToY(this.startRC.r);
-        const playerRadius = Math.min(this.cellW, this.cellH) * 0.32;
-        this.playerObj = this.add.circle(
+        const playerRadius = Math.min(this.cellW, this.cellH) * 0.38;
+        this.playerObj = GameVisuals.glowCircle(
+            this,
             startX,
             startY,
             playerRadius,
             this.platformColor,
-            this.platformAlpha,
+            Math.max(this.platformAlpha, 0.7),
         );
 
         // Player state
