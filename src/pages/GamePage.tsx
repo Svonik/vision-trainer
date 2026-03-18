@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { typedEventBus } from '../game/TypedEventBus';
-import { addCachedSession, getCachedSessions } from '../modules/sessionCache';
+import { addCachedSession, getCachedSessions, updateLastSessionWellness } from '../modules/sessionCache';
 import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
@@ -233,6 +233,7 @@ export function GamePage() {
                     >
                         <SessionSummaryCard
                             summary={summary}
+                            onWellnessPost={updateLastSessionWellness}
                             onContinue={() => { setShowSummary(false); navigate('/games'); }}
                         />
                     </motion.div>

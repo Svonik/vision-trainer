@@ -78,6 +78,8 @@ const strings = {
   'gameSelect.frogger.description': 'Перейдите через полосы с препятствиями. Вы видны одному глазу, препятствия — другому.',
   'gameSelect.catchmonsters.title': 'Поймай монстра',
   'gameSelect.catchmonsters.description': 'Ловите хаотично двигающихся монстров. Тренирует плавное слежение глазами.',
+  'gameSelect.whackmole.title': 'Поймай крота',
+  'gameSelect.whackmole.description': 'Кроты выскакивают из нор — нажимайте на них! Тренирует быстрые саккады.',
   'calibration.hint': 'Оба квадрата должны быть одинаково видны',
   'calibration.glassesType': 'Какая линза у вас слева?',
   'calibration.glassesRed': 'Красная',

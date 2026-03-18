@@ -19,6 +19,8 @@ export const GAMES: GameConfig[] = [
     { id: 'memorytiles', titleKey: 'gameSelect.memorytiles.title', descriptionKey: 'gameSelect.memorytiles.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/memorytiles/settings' },
     { id: 'frogger', titleKey: 'gameSelect.frogger.title', descriptionKey: 'gameSelect.frogger.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/frogger/settings' },
     { id: 'catchmonsters', titleKey: 'gameSelect.catchmonsters.title', descriptionKey: 'gameSelect.catchmonsters.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/catchmonsters/settings' },
+    { id: 'whackmole', titleKey: 'gameSelect.whackmole.title', descriptionKey: 'gameSelect.whackmole.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/whackmole/settings' },
+    { id: 'game2048', titleKey: 'gameSelect.game2048.title', descriptionKey: 'gameSelect.game2048.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/game2048/settings' },
 ];
 
 // Map from URL gameId param (e.g. 'catcher') to GAMES entry id (e.g. 'binocular-catcher')
@@ -35,6 +37,8 @@ const ROUTE_ID_MAP: Record<string, string> = {
     memorytiles: 'memorytiles',
     frogger: 'frogger',
     catchmonsters: 'catchmonsters',
+    whackmole: 'whackmole',
+    game2048: 'game2048',
 };
 
 /** Look up a game by its internal id (e.g. 'binocular-catcher') or URL route param (e.g. 'catcher'). */

@@ -28,8 +28,8 @@ describe('getGameById', () => {
         expect(game).toBeUndefined();
     });
 
-    it('GAMES array has 12 entries', () => {
-        expect(GAMES).toHaveLength(12);
+    it('GAMES array has 13 entries', () => {
+        expect(GAMES).toHaveLength(13);
     });
 
     it('every game has required fields', () => {

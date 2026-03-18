@@ -11,6 +11,8 @@ export const GAME_SCENE_MAP: Record<string, string> = {
     memorytiles: 'MemoryTilesGameScene',
     frogger: 'FroggerGameScene',
     catchmonsters: 'CatchMonstersGameScene',
+    whackmole: 'WhackMoleGameScene',
+    game2048: 'Game2048Scene',
 };
 
 export const START_EVENT_MAP: Record<string, string> = {
@@ -26,4 +28,6 @@ export const START_EVENT_MAP: Record<string, string> = {
     memorytiles: 'start-memorytiles-game',
     frogger: 'start-frogger-game',
     catchmonsters: 'start-catchmonsters-game',
+    whackmole: 'start-whackmole-game',
+    game2048: 'start-game2048-game',
 };

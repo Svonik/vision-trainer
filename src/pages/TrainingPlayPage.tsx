@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { typedEventBus } from '../game/TypedEventBus';
 import { AppButton } from '@/components/AppButton';
-import { addCachedSession, getCachedSessions } from '../modules/sessionCache';
+import { addCachedSession, getCachedSessions, updateLastSessionWellness } from '../modules/sessionCache';
 import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
@@ -444,6 +444,7 @@ export function TrainingPlayPage() {
                     >
                         <SessionSummaryCard
                             summary={summary}
+                            onWellnessPost={updateLastSessionWellness}
                             onContinue={() => {
                                 setShowSummary(false);
                                 if (pendingAction) {

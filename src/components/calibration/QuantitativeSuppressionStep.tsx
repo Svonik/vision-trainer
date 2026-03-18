@@ -38,9 +38,11 @@ export function QuantitativeSuppressionStep({ glassesType, onComplete }: Quantit
   const fellowAlpha = state.currentContrast / 100;
 
   return (
-    <div className="flex flex-col items-center gap-6 p-8">
-      <h2 className="text-xl font-bold">{t('suppression.title')}</h2>
-      <p className="text-center text-gray-600">{t('suppression.instruction')}</p>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 space-y-6 bg-[var(--bg)]">
+      <h2 className="font-[var(--font-display)] text-2xl font-bold text-[var(--text)] text-center">
+        {t('suppression.title')}
+      </h2>
+      <p className="text-center text-[var(--text-secondary)]">{t('suppression.instruction')}</p>
       <div className="flex gap-8 items-center justify-center my-4">
         <div
           className="w-24 h-24 rounded-lg"
@@ -51,21 +53,25 @@ export function QuantitativeSuppressionStep({ glassesType, onComplete }: Quantit
           style={{ backgroundColor: fellowColor, opacity: fellowAlpha }}
         />
       </div>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-[var(--text-secondary)]">
         {t('suppression.result')}: {state.currentContrast}%
       </p>
-      <div className="flex gap-4">
+      <div className="grid grid-cols-2 gap-4 w-full max-w-md">
         <button
           onClick={handleNotSeen}
-          className="px-6 py-3 bg-gray-200 rounded-xl text-lg hover:bg-gray-300 transition-colors"
+          className="rounded-3xl border-2 border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] p-4 btn-press transition-all"
         >
-          {t('suppression.next')}
+          <p className="font-[var(--font-display)] text-lg font-semibold text-[var(--text)]">
+            {t('suppression.next')}
+          </p>
         </button>
         <button
           onClick={handleSeen}
-          className="px-6 py-3 bg-green-500 text-white rounded-xl text-lg font-bold hover:bg-green-600 transition-colors"
+          className="rounded-3xl border-2 border-[var(--cta)] bg-[var(--surface)] shadow-[0_0_25px_rgba(255,159,67,0.3)] p-4 btn-press transition-all"
         >
-          {t('suppression.seen')}
+          <p className="font-[var(--font-display)] text-lg font-bold text-[var(--cta)]">
+            {t('suppression.seen')}
+          </p>
         </button>
       </div>
     </div>

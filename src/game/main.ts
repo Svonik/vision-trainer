@@ -11,6 +11,8 @@ import BalloonPopGameScene from './scenes/BalloonPopGameScene';
 import MemoryTilesGameScene from './scenes/MemoryTilesGameScene';
 import FroggerGameScene from './scenes/FroggerGameScene';
 import CatchMonstersGameScene from './scenes/CatchMonstersGameScene';
+import WhackMoleGameScene from './scenes/WhackMoleGameScene';
+import Game2048Scene from './scenes/Game2048Scene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -27,7 +29,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 } }
     },
-    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene, BalloonPopGameScene, MemoryTilesGameScene, FroggerGameScene, CatchMonstersGameScene]
+    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene, BalloonPopGameScene, MemoryTilesGameScene, FroggerGameScene, CatchMonstersGameScene, WhackMoleGameScene, Game2048Scene]
 };
 
 const StartGame = (parent: string) => {

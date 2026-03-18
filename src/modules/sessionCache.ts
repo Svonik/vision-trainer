@@ -22,6 +22,19 @@ export function addCachedSession(session: SessionResult): void {
     import('./storage').then(({ writeSessions }) => writeSessions(cache!));
 }
 
+export function updateLastSessionWellness(postEyeStrain: boolean, postHeadache: boolean): void {
+    const current = getCachedSessions();
+    if (current.length === 0) return;
+    const last = current[current.length - 1];
+    if (!last.wellness) return;
+    const updated = [
+        ...current.slice(0, -1),
+        { ...last, wellness: { ...last.wellness, postEyeStrain, postHeadache } },
+    ];
+    cache = updated;
+    import('./storage').then(({ writeSessions }) => writeSessions(cache!));
+}
+
 export function invalidateSessionCache(): void {
     cache = null;
 }
