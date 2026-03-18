@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { t } from '@/modules/i18n';
+import { getCachedSessions } from '@/modules/sessionCache';
 import type { SessionSummary } from '@/modules/sessionSummary';
+import { shouldAlertDoctor } from '@/modules/wellnessCheck';
 
 interface SessionSummaryCardProps {
     readonly summary: SessionSummary;
@@ -15,6 +17,8 @@ export function SessionSummaryCard({
 }: SessionSummaryCardProps) {
     const [eyeStrain, setEyeStrain] = useState(false);
     const [headache, setHeadache] = useState(false);
+    const sessions = getCachedSessions();
+    const doctorAlert = shouldAlertDoctor(sessions);
 
     const message =
         summary.stars === 3
@@ -80,6 +84,14 @@ export function SessionSummaryCard({
                     onChange={setHeadache}
                 />
             </div>
+
+            {doctorAlert && (
+                <div className="w-full p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center">
+                    <p className="text-sm font-bold text-[var(--warning)]">
+                        {t('wellness.alert_doctor')}
+                    </p>
+                </div>
+            )}
 
             <button
                 type="button"

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { WeeklyProgress } from '@/components/WeeklyProgress';
 import { t } from '@/modules/i18n';
+import { shouldAlertDoctor } from '@/modules/wellnessCheck';
 import { GAMES as GAMES_DATA } from '../config/games';
 import { getCachedSessions } from '../modules/sessionCache';
 
@@ -42,7 +43,7 @@ const GameCard = React.memo(function GameCard({
     const navigate = useNavigate();
     return (
         <Card
-            className="bg-[var(--surface)] rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer overflow-hidden spring-enter"
+            className="bg-[var(--surface)] rounded-3xl hover:scale-[1.01] hover:shadow-xl hover:shadow-purple-900/20 transition-[transform,box-shadow] duration-300 ease-out cursor-pointer overflow-hidden spring-enter"
             style={{ animationDelay: `${index * 60}ms` }}
             onClick={() => navigate(game.route)}
             role="button"
@@ -91,6 +92,7 @@ const GameCard = React.memo(function GameCard({
 
 export function GameSelectPage() {
     const sessions = getCachedSessions();
+    const doctorAlert = shouldAlertDoctor(sessions);
     const getGameCount = (gameId: string) =>
         sessions.filter((s: any) => s.game === gameId).length;
 
@@ -102,6 +104,14 @@ export function GameSelectPage() {
             <h1 className="font-[var(--font-display)] text-4xl text-[var(--text)] mb-6 text-balance">
                 {t('gameSelect.title')}
             </h1>
+
+            {doctorAlert && (
+                <div className="w-full max-w-3xl p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center mb-4">
+                    <p className="text-sm font-bold text-[var(--warning)]">
+                        {t('wellness.alert_doctor')}
+                    </p>
+                </div>
+            )}
 
             <WeeklyProgress sessions={sessions} />
 

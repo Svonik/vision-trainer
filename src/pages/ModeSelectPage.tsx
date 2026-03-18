@@ -8,10 +8,12 @@ import { getCachedSessions } from '../modules/sessionCache';
 import { generateSession } from '../modules/sessionEngine';
 import { getCalibration } from '../modules/storage';
 import { getProtocol } from '../modules/therapyProtocol';
+import { shouldAlertDoctor } from '../modules/wellnessCheck';
 
 export function ModeSelectPage() {
     const navigate = useNavigate();
     const sessions = getCachedSessions();
+    const doctorAlert = shouldAlertDoctor(sessions);
     const todayGames = generateSession(sessions);
     const calibration = getCalibration();
     const protocol = getProtocol(calibration.age_group);
@@ -29,19 +31,27 @@ export function ModeSelectPage() {
                 {t('mode.subtitle')}
             </p>
 
+            {doctorAlert && (
+                <div className="w-full max-w-md p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center mb-4">
+                    <p className="text-sm font-bold text-[var(--warning)]">
+                        {t('wellness.alert_doctor')}
+                    </p>
+                </div>
+            )}
+
             <WeeklyProgress sessions={sessions} />
 
             <div className="flex flex-col gap-5 max-w-md w-full">
                 {/* Training card */}
                 <button
                     type="button"
-                    className="group hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer spring-enter text-left w-full rounded-3xl"
+                    className="group hover:scale-[1.01] hover:shadow-xl hover:shadow-purple-900/20 transition-[transform,box-shadow] duration-300 ease-out cursor-pointer spring-enter text-left w-full rounded-3xl"
                     style={{ animationDelay: '0ms' }}
                     onClick={() => navigate('/training/settings')}
                     aria-label={t('mode.training')}
                 >
-                    <Card className="rounded-3xl overflow-hidden gap-0">
-                        <CardContent className="p-6 space-y-4">
+                    <Card glow className="rounded-3xl gap-0">
+                        <CardContent className="p-6 space-y-4 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-11 h-11 rounded-2xl bg-[var(--accent)]/30 flex items-center justify-center flex-shrink-0">
@@ -87,13 +97,13 @@ export function ModeSelectPage() {
                 {/* Free play card */}
                 <button
                     type="button"
-                    className="group hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer spring-enter text-left w-full rounded-3xl"
+                    className="group hover:scale-[1.01] hover:shadow-xl hover:shadow-purple-900/20 transition-[transform,box-shadow] duration-300 ease-out cursor-pointer spring-enter text-left w-full rounded-3xl"
                     style={{ animationDelay: '80ms' }}
                     onClick={() => navigate('/games')}
                     aria-label={t('mode.freePlay')}
                 >
-                    <Card className="rounded-3xl overflow-hidden gap-0">
-                        <CardContent className="p-6 space-y-4">
+                    <Card glow className="rounded-3xl gap-0">
+                        <CardContent className="p-6 space-y-4 relative z-10">
                             <div className="flex items-center gap-3">
                                 <div className="w-11 h-11 rounded-2xl bg-[var(--cyan-soft)]/20 flex items-center justify-center flex-shrink-0">
                                     <Gamepad2 className="w-6 h-6 text-[var(--cyan-soft)]" />
