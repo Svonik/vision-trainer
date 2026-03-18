@@ -5,8 +5,7 @@ import { AppButton } from '@/components/AppButton';
 import { ProgressRing } from '@/components/ProgressRing';
 import { formatDuration } from '@/lib/formatTime';
 import { t } from '../modules/i18n';
-import { getCachedSessions } from '../modules/sessionCache';
-import { GAME_TITLE_KEYS, recommendContrast } from '../modules/sessionEngine';
+import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
 
 interface GameResult {
     game: string;
@@ -55,9 +54,6 @@ export function TrainingSummaryPage() {
                       100,
               )
             : 0;
-
-    const sessions = getCachedSessions();
-    const recommendation = recommendContrast(sessions);
 
     return (
         <div
@@ -128,33 +124,6 @@ export function TrainingSummaryPage() {
                             })}
                         </div>
                     )}
-
-                    {/* Contrast recommendation */}
-                    <div
-                        className={`rounded-xl px-4 py-3 border-l-2 text-sm ${
-                            recommendation.suggestion === 'decrease'
-                                ? 'bg-[var(--success)]/10 border-[var(--success)] text-[var(--success)]'
-                                : recommendation.suggestion === 'increase'
-                                  ? 'bg-[var(--warning)]/10 border-[var(--warning)] text-[var(--warning)]'
-                                  : 'bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]'
-                        }`}
-                    >
-                        <p className="font-medium text-sm uppercase tracking-wide mb-1 opacity-70">
-                            {t('training.contrastSuggestion')}
-                        </p>
-                        <p>
-                            {recommendation.suggestion === 'decrease'
-                                ? t('training.suggestDecrease')
-                                : recommendation.suggestion === 'increase'
-                                  ? t('training.suggestIncrease')
-                                  : t('training.suggestKeep')}
-                        </p>
-                        {recommendation.suggestion !== 'keep' && (
-                            <p className="text-sm opacity-60 mt-1">
-                                {`${t('stats.contrastL')}: ${recommendation.left}% / ${t('stats.contrastR')}: ${recommendation.right}%`}
-                            </p>
-                        )}
-                    </div>
 
                     {/* Overall score: count of games with hit_rate > 0.5 */}
                     <div className="text-center border-t border-[var(--border)]/40 pt-4">

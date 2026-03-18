@@ -8,11 +8,7 @@ import { useGameSettings } from '../hooks/useGameSettings';
 import { CONTRAST, SPEEDS } from '../modules/constants';
 import type { GlassesType } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
-import {
-    GAME_TITLE_KEYS,
-    generateSession,
-    recommendContrast,
-} from '../modules/sessionEngine';
+import { GAME_TITLE_KEYS, generateSession } from '../modules/sessionEngine';
 import {
     getCalibration,
     getDefaultSettings,
@@ -43,27 +39,20 @@ export function TrainingSettingsPage() {
     // Accept session passed via navigation state (allows re-entry without regenerating)
     const sessionGames: string[] =
         location.state?.sessionGames ?? generateSession(sessions);
-    const recommendation = recommendContrast(sessions);
 
     useEffect(() => {
         const calibration = getCalibration();
         const defaults = getDefaultSettings();
         updateSettings({
             glassesType: calibration.glasses_type ?? 'red-cyan',
-            contrastLeft:
-                recommendation.left ??
-                defaults.contrastLeft ??
-                CONTRAST.DEFAULT,
-            contrastRight:
-                recommendation.right ??
-                defaults.contrastRight ??
-                CONTRAST.DEFAULT,
+            contrastLeft: defaults.contrastLeft ?? CONTRAST.DEFAULT,
+            contrastRight: defaults.contrastRight ?? CONTRAST.DEFAULT,
             speed: defaults.speed ?? 'slow',
             eyeConfig: defaults.eyeConfig ?? 'platform_left',
             fellowEyeContrast: defaults.fellowEyeContrast ?? 30,
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [recommendation.left, recommendation.right, updateSettings]);
+    }, [updateSettings]);
 
     const defaults = getDefaultSettings();
 
@@ -101,16 +90,6 @@ export function TrainingSettingsPage() {
                             ))}
                         </div>
                     </div>
-
-                    {/* Contrast recommendation hint */}
-                    {recommendation.suggestion !== 'keep' && (
-                        <div className="rounded-3xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-sm text-[var(--accent)]">
-                            {t('training.contrastRecommendation')}:{' '}
-                            {recommendation.suggestion === 'decrease'
-                                ? t('training.suggestDecrease')
-                                : t('training.suggestIncrease')}
-                        </div>
-                    )}
 
                     {/* Contrast indicator (read-only) */}
                     <ContrastIndicator

@@ -41,10 +41,6 @@ export const CONTRAST = {
     MAX: 100,
     STEP: 5,
     DEFAULT: 100,
-    DYNAMIC_STEP: 5,
-    DYNAMIC_FLOOR: 50,
-    DYNAMIC_TRIGGER_UP: 5,
-    DYNAMIC_TRIGGER_DOWN: 3,
 } as const;
 
 export const CLINICAL_CONTRAST = {
