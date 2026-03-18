@@ -215,6 +215,10 @@ const strings = {
   'gameSelect.knifehit.description': 'Бросайте ножи в вращающуюся мишень! Ваши ножи видны одному глазу, застрявшие — другому.',
   'gameSelect.runner.title': 'Бегун',
   'gameSelect.runner.description': 'Бегите и прыгайте через препятствия! Тренирует smooth pursuit.',
+  'gameSelect.colorflood.title': 'Цветной потоп',
+  'gameSelect.colorflood.description': 'Залейте всё поле одним цветом! Тренирует цветовую дискриминацию.',
+  'gameSelect.match3.title': 'Три в ряд',
+  'gameSelect.match3.description': 'Меняйте местами фигуры для совпадений! Тренирует визуальный поиск.',
 } as const;
 
 export type TranslationKey = keyof typeof strings;
