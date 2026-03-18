@@ -615,6 +615,7 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
     }
 
     updatePlayer(dt) {
+        if (!this.playerObj) return; // not initialized yet
         if (!this.playerMoving) {
             // Try next direction first, then continue current direction
             const tryDirs =
@@ -623,7 +624,7 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
                     : [this.playerDir];
 
             for (const dir of tryDirs) {
-                if (dir === 'none') continue;
+                if (dir === 'none' || !DIR_VECS[dir]) continue;
                 const [dx, dy] = DIR_VECS[dir];
                 const nextCol = this.playerCol + dx;
                 const nextRow = this.playerRow + dy;
