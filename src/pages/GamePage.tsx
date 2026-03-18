@@ -17,6 +17,8 @@ import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
 import { Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
+import { WellnessPreCheck } from '../components/WellnessPreCheck';
+import type { WellnessLevel } from '@/modules/wellnessCheck';
 
 export function GamePage() {
     const location = useLocation();
@@ -32,6 +34,7 @@ export function GamePage() {
     const [loading, setLoading] = useState(true);
     const [showSummary, setShowSummary] = useState(false);
     const [summary, setSummary] = useState<SessionSummary | null>(null);
+    const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(null);
 
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -39,7 +42,10 @@ export function GamePage() {
 
     useEffect(() => {
         const handleComplete = ({ result, settings: s }: any) => {
-            addCachedSession(result);
+            const resultWithWellness = wellnessLevel
+                ? { ...result, wellness: { preSession: wellnessLevel, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
+                : result;
+            addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
                 const currentSettings = getDefaultSettings();
                 saveDefaultSettings({
@@ -82,7 +88,7 @@ export function GamePage() {
             typedEventBus.removeListener('timer-tick', handleTick);
             setElapsedMs(null);
         };
-    }, [settings, navigate, gameId, targetScene, startEvent]);
+    }, [settings, navigate, gameId, targetScene, startEvent, wellnessLevel]);
 
     const handlePause = () => {
         setIsPaused(true);
@@ -98,6 +104,15 @@ export function GamePage() {
         setIsPaused(false);
         typedEventBus.emit('game-exit');
     };
+
+    if (wellnessLevel === null) {
+        return (
+            <WellnessPreCheck
+                onSelect={(level) => setWellnessLevel(level)}
+                onSkipSession={() => navigate(-1)}
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'var(--bg-gradient)' }}>

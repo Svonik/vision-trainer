@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router';
 
 vi.mock('../../src/game/PhaserGame', () => ({
@@ -22,7 +22,7 @@ vi.mock('../../src/modules/sessionCache', () => ({
 import { GamePage } from '../../src/pages/GamePage';
 
 describe('GamePage', () => {
-    it('renders game container', () => {
+    it('renders game container after wellness check', () => {
         render(
             <MemoryRouter initialEntries={[{ pathname: '/games/catcher/play', state: { settings: { speed: 'slow' } } }]}>
                 <Routes>
@@ -30,6 +30,11 @@ describe('GamePage', () => {
                 </Routes>
             </MemoryRouter>
         );
+        // Wellness pre-check modal appears first
+        expect(screen.getByText('Как ты себя чувствуешь?')).toBeInTheDocument();
+        // Click first emoji button (good) to proceed past wellness check
+        const emojiButtons = screen.getAllByRole('button');
+        fireEvent.click(emojiButtons[0]);
         expect(document.getElementById('game-container')).toBeInTheDocument();
     });
 });

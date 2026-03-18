@@ -16,6 +16,8 @@ import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
+import { WellnessPreCheck } from '../components/WellnessPreCheck';
+import type { WellnessLevel } from '@/modules/wellnessCheck';
 
 interface GameResult {
     game: string;
@@ -135,6 +137,7 @@ export function TrainingPlayPage() {
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(null);
 
     const currentGameId = sessionGames[currentGameIndex] ?? '';
 
@@ -190,7 +193,10 @@ export function TrainingPlayPage() {
         const startEvent = START_EVENT_MAP[currentGameId] ?? 'start-game';
 
         const handleComplete = ({ result }: { result: GameResult }) => {
-            addCachedSession(result);
+            const resultWithWellness = wellnessLevel
+                ? { ...result, wellness: { preSession: wellnessLevel, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
+                : result;
+            addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
                 const currentSettings = getDefaultSettings();
                 saveDefaultSettings({
@@ -198,7 +204,7 @@ export function TrainingPlayPage() {
                     fellowEyeContrast: result.fellow_contrast_end,
                 });
             }
-            const updatedResults = [...completedResults, result];
+            const updatedResults = [...completedResults, resultWithWellness];
             setCompletedResults(updatedResults);
             setElapsedMs(null);
 
@@ -254,7 +260,7 @@ export function TrainingPlayPage() {
             setElapsedMs(null);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentGameId, currentGameIndex, showTransition]);
+    }, [currentGameId, currentGameIndex, showTransition, wellnessLevel]);
 
     const handleAdvance = () => {
         if (countdownRef.current !== null) {
@@ -281,6 +287,15 @@ export function TrainingPlayPage() {
     };
 
     const nextGameId = sessionGames[currentGameIndex + 1] ?? '';
+
+    if (wellnessLevel === null) {
+        return (
+            <WellnessPreCheck
+                onSelect={(level) => setWellnessLevel(level)}
+                onSkipSession={() => navigate('/mode-select')}
+            />
+        );
+    }
 
     if (showTransition) {
         return (
