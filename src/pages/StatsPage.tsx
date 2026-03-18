@@ -139,16 +139,97 @@ export function StatsPage() {
                                 </p>
                             </div>
 
+                            {/* Window accuracy */}
+                            {result.window_accuracy != null && (
+                                <div className="text-center">
+                                    <p className="font-[var(--font-display)] text-2xl text-[var(--text)] tabular-nums">
+                                        {Math.round(
+                                            result.window_accuracy * 100,
+                                        )}
+                                        %
+                                    </p>
+                                    <p className="text-[var(--text-secondary)] text-base">
+                                        {t('stats.window_accuracy')}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Fellow contrast change */}
+                            {result.fellow_contrast_start != null &&
+                                result.fellow_contrast_end != null && (
+                                    <div className="text-center">
+                                        <p className="font-[var(--font-display)] text-2xl text-[var(--text)] tabular-nums">
+                                            {result.fellow_contrast_start}%{' '}
+                                            &rarr; {result.fellow_contrast_end}%
+                                        </p>
+                                        <p className="text-[var(--text-secondary)] text-base">
+                                            {t('stats.fellow_contrast')}
+                                        </p>
+                                        {result.fellow_contrast_end !==
+                                            result.fellow_contrast_start && (
+                                            <p
+                                                className={`text-sm mt-1 tabular-nums ${
+                                                    result.fellow_contrast_end >
+                                                    result.fellow_contrast_start
+                                                        ? 'text-[var(--success)]'
+                                                        : 'text-[var(--accent-secondary)]'
+                                                }`}
+                                            >
+                                                {t('stats.contrast_change')}:{' '}
+                                                {result.fellow_contrast_end >
+                                                result.fellow_contrast_start
+                                                    ? '+'
+                                                    : ''}
+                                                {result.fellow_contrast_end -
+                                                    result.fellow_contrast_start}
+                                                %
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                            {/* Wellness data */}
+                            {result.wellness && (
+                                <div className="text-center pt-2 border-t border-[var(--border)]/50 space-y-1">
+                                    <p className="text-[var(--text-secondary)] text-sm">
+                                        {t('wellness.pre_title')}:{' '}
+                                        {t(
+                                            `wellness.${result.wellness.preSession}` as any,
+                                        )}
+                                    </p>
+                                    {(result.wellness.postEyeStrain ||
+                                        result.wellness.postHeadache) && (
+                                        <p className="text-[var(--warning)] text-sm">
+                                            {result.wellness.postEyeStrain &&
+                                                t('wellness.post_eye_strain')}
+                                            {result.wellness.postEyeStrain &&
+                                                result.wellness.postHeadache &&
+                                                ' · '}
+                                            {result.wellness.postHeadache &&
+                                                t('wellness.post_headache')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Settings footer */}
                             <div className="flex justify-center gap-4 text-sm text-[var(--text-secondary)] pt-2 border-t border-[var(--border)]/50 bg-[var(--surface)]/50 tabular-nums">
                                 <span>
                                     {t('stats.speed')}: {speedLabel}
                                 </span>
-                                <span>
-                                    {t('stats.contrast')}:{' '}
-                                    {result.contrast_left}% /{' '}
-                                    {result.contrast_right}%
-                                </span>
+                                {result.fellow_contrast_start != null ? (
+                                    <span>
+                                        {t('stats.fellow_contrast')}:{' '}
+                                        {result.fellow_contrast_start}% &rarr;{' '}
+                                        {result.fellow_contrast_end ?? '—'}%
+                                    </span>
+                                ) : (
+                                    <span>
+                                        {t('stats.contrast')}:{' '}
+                                        {result.contrast_left}% /{' '}
+                                        {result.contrast_right}%
+                                    </span>
+                                )}
                             </div>
                         </div>
                     ) : (
