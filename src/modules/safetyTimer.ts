@@ -1,8 +1,10 @@
 import { SAFETY } from './constants';
+import type { TherapyProtocol } from './therapyProtocol';
 
 interface SafetyTimerCallbacks {
     onWarning: () => void;
     onBreak: () => void;
+    protocol?: TherapyProtocol;
 }
 
 export interface SafetyTimer {
@@ -15,14 +17,19 @@ export interface SafetyTimer {
     extend: () => void;
 }
 
-export const createSafetyTimer = ({ onWarning, onBreak }: SafetyTimerCallbacks): SafetyTimer => {
+export const createSafetyTimer = ({ onWarning, onBreak, protocol }: SafetyTimerCallbacks): SafetyTimer => {
+    const sessionDurationMs = protocol?.sessionDurationMs ?? SAFETY.BREAK_TIME_MS;
+    const warningBeforeMs = protocol?.warningBeforeMs ?? SAFETY.WARNING_BEFORE_MS;
+    const extensionMs = protocol?.extensionMs ?? SAFETY.EXTENSION_MS;
+    const maxExtensions = protocol?.maxExtensions ?? SAFETY.MAX_EXTENSIONS;
+
     let startTime: number | null = null;
     let pausedAt: number | null = null;
     let totalPausedMs = 0;
     let warningFired = false;
     let breakFired = false;
     let extensions = 0;
-    let breakTimeMs = SAFETY.BREAK_TIME_MS;
+    let breakTimeMs = sessionDurationMs;
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const getElapsedMs = (): number => {
@@ -40,7 +47,7 @@ export const createSafetyTimer = ({ onWarning, onBreak }: SafetyTimerCallbacks):
 
     const check = (): void => {
         const elapsed = getElapsedMs();
-        const warningAt = breakTimeMs - SAFETY.WARNING_BEFORE_MS;
+        const warningAt = breakTimeMs - warningBeforeMs;
 
         if (!warningFired && elapsed >= warningAt) {
             warningFired = true;
@@ -60,7 +67,7 @@ export const createSafetyTimer = ({ onWarning, onBreak }: SafetyTimerCallbacks):
         warningFired = false;
         breakFired = false;
         extensions = 0;
-        breakTimeMs = SAFETY.BREAK_TIME_MS;
+        breakTimeMs = sessionDurationMs;
         intervalId = setInterval(check, 1000);
     };
 
@@ -77,12 +84,12 @@ export const createSafetyTimer = ({ onWarning, onBreak }: SafetyTimerCallbacks):
         }
     };
 
-    const canExtend = (): boolean => extensions < SAFETY.MAX_EXTENSIONS;
+    const canExtend = (): boolean => extensions < maxExtensions;
 
     const extend = (): void => {
         if (canExtend()) {
             extensions += 1;
-            breakTimeMs += SAFETY.EXTENSION_MS;
+            breakTimeMs += extensionMs;
             breakFired = false;
             warningFired = false;
             if (!intervalId) {
