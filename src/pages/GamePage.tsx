@@ -73,7 +73,6 @@ export function GamePage() {
                       },
                   }
                 : result;
-            addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
                 const currentSettings = getDefaultSettings();
                 saveDefaultSettings({
@@ -82,7 +81,11 @@ export function GamePage() {
                 });
             }
             const sessions = getCachedSessions();
-            const summaryData = computeSessionSummary(result, sessions);
+            const summaryData = computeSessionSummary(
+                resultWithWellness,
+                sessions,
+            );
+            addCachedSession(resultWithWellness);
             setSummary(summaryData);
             setShowSummary(true);
         };
