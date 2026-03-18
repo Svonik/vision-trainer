@@ -76,6 +76,9 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial tile alpha with fellowEyeContrast (clinical contrast)
+    this.alphaA = this.contrastState.fellowEyeContrast / 100;
+
     this.level = 1;
     const gridConfig = GRID_CONFIG[this.settings.speed] || GRID_CONFIG.normal;
     this.cols = gridConfig.cols;

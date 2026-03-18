@@ -119,6 +119,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial platform alpha with fellowEyeContrast (clinical contrast)
+    this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+
     // Frame (both eyes)
     GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
     GameVisuals.styledBorder(this, fx, fy, fw, fh);

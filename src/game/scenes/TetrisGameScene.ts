@@ -152,6 +152,9 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial placed-cells alpha with fellowEyeContrast (clinical contrast)
+    this.placedAlpha = this.contrastState.fellowEyeContrast / 100;
+
     // Grid cell size — fit COLS x ROWS inside field with some padding
     const gridPadX = 10;
     const gridPadY = 40; // room for score at top

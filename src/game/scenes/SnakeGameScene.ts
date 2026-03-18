@@ -72,6 +72,9 @@ export default class SnakeGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial food alpha with fellowEyeContrast (clinical contrast)
+    this.ballAlpha = this.contrastState.fellowEyeContrast / 100;
+
     // Background fill
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK, 1);
 

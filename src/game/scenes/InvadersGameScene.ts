@@ -96,6 +96,9 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial platform alpha with fellowEyeContrast (clinical contrast)
+    this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+
     // State
     this.level = 1;
     this.lives = MAX_LIVES;

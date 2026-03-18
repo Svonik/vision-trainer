@@ -66,6 +66,9 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial crosshair alpha with fellowEyeContrast (clinical contrast)
+    this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+
     this.level = 1;
     this.baseSpeed = MONSTER_SPEEDS[this.settings.speed] || 70;
     this.activeMonsterCount = MONSTER_COUNT[this.settings.speed] || 3;

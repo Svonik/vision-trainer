@@ -67,6 +67,9 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial pipe alpha with fellowEyeContrast (clinical contrast)
+    this.pipeAlpha = this.contrastState.fellowEyeContrast / 100;
+
     this.scrollSpeed = SCROLL_SPEEDS[this.settings.speed] || 150;
     this.score = 0;
     this.totalSpawned = 0;

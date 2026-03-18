@@ -68,6 +68,9 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial player alpha with fellowEyeContrast (clinical contrast)
+    this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+
     this.level = 1;
     this.baseSpeed = OBSTACLE_SPEEDS[this.settings.speed] || 100;
     this.speedMultiplier = 1;

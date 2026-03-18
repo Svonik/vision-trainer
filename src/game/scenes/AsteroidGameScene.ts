@@ -97,6 +97,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial asteroid alpha with fellowEyeContrast (clinical contrast)
+    this.ballAlpha = this.contrastState.fellowEyeContrast / 100;
+
     // State
     this.lives = MAX_LIVES;
     this.asteroidsDestroyed = 0;

@@ -62,6 +62,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.contrastConfig = createContrastConfig();
     this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
+    // Sync initial balloon alpha with fellowEyeContrast (clinical contrast)
+    this.balloonAlpha = this.contrastState.fellowEyeContrast / 100;
+
     this.level = 1;
     this.balloonLifespan = LIFESPAN_MS[this.settings.speed] || LIFESPAN_MS.normal;
 
