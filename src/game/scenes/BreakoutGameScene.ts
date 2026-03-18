@@ -158,9 +158,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.ball = this.add.image(ccx, ballStartY, 'ball');
       this.ball.setTint(this.ballColor);
       this.ball.setAlpha(this.ballAlpha);
-      // Proportional scale from diameter
-      const ballScale = (ballRadius * 2) / this.ball.width;
-      this.ball.setScale(ballScale);
+      this.ball.setDisplaySize(ballRadius * 2, ballRadius * 2);
     } else {
       this.ball = this.add.circle(ccx, ballStartY, ballRadius, this.ballColor, this.ballAlpha);
     }
@@ -262,9 +260,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
     const brickStartX = fx + (fw - brickW * cols) / 2 + brickW / 2;
     const brickStartY = fy + 50;
 
-    const BRICK_SPRITES = ['brick-grey', 'brick-blue', 'brick-green', 'brick-purple', 'brick-red'];
-    const useBrickSprites = this.textures.exists('brick-grey');
-
     let brickCount = 0;
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
@@ -272,20 +267,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
         const bx = brickStartX + col * brickW;
         const by = brickStartY + row * brickH;
         const shade = row % 2 === 0 ? 0x909090 : 0x707070;
-        let brick;
-        if (useBrickSprites) {
-          const spriteKey = BRICK_SPRITES[row % BRICK_SPRITES.length];
-          brick = this.add.image(bx, by, spriteKey);
-          brick.setTint(shade);
-          // Scale proportionally from width to avoid distortion blur
-          const scale = (brickW - 4) / brick.width;
-          brick.setScale(scale);
-        } else {
-          // Invisible physics rect + visual glow rect fallback
-          brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
-          const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
-          brick._visual = brickVisual;
-        }
+        // Invisible physics rect + visual glow rect
+        const brick = this.add.rectangle(bx, by, brickW - 4, brickH - 4, shade, 0);
+        const brickVisual = GameVisuals.glowRect(this, bx, by, brickW - 6, brickH - 6, shade, 0.85, 3);
+        brick._visual = brickVisual;
         this.physics.add.existing(brick, true);
         this.bricks.add(brick);
         brickCount++;
@@ -547,22 +532,12 @@ export default class BreakoutGameScene extends Phaser.Scene {
           this.activePowerups.wide = true;
           const newW = this.originalPlatformWidth * 1.5;
           this.platformW = newW;
-          const wideScale = newW / (this.platform.texture?.key === '__DEFAULT' ? newW : this.platform.texture.getSourceImage().width || newW);
-          if (this.platform.texture?.key !== '__DEFAULT') {
-            this.platform.setScale(wideScale);
-          } else {
-            this.platform.setDisplaySize(newW, this.platformH);
-          }
+          this.platform.setDisplaySize(newW, this.platformH);
           this.platform.body.setSize(newW, this.platformH);
           this.time.delayedCall(POWERUP_DURATIONS.wide, () => {
             this.activePowerups.wide = false;
             this.platformW = this.originalPlatformWidth;
-            if (this.platform.texture?.key !== '__DEFAULT') {
-              const origScale = this.originalPlatformWidth / this.platform.texture.getSourceImage().width;
-              this.platform.setScale(origScale);
-            } else {
-              this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
-            }
+            this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
             this.platform.body.setSize(this.originalPlatformWidth, this.platformH);
           });
         }
@@ -776,12 +751,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
     // Reset platform width to original
     this.platformW = this.originalPlatformWidth;
-    if (this.platform.texture?.key !== '__DEFAULT') {
-      const origScale = this.originalPlatformWidth / this.platform.texture.getSourceImage().width;
-      this.platform.setScale(origScale);
-    } else {
-      this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
-    }
+    this.platform.setDisplaySize(this.originalPlatformWidth, this.platformH);
     this.platform.body.setSize(this.originalPlatformWidth, this.platformH);
 
     // Spawn bricks with pattern for this level
