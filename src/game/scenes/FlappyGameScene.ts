@@ -1,464 +1,617 @@
 // @ts-nocheck
-import { t } from '../../modules/i18n';
+
 import { COLORS, GAME } from '../../modules/constants';
+import {
+    createContrastConfig,
+    createContrastState,
+    getAccuracy,
+    recordTrial,
+} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
-import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
-import { EventBus } from '../EventBus';
+import { t } from '../../modules/i18n';
+import { createSafetyTimer } from '../../modules/safetyTimer';
 import { SynthSounds } from '../audio/SynthSounds';
+import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 
 const SCROLL_SPEEDS = { slow: 100, normal: 150, fast: 200, pro: 260 };
-const GRAVITY = 400;          // px/s²
-const FLAP_IMPULSE = -200;    // px/s (upward)
+const GRAVITY = 400; // px/s²
+const FLAP_IMPULSE = -200; // px/s (upward)
 const PIPE_SPAWN_INTERVAL = 2500; // ms
-const GAP_RATIO = 0.40;        // 40% of field height
+const GAP_RATIO = 0.4; // 40% of field height
 
 export default class FlappyGameScene extends Phaser.Scene {
-  constructor() {
-    super('FlappyGameScene');
-  }
+    constructor() {
+        super('FlappyGameScene');
+    }
 
-  preload() {
-    this.load.audio('flappy-bgm', 'audio/flappy-bgm.mp3');
-  }
+    preload() {
+        this.load.audio('flappy-bgm', 'audio/flappy-bgm.mp3');
+    }
 
-  create() {
-    SynthSounds.resume();
+    create() {
+        SynthSounds.resume();
 
-    this.startGameHandler = (settings) => {
-      this.settings = createGameSettings(settings || {});
-      this.startGameplay();
-    };
-    this.safetyFinishHandler = () => { this.endGame(); };
-    this.safetyExtendHandler = () => {
-      if (this.safetyTimer && this.safetyTimer.canExtend()) {
-        this.safetyTimer.extend();
+        this.startGameHandler = (settings) => {
+            this.settings = createGameSettings(settings || {});
+            this.startGameplay();
+        };
+        this.safetyFinishHandler = () => {
+            this.endGame();
+        };
+        this.safetyExtendHandler = () => {
+            if (this.safetyTimer?.canExtend()) {
+                this.safetyTimer.extend();
+                this.isPaused = false;
+            }
+        };
+
+        EventBus.on('start-flappy-game', this.startGameHandler);
+        EventBus.on('safety-finish', this.safetyFinishHandler);
+        EventBus.on('safety-extend', this.safetyExtendHandler);
+
+        this.events.on('shutdown', this.shutdown, this);
+
+        EventBus.emit('current-scene-ready', this);
+    }
+
+    startGameplay() {
+        const fw = GAME.WIDTH * GAME.FIELD_WIDTH_RATIO;
+        const fh = GAME.HEIGHT * GAME.FIELD_HEIGHT_RATIO;
+        const fx = (GAME.WIDTH - fw) / 2;
+        const fy = (GAME.HEIGHT - fh) / 2;
+        this.field = { x: fx, y: fy, w: fw, h: fh };
+
+        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
+        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
+        // Bird → platformColor, Pipes → ballColor (dichoptic split)
+        this.birdColor = isLeftPlatform
+            ? eyeColors.leftColor
+            : eyeColors.rightColor;
+        this.pipeColor = isLeftPlatform
+            ? eyeColors.rightColor
+            : eyeColors.leftColor;
+        this.birdAlpha =
+            (isLeftPlatform
+                ? this.settings.contrastLeft
+                : this.settings.contrastRight) / 100;
+        this.pipeAlpha =
+            (isLeftPlatform
+                ? this.settings.contrastRight
+                : this.settings.contrastLeft) / 100;
+
+        this.contrastConfig = createContrastConfig();
+        this.contrastState = createContrastState(
+            this.settings.fellowEyeContrast ?? 30,
+        );
+
+        // Fellow eye (bird) uses clinical contrast; amblyopic eye (pipes) always 100%
+        this.birdAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.pipeAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
+
+        this.scrollSpeed = SCROLL_SPEEDS[this.settings.speed] || 150;
+        this.score = 0;
+        this.totalSpawned = 0;
         this.isPaused = false;
-      }
-    };
-
-    EventBus.on('start-flappy-game', this.startGameHandler);
-    EventBus.on('safety-finish', this.safetyFinishHandler);
-    EventBus.on('safety-extend', this.safetyExtendHandler);
-
-    this.events.on('shutdown', this.shutdown, this);
-
-    EventBus.emit('current-scene-ready', this);
-  }
-
-  startGameplay() {
-    const fw = GAME.WIDTH * GAME.FIELD_WIDTH_RATIO;
-    const fh = GAME.HEIGHT * GAME.FIELD_HEIGHT_RATIO;
-    const fx = (GAME.WIDTH - fw) / 2;
-    const fy = (GAME.HEIGHT - fh) / 2;
-    this.field = { x: fx, y: fy, w: fw, h: fh };
-
-    const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-    const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-    // Bird → platformColor, Pipes → ballColor (dichoptic split)
-    this.birdColor = isLeftPlatform ? eyeColors.leftColor : eyeColors.rightColor;
-    this.pipeColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
-    this.birdAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
-    this.pipeAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
-
-    this.contrastConfig = createContrastConfig();
-    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
-
-    // Sync initial pipe alpha with fellowEyeContrast (clinical contrast)
-    this.pipeAlpha = this.contrastState.fellowEyeContrast / 100;
-
-    this.scrollSpeed = SCROLL_SPEEDS[this.settings.speed] || 150;
-    this.score = 0;
-    this.totalSpawned = 0;
-    this.isPaused = false;
-    this.pauseOverlay = null;
-    this.gameOver = false;
-    this.gameEnded = false;
-    this.level = 1;
-    this.pipesForNextLevel = 5;
-    this.gapSize = fh * GAP_RATIO;
-
-    // Background (BLACK — both eyes)
-    this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK);
-
-    // Field border (GRAY — both eyes)
-    GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
-    GameVisuals.styledBorder(this, fx, fy, fw, fh);
-
-    // Fixation cross (both eyes)
-    const crossSize = Math.max(fw * GAME.FIXATION_CROSS_RATIO, GAME.FIXATION_CROSS_MIN_PX);
-    const ccx = fx + fw / 2;
-    const ccy = fy + fh / 2;
-    GameVisuals.styledCross(this, ccx, ccy, crossSize);
-
-    // Ground line (GRAY — both eyes)
-    this.groundY = fy + fh - 4;
-    this.groundLine = this.add.rectangle(fx + fw / 2, this.groundY, fw, 2, COLORS.GRAY);
-
-    // Bird (platformColor — one eye) — glow circle container
-    const birdRadius = Math.round(fw * 0.03);
-    const birdX = fx + fw * 0.25;
-    const birdStartY = fy + fh / 2;
-    this.bird = { x: birdX, y: birdStartY, vy: 0, radius: birdRadius };
-    // Keep plain circle for setFillStyle on game over
-    this.birdGfx = this.add.circle(birdX, birdStartY, birdRadius, this.birdColor, 0);
-    this.birdVisual = GameVisuals.glowCircle(this, birdX, birdStartY, birdRadius, this.birdColor, this.birdAlpha);
-    GameVisuals.pulse(this, this.birdVisual, 0.92, 1.08, 600);
-
-    // HUD
-    this.hud = GameVisuals.createHUD(this, this.field);
-
-    // Pause button
-    const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
-      fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
-    }).setInteractive({ useHandCursor: true });
-    pauseBtn.on('pointerup', () => this.togglePause());
-
-    // Pipe container
-    this.pipes = [];
-    this.pipeGraphics = [];
-    // Fix: don't spawn pipe immediately — wait for first interval
-    this.lastPipeTime = 0;
-
-    // Input: click / tap — guard against pause click-through
-    this.input.on('pointerup', () => {
-      if (this.isPaused || this.gameOver) return;
-      this.flap();
-    });
-
-    // Input: Space / ArrowUp
-    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    this.upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
-
-    // Safety timer
-    this.safetyTimer = createSafetyTimer({
-      onWarning: () => EventBus.emit('safety-timer-warning', { type: 'warning' }),
-      onBreak: () => EventBus.emit('safety-timer-warning', { type: 'break' }),
-    });
-
-    // Tab blur → auto-pause (store reference for cleanup)
-    this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
-    this.game.events.on('blur', this.blurHandler);
-
-    // Pause gameplay until countdown finishes
-    this.isPaused = true;
-    GameVFX.countdown(this, ccx, ccy, () => {
-      this.isPaused = false;
-      this.input.setDefaultCursor('none');
-      this.safetyTimer.start();
-      // Seed lastPipeTime so first pipe spawns after one interval
-      this.lastPipeTime = this.time.now;
-      // Background music — quiet, looped
-      try {
-        if (this.cache.audio.exists('flappy-bgm')) {
-          this.bgm = this.sound.add('flappy-bgm', { loop: true, volume: 0.12 });
-          this.bgm.play();
-        }
-      } catch (e) {
-        console.warn('BGM not available:', e);
-      }
-    });
-  }
-
-  shutdown() {
-    EventBus.removeListener('start-flappy-game', this.startGameHandler);
-    EventBus.removeListener('safety-finish', this.safetyFinishHandler);
-    EventBus.removeListener('safety-extend', this.safetyExtendHandler);
-    if (this.safetyTimer) this.safetyTimer.stop();
-    if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
-    if (this.bgm) { this.bgm.stop(); this.bgm = null; }
-    this.input.setDefaultCursor('default');
-  }
-
-  update(time, delta) {
-    if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) { this.togglePause(); return; }
-    if (this.isPaused || this.gameOver) return;
-    if (!this.bird) return;
-
-    const dt = delta / 1000;
-
-    // Space / ArrowUp to flap
-    if (
-      (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) ||
-      (this.upKey && Phaser.Input.Keyboard.JustDown(this.upKey))
-    ) {
-      this.flap();
-    }
-
-    // Bird physics
-    this.bird = { ...this.bird, vy: this.bird.vy + GRAVITY * dt };
-    const newY = this.bird.y + this.bird.vy * dt;
-    this.bird = { ...this.bird, y: newY };
-    this.birdGfx.y = this.bird.y;
-    if (this.birdVisual) { this.birdVisual.x = this.bird.x; this.birdVisual.y = this.bird.y; }
-
-    // Boundary: ceiling collision
-    const ceilY = this.field.y + this.bird.radius;
-    if (this.bird.y < ceilY) {
-      this.bird = { ...this.bird, y: ceilY, vy: 0 };
-      this.birdGfx.y = this.bird.y;
-      if (this.birdVisual) this.birdVisual.y = this.bird.y;
-    }
-
-    // Boundary: ground collision
-    const groundHitY = this.groundY - this.bird.radius;
-    if (this.bird.y >= groundHitY) {
-      this.bird = { ...this.bird, y: groundHitY };
-      this.birdGfx.y = this.bird.y;
-      if (this.birdVisual) this.birdVisual.y = this.bird.y;
-      this.triggerGameOver();
-      return;
-    }
-
-    // Spawn pipes
-    const now = time; // ms
-    if (now - this.lastPipeTime >= PIPE_SPAWN_INTERVAL) {
-      this.spawnPipe();
-      this.lastPipeTime = now;
-    }
-
-    // Move pipes and check collisions
-    const pipeWidth = this.field.w * 0.10;
-    const moveAmount = this.scrollSpeed * dt;
-    const toRemove = [];
-
-    for (let i = 0; i < this.pipes.length; i++) {
-      const pipe = this.pipes[i];
-      const updatedPipe = { ...pipe, x: pipe.x - moveAmount };
-      this.pipes[i] = updatedPipe;
-
-      const [topGfx, botGfx] = this.pipeGraphics[i];
-      topGfx.x = updatedPipe.x;
-      botGfx.x = updatedPipe.x;
-
-      // Score: bird passed the right edge of pipe
-      if (!updatedPipe.scored && updatedPipe.x + pipeWidth / 2 < this.bird.x - this.bird.radius) {
-        this.pipes[i] = { ...updatedPipe, scored: true };
-        this.score++;
-        if (this.hud) this.hud.scoreText.setText(`★ ${this.score}`);
-        SynthSounds.score();
-        GameVFX.scorePopup(this, this.bird.x, this.bird.y);
-
-        this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
-
-        // Level up every pipesForNextLevel pipes
-        if (this.score >= this.pipesForNextLevel) {
-          this.level++;
-          this.pipesForNextLevel += 5;
-          this.scrollSpeed *= 1.10;
-          this.gapSize = Math.max(this.field.h * 0.25, this.gapSize * 0.97);
-          if (this.hud) this.hud.levelText.setText(`Ур.${this.level}`);
-          const cx = this.field.x + this.field.w / 2;
-          const cy = this.field.y + this.field.h / 2;
-          const flashText = this.add.text(cx, cy, `Уровень ${this.level}!`, {
-            fontSize: '32px', color: '#FFFFFF', fontFamily: 'Arial, sans-serif', fontStyle: 'bold',
-          }).setOrigin(0.5).setAlpha(0);
-          this.tweens.add({
-            targets: flashText,
-            alpha: 1, scaleX: 1.2, scaleY: 1.2,
-            duration: 200, yoyo: true, hold: 1000,
-            onComplete: () => flashText.destroy(),
-          });
-        }
-      }
-
-      // Collision detection (AABB vs circle)
-      if (this.checkBirdPipeCollision(this.bird, updatedPipe, pipeWidth)) {
-        this.triggerGameOver();
-        return;
-      }
-
-      // Remove pipes that scrolled fully off-screen
-      if (updatedPipe.x + pipeWidth / 2 < this.field.x) {
-        toRemove.push(i);
-      }
-    }
-
-    // Remove off-screen pipes (reverse order to keep indices stable)
-    for (let i = toRemove.length - 1; i >= 0; i--) {
-      const idx = toRemove[i];
-      this.pipeGraphics[idx][0].destroy();
-      this.pipeGraphics[idx][1].destroy();
-      this.pipes.splice(idx, 1);
-      this.pipeGraphics.splice(idx, 1);
-    }
-
-    // HUD update
-    if (this.safetyTimer && this.hud) {
-      GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.score}`);
-    }
-  }
-
-  flap() {
-    if (!this.bird) return;
-    this.bird = { ...this.bird, vy: FLAP_IMPULSE };
-    SynthSounds.launch();
-  }
-
-  spawnPipe() {
-    const { x: fx, y: fy, w: fw, h: fh } = this.field;
-    const pipeWidth = fw * 0.10;
-    const gapHeight = this.gapSize !== undefined ? this.gapSize : fh * GAP_RATIO;
-    const groundLineThickness = 6;
-    const usableFh = fh - groundLineThickness;
-
-    // Random gap center within bounds (keep some margin)
-    const margin = gapHeight * 0.5 + 20;
-    const minCenter = fy + margin;
-    const maxCenter = fy + usableFh - margin;
-    const gapCenterY = Phaser.Math.Between(Math.round(minCenter), Math.round(maxCenter));
-
-    const topH = gapCenterY - gapHeight / 2 - fy;
-    const botY = gapCenterY + gapHeight / 2;
-    const botH = fy + usableFh - botY;
-    const startX = fx + fw + pipeWidth / 2;
-
-    // Top pipe — glow rect container
-    const topGfx = GameVisuals.glowRect(this, startX, fy + topH / 2, pipeWidth, topH, this.pipeColor, this.pipeAlpha, 2);
-    // Bottom pipe — glow rect container
-    const botGfx = GameVisuals.glowRect(this, startX, botY + botH / 2, pipeWidth, botH, this.pipeColor, this.pipeAlpha, 2);
-
-    this.pipes.push({
-      x: startX,
-      gapCenterY,
-      gapHeight,
-      topH,
-      botY,
-      botH,
-      scored: false,
-    });
-    this.pipeGraphics.push([topGfx, botGfx]);
-    this.totalSpawned++;
-  }
-
-  checkBirdPipeCollision(bird, pipe, pipeWidth) {
-    const { x: fx, y: fy, h: fh } = this.field;
-    const halfPW = pipeWidth / 2;
-    const r = bird.radius;
-
-    const bLeft = bird.x - r;
-    const bRight = bird.x + r;
-    const pLeft = pipe.x - halfPW;
-    const pRight = pipe.x + halfPW;
-
-    // No horizontal overlap → no collision
-    if (bRight < pLeft || bLeft > pRight) return false;
-
-    // Horizontal overlap — check vertical gap
-    const gapTop = pipe.gapCenterY - pipe.gapHeight / 2;
-    const gapBot = pipe.gapCenterY + pipe.gapHeight / 2;
-
-    // Bird circle intersects top pipe or bottom pipe
-    const bTop = bird.y - r;
-    const bBot = bird.y + r;
-
-    if (bTop < gapTop || bBot > gapBot) return true;
-
-    return false;
-  }
-
-  triggerGameOver() {
-    if (this.gameOver) return;
-    this.gameOver = true;
-    // Flash the bird visual gray to preserve dichoptic integrity
-    if (this.birdVisual) {
-      this.tweens.killTweensOf(this.birdVisual);
-      this.birdVisual.setAlpha(0.5);
-    }
-    SynthSounds.gameOver();
-    GameVFX.screenShake(this);
-
-    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
-    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
-    this.time.delayedCall(300, () => {
-      this.endGame();
-    });
-  }
-
-  updateFellowEyeAlpha(alpha) {
-    this.pipeAlpha = alpha;
-  }
-
-  togglePause() {
-    this.isPaused = !this.isPaused;
-    if (this.isPaused) {
-      this.safetyTimer.pause();
-      this.input.setDefaultCursor('default');
-      if (this.bgm?.isPlaying) this.bgm.pause();
-      this.showPauseMenu();
-    } else {
-      this.safetyTimer.resume();
-      this.input.setDefaultCursor('none');
-      if (this.bgm?.isPaused) this.bgm.resume();
-      if (this.pauseOverlay) {
-        this.pauseOverlay.forEach((el) => el.destroy());
         this.pauseOverlay = null;
-      }
+        this.gameOver = false;
+        this.gameEnded = false;
+        this.level = 1;
+        this.pipesForNextLevel = 5;
+        this.gapSize = fh * GAP_RATIO;
+
+        // Background (BLACK — both eyes)
+        this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK);
+
+        // Field border (GRAY — both eyes)
+        GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
+        GameVisuals.styledBorder(this, fx, fy, fw, fh);
+
+        // Fixation cross (both eyes)
+        const crossSize = Math.max(
+            fw * GAME.FIXATION_CROSS_RATIO,
+            GAME.FIXATION_CROSS_MIN_PX,
+        );
+        const ccx = fx + fw / 2;
+        const ccy = fy + fh / 2;
+        GameVisuals.styledCross(this, ccx, ccy, crossSize);
+
+        // Ground line (GRAY — both eyes)
+        this.groundY = fy + fh - 4;
+        this.groundLine = this.add.rectangle(
+            fx + fw / 2,
+            this.groundY,
+            fw,
+            2,
+            COLORS.GRAY,
+        );
+
+        // Bird (platformColor — one eye) — glow circle container
+        const birdRadius = Math.round(fw * 0.03);
+        const birdX = fx + fw * 0.25;
+        const birdStartY = fy + fh / 2;
+        this.bird = { x: birdX, y: birdStartY, vy: 0, radius: birdRadius };
+        // Keep plain circle for setFillStyle on game over
+        this.birdGfx = this.add.circle(
+            birdX,
+            birdStartY,
+            birdRadius,
+            this.birdColor,
+            0,
+        );
+        this.birdVisual = GameVisuals.glowCircle(
+            this,
+            birdX,
+            birdStartY,
+            birdRadius,
+            this.birdColor,
+            this.birdAlpha,
+        );
+        GameVisuals.pulse(this, this.birdVisual, 0.92, 1.08, 600);
+
+        // HUD
+        this.hud = GameVisuals.createHUD(this, this.field);
+
+        // Pause button
+        const pauseBtn = this.add
+            .text(fx + 10, fy + fh - 20, t('game.pause'), {
+                fontSize: '14px',
+                color: COLORS.GRAY_HEX,
+                fontFamily: 'Arial, sans-serif',
+            })
+            .setInteractive({ useHandCursor: true });
+        pauseBtn.on('pointerup', () => this.togglePause());
+
+        // Pipe container
+        this.pipes = [];
+        this.pipeGraphics = [];
+        // Fix: don't spawn pipe immediately — wait for first interval
+        this.lastPipeTime = 0;
+
+        // Input: click / tap — guard against pause click-through
+        this.input.on('pointerup', () => {
+            if (this.isPaused || this.gameOver) return;
+            this.flap();
+        });
+
+        // Input: Space / ArrowUp
+        this.spaceKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SPACE,
+        );
+        this.escKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.ESC,
+        );
+        this.upKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.UP,
+        );
+
+        // Safety timer
+        this.safetyTimer = createSafetyTimer({
+            onWarning: () =>
+                EventBus.emit('safety-timer-warning', { type: 'warning' }),
+            onBreak: () =>
+                EventBus.emit('safety-timer-warning', { type: 'break' }),
+        });
+
+        // Tab blur → auto-pause (store reference for cleanup)
+        this.blurHandler = () => {
+            if (!this.isPaused) this.togglePause();
+        };
+        this.game.events.on('blur', this.blurHandler);
+
+        // Pause gameplay until countdown finishes
+        this.isPaused = true;
+        GameVFX.countdown(this, ccx, ccy, () => {
+            this.isPaused = false;
+            this.input.setDefaultCursor('none');
+            this.safetyTimer.start();
+            // Seed lastPipeTime so first pipe spawns after one interval
+            this.lastPipeTime = this.time.now;
+            // Background music — quiet, looped
+            try {
+                if (this.cache.audio.exists('flappy-bgm')) {
+                    this.bgm = this.sound.add('flappy-bgm', {
+                        loop: true,
+                        volume: 0.12,
+                    });
+                    this.bgm.play();
+                }
+            } catch (e) {
+                console.warn('BGM not available:', e);
+            }
+        });
     }
-  }
 
-  showPauseMenu() {
-    const cx = this.cameras.main.centerX;
-    const cy = this.cameras.main.centerY;
-
-    const bg = this.add.rectangle(cx, cy, 300, 200, COLORS.BLACK, 0.85)
-      .setStrokeStyle(2, COLORS.GRAY);
-    const title = this.add.text(cx, cy - 50, t('game.pause'), {
-      fontSize: '24px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-
-    const resumeBtn = this.add.rectangle(cx, cy + 10, 200, 40, COLORS.GRAY, 0.2)
-      .setStrokeStyle(1, COLORS.GRAY).setInteractive({ useHandCursor: true });
-    const resumeText = this.add.text(cx, cy + 10, t('game.resume'), {
-      fontSize: '16px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-    resumeBtn.on('pointerup', () => this.togglePause());
-
-    const quitBtn = this.add.rectangle(cx, cy + 60, 200, 40, COLORS.GRAY, 0.2)
-      .setStrokeStyle(1, COLORS.GRAY).setInteractive({ useHandCursor: true });
-    const quitText = this.add.text(cx, cy + 60, t('game.quit'), {
-      fontSize: '16px', color: COLORS.WHITE_HEX, fontFamily: 'Arial, sans-serif',
-    }).setOrigin(0.5);
-    quitBtn.on('pointerup', () => this.endGame());
-
-    this.pauseOverlay = [bg, title, resumeBtn, resumeText, quitBtn, quitText];
-  }
-
-  endGame() {
-    if (this.gameEnded) return;
-    this.gameEnded = true;
-
-    if (this.bgm?.isPlaying) {
-      this.tweens.add({ targets: this.bgm, volume: 0, duration: 500 });
+    shutdown() {
+        EventBus.removeListener('start-flappy-game', this.startGameHandler);
+        EventBus.removeListener('safety-finish', this.safetyFinishHandler);
+        EventBus.removeListener('safety-extend', this.safetyExtendHandler);
+        if (this.safetyTimer) this.safetyTimer.stop();
+        if (this.blurHandler) this.game.events.off('blur', this.blurHandler);
+        if (this.bgm) {
+            this.bgm.stop();
+            this.bgm = null;
+        }
+        this.input.setDefaultCursor('default');
     }
-    if (this.safetyTimer) this.safetyTimer.stop();
 
-    const result = {
-      game: 'flappy',
-      timestamp: new Date().toISOString(),
-      duration_s: Math.round((this.safetyTimer?.getElapsedMs() ?? 0) / 1000),
-      caught: this.score,
-      total_spawned: this.totalSpawned,
-      hit_rate: this.totalSpawned > 0
-        ? Math.round((this.score / this.totalSpawned) * 100) / 100
-        : 0,
-      contrast_left: this.settings.contrastLeft,
-      contrast_right: this.settings.contrastRight,
-      speed: this.settings.speed,
-      eye_config: this.settings.eyeConfig,
-      completed: false,
-      level: this.level,
-      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-      fellow_contrast_end: this.contrastState.fellowEyeContrast,
-      window_accuracy: getAccuracy(this.contrastState),
-      total_trials: this.contrastState.totalTrials,
-    };
+    update(time, delta) {
+        if (this.escKey && Phaser.Input.Keyboard.JustDown(this.escKey)) {
+            this.togglePause();
+            return;
+        }
+        if (this.isPaused || this.gameOver) return;
+        if (!this.bird) return;
 
-    EventBus.emit('game-complete', { result, settings: this.settings });
-  }
+        const dt = delta / 1000;
+
+        // Space / ArrowUp to flap
+        if (
+            (this.spaceKey && Phaser.Input.Keyboard.JustDown(this.spaceKey)) ||
+            (this.upKey && Phaser.Input.Keyboard.JustDown(this.upKey))
+        ) {
+            this.flap();
+        }
+
+        // Bird physics
+        this.bird = { ...this.bird, vy: this.bird.vy + GRAVITY * dt };
+        const newY = this.bird.y + this.bird.vy * dt;
+        this.bird = { ...this.bird, y: newY };
+        this.birdGfx.y = this.bird.y;
+        if (this.birdVisual) {
+            this.birdVisual.x = this.bird.x;
+            this.birdVisual.y = this.bird.y;
+        }
+
+        // Boundary: ceiling collision
+        const ceilY = this.field.y + this.bird.radius;
+        if (this.bird.y < ceilY) {
+            this.bird = { ...this.bird, y: ceilY, vy: 0 };
+            this.birdGfx.y = this.bird.y;
+            if (this.birdVisual) this.birdVisual.y = this.bird.y;
+        }
+
+        // Boundary: ground collision
+        const groundHitY = this.groundY - this.bird.radius;
+        if (this.bird.y >= groundHitY) {
+            this.bird = { ...this.bird, y: groundHitY };
+            this.birdGfx.y = this.bird.y;
+            if (this.birdVisual) this.birdVisual.y = this.bird.y;
+            this.triggerGameOver();
+            return;
+        }
+
+        // Spawn pipes
+        const now = time; // ms
+        if (now - this.lastPipeTime >= PIPE_SPAWN_INTERVAL) {
+            this.spawnPipe();
+            this.lastPipeTime = now;
+        }
+
+        // Move pipes and check collisions
+        const pipeWidth = this.field.w * 0.1;
+        const moveAmount = this.scrollSpeed * dt;
+        const toRemove = [];
+
+        for (let i = 0; i < this.pipes.length; i++) {
+            const pipe = this.pipes[i];
+            const updatedPipe = { ...pipe, x: pipe.x - moveAmount };
+            this.pipes[i] = updatedPipe;
+
+            const [topGfx, botGfx] = this.pipeGraphics[i];
+            topGfx.x = updatedPipe.x;
+            botGfx.x = updatedPipe.x;
+
+            // Score: bird passed the right edge of pipe
+            if (
+                !updatedPipe.scored &&
+                updatedPipe.x + pipeWidth / 2 < this.bird.x - this.bird.radius
+            ) {
+                this.pipes[i] = { ...updatedPipe, scored: true };
+                this.score++;
+                if (this.hud) this.hud.scoreText.setText(`★ ${this.score}`);
+                SynthSounds.score();
+                GameVFX.scorePopup(this, this.bird.x, this.bird.y);
+
+                this.contrastState = recordTrial(
+                    this.contrastState,
+                    this.contrastConfig,
+                    true,
+                );
+                this.updateFellowEyeAlpha(
+                    this.contrastState.fellowEyeContrast / 100,
+                );
+
+                // Level up every pipesForNextLevel pipes
+                if (this.score >= this.pipesForNextLevel) {
+                    this.level++;
+                    this.pipesForNextLevel += 5;
+                    this.scrollSpeed *= 1.1;
+                    this.gapSize = Math.max(
+                        this.field.h * 0.25,
+                        this.gapSize * 0.97,
+                    );
+                    if (this.hud)
+                        this.hud.levelText.setText(`Ур.${this.level}`);
+                    const cx = this.field.x + this.field.w / 2;
+                    const cy = this.field.y + this.field.h / 2;
+                    const flashText = this.add
+                        .text(cx, cy, `Уровень ${this.level}!`, {
+                            fontSize: '32px',
+                            color: '#FFFFFF',
+                            fontFamily: 'Arial, sans-serif',
+                            fontStyle: 'bold',
+                        })
+                        .setOrigin(0.5)
+                        .setAlpha(0);
+                    this.tweens.add({
+                        targets: flashText,
+                        alpha: 1,
+                        scaleX: 1.2,
+                        scaleY: 1.2,
+                        duration: 200,
+                        yoyo: true,
+                        hold: 1000,
+                        onComplete: () => flashText.destroy(),
+                    });
+                }
+            }
+
+            // Collision detection (AABB vs circle)
+            if (
+                this.checkBirdPipeCollision(this.bird, updatedPipe, pipeWidth)
+            ) {
+                this.triggerGameOver();
+                return;
+            }
+
+            // Remove pipes that scrolled fully off-screen
+            if (updatedPipe.x + pipeWidth / 2 < this.field.x) {
+                toRemove.push(i);
+            }
+        }
+
+        // Remove off-screen pipes (reverse order to keep indices stable)
+        for (let i = toRemove.length - 1; i >= 0; i--) {
+            const idx = toRemove[i];
+            this.pipeGraphics[idx][0].destroy();
+            this.pipeGraphics[idx][1].destroy();
+            this.pipes.splice(idx, 1);
+            this.pipeGraphics.splice(idx, 1);
+        }
+
+        // HUD update
+        if (this.safetyTimer && this.hud) {
+            GameVisuals.updateHUD(
+                this.hud,
+                this.level,
+                this.safetyTimer.getElapsedMs(),
+                `★ ${this.score}`,
+            );
+        }
+    }
+
+    flap() {
+        if (!this.bird) return;
+        this.bird = { ...this.bird, vy: FLAP_IMPULSE };
+        SynthSounds.launch();
+    }
+
+    spawnPipe() {
+        const { x: fx, y: fy, w: fw, h: fh } = this.field;
+        const pipeWidth = fw * 0.1;
+        const gapHeight =
+            this.gapSize !== undefined ? this.gapSize : fh * GAP_RATIO;
+        const groundLineThickness = 6;
+        const usableFh = fh - groundLineThickness;
+
+        // Random gap center within bounds (keep some margin)
+        const margin = gapHeight * 0.5 + 20;
+        const minCenter = fy + margin;
+        const maxCenter = fy + usableFh - margin;
+        const gapCenterY = Phaser.Math.Between(
+            Math.round(minCenter),
+            Math.round(maxCenter),
+        );
+
+        const topH = gapCenterY - gapHeight / 2 - fy;
+        const botY = gapCenterY + gapHeight / 2;
+        const botH = fy + usableFh - botY;
+        const startX = fx + fw + pipeWidth / 2;
+
+        // Top pipe — glow rect container
+        const topGfx = GameVisuals.glowRect(
+            this,
+            startX,
+            fy + topH / 2,
+            pipeWidth,
+            topH,
+            this.pipeColor,
+            this.pipeAlpha,
+            2,
+        );
+        // Bottom pipe — glow rect container
+        const botGfx = GameVisuals.glowRect(
+            this,
+            startX,
+            botY + botH / 2,
+            pipeWidth,
+            botH,
+            this.pipeColor,
+            this.pipeAlpha,
+            2,
+        );
+
+        this.pipes.push({
+            x: startX,
+            gapCenterY,
+            gapHeight,
+            topH,
+            botY,
+            botH,
+            scored: false,
+        });
+        this.pipeGraphics.push([topGfx, botGfx]);
+        this.totalSpawned++;
+    }
+
+    checkBirdPipeCollision(bird, pipe, pipeWidth) {
+        const { x: fx, y: fy, h: fh } = this.field;
+        const halfPW = pipeWidth / 2;
+        const r = bird.radius;
+
+        const bLeft = bird.x - r;
+        const bRight = bird.x + r;
+        const pLeft = pipe.x - halfPW;
+        const pRight = pipe.x + halfPW;
+
+        // No horizontal overlap → no collision
+        if (bRight < pLeft || bLeft > pRight) return false;
+
+        // Horizontal overlap — check vertical gap
+        const gapTop = pipe.gapCenterY - pipe.gapHeight / 2;
+        const gapBot = pipe.gapCenterY + pipe.gapHeight / 2;
+
+        // Bird circle intersects top pipe or bottom pipe
+        const bTop = bird.y - r;
+        const bBot = bird.y + r;
+
+        if (bTop < gapTop || bBot > gapBot) return true;
+
+        return false;
+    }
+
+    triggerGameOver() {
+        if (this.gameOver) return;
+        this.gameOver = true;
+        // Flash the bird visual gray to preserve dichoptic integrity
+        if (this.birdVisual) {
+            this.tweens.killTweensOf(this.birdVisual);
+            this.birdVisual.setAlpha(0.5);
+        }
+        SynthSounds.gameOver();
+        GameVFX.screenShake(this);
+
+        this.contrastState = recordTrial(
+            this.contrastState,
+            this.contrastConfig,
+            false,
+        );
+        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.time.delayedCall(300, () => {
+            this.endGame();
+        });
+    }
+
+    updateFellowEyeAlpha(alpha) {
+        // Update bird (fellow eye) alpha — pipes (amblyopic eye) stay at 1.0
+        this.birdAlpha = alpha;
+    }
+
+    togglePause() {
+        this.isPaused = !this.isPaused;
+        if (this.isPaused) {
+            this.safetyTimer.pause();
+            this.input.setDefaultCursor('default');
+            if (this.bgm?.isPlaying) this.bgm.pause();
+            this.showPauseMenu();
+        } else {
+            this.safetyTimer.resume();
+            this.input.setDefaultCursor('none');
+            if (this.bgm?.isPaused) this.bgm.resume();
+            if (this.pauseOverlay) {
+                this.pauseOverlay.forEach((el) => el.destroy());
+                this.pauseOverlay = null;
+            }
+        }
+    }
+
+    showPauseMenu() {
+        const cx = this.cameras.main.centerX;
+        const cy = this.cameras.main.centerY;
+
+        const bg = this.add
+            .rectangle(cx, cy, 300, 200, COLORS.BLACK, 0.85)
+            .setStrokeStyle(2, COLORS.GRAY);
+        const title = this.add
+            .text(cx, cy - 50, t('game.pause'), {
+                fontSize: '24px',
+                color: COLORS.WHITE_HEX,
+                fontFamily: 'Arial, sans-serif',
+            })
+            .setOrigin(0.5);
+
+        const resumeBtn = this.add
+            .rectangle(cx, cy + 10, 200, 40, COLORS.GRAY, 0.2)
+            .setStrokeStyle(1, COLORS.GRAY)
+            .setInteractive({ useHandCursor: true });
+        const resumeText = this.add
+            .text(cx, cy + 10, t('game.resume'), {
+                fontSize: '16px',
+                color: COLORS.WHITE_HEX,
+                fontFamily: 'Arial, sans-serif',
+            })
+            .setOrigin(0.5);
+        resumeBtn.on('pointerup', () => this.togglePause());
+
+        const quitBtn = this.add
+            .rectangle(cx, cy + 60, 200, 40, COLORS.GRAY, 0.2)
+            .setStrokeStyle(1, COLORS.GRAY)
+            .setInteractive({ useHandCursor: true });
+        const quitText = this.add
+            .text(cx, cy + 60, t('game.quit'), {
+                fontSize: '16px',
+                color: COLORS.WHITE_HEX,
+                fontFamily: 'Arial, sans-serif',
+            })
+            .setOrigin(0.5);
+        quitBtn.on('pointerup', () => this.endGame());
+
+        this.pauseOverlay = [
+            bg,
+            title,
+            resumeBtn,
+            resumeText,
+            quitBtn,
+            quitText,
+        ];
+    }
+
+    endGame() {
+        if (this.gameEnded) return;
+        this.gameEnded = true;
+
+        if (this.bgm?.isPlaying) {
+            this.tweens.add({ targets: this.bgm, volume: 0, duration: 500 });
+        }
+        if (this.safetyTimer) this.safetyTimer.stop();
+
+        const result = {
+            game: 'flappy',
+            timestamp: new Date().toISOString(),
+            duration_s: Math.round(
+                (this.safetyTimer?.getElapsedMs() ?? 0) / 1000,
+            ),
+            caught: this.score,
+            total_spawned: this.totalSpawned,
+            hit_rate:
+                this.totalSpawned > 0
+                    ? Math.round((this.score / this.totalSpawned) * 100) / 100
+                    : 0,
+            contrast_left: this.settings.contrastLeft,
+            contrast_right: this.settings.contrastRight,
+            speed: this.settings.speed,
+            eye_config: this.settings.eyeConfig,
+            completed: false,
+            level: this.level,
+            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+            fellow_contrast_end: this.contrastState.fellowEyeContrast,
+            window_accuracy: getAccuracy(this.contrastState),
+            total_trials: this.contrastState.totalTrials,
+        };
+
+        EventBus.emit('game-complete', { result, settings: this.settings });
+    }
 }

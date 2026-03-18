@@ -76,21 +76,15 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         this.crosshairColor = isTargetLeft
             ? eyeColors.rightColor
             : eyeColors.leftColor;
-        this.targetAlpha =
-            (isTargetLeft
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.crosshairAlpha =
-            (isTargetLeft
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
         // Clinical contrast engine
         this.contrastConfig = createContrastConfig();
         this.contrastState = createContrastState(
             this.settings.fellowEyeContrast ?? 30,
         );
-        this.targetAlpha = this.contrastState.fellowEyeContrast / 100;
+
+        // Fellow eye (crosshair) uses clinical contrast; amblyopic eye (targets) always 100%
+        this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.targetAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Game state
         this.level = 1;
@@ -424,9 +418,9 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         }
     }
 
-    // --- Update target alpha from contrast engine ---
+    // --- Update crosshair (fellow eye) alpha from contrast engine ---
     updateTargetAlpha() {
-        this.targetAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
     }
 
     // --- Update loop ---
