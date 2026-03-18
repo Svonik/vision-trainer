@@ -4,8 +4,9 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { DisclaimerPage } from './DisclaimerPage';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
-import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
+import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
+import type { SuppressionResult } from '../modules/suppressionTest';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
 
@@ -46,15 +47,16 @@ export function OnboardingWizard() {
         setStep('suppression');
     };
 
-    const handleSuppressionPass = () => {
-        save({ suppression_passed: true });
-        navigate('/mode-select');
-    };
-
-    const handleSuppressionFail = () => {
-        setAdjustAttempts(prev => prev + 1);
-        setDirection(1);
-        setStep('adjust');
+    const handleSuppressionComplete = (result: SuppressionResult) => {
+        const passed = result.balancePoint <= 80;
+        save({ suppression_passed: passed });
+        if (passed) {
+            navigate('/mode-select');
+        } else {
+            setAdjustAttempts(prev => prev + 1);
+            setDirection(1);
+            setStep('adjust');
+        }
     };
 
     const handleAdjustRetry = () => {
@@ -97,10 +99,9 @@ export function OnboardingWizard() {
                         <AgeGroupStep onSelect={handleAgeGroupSelect} />
                     )}
                     {step === 'suppression' && (
-                        <SuppressionTestStep
+                        <QuantitativeSuppressionStep
                             glassesType={glassesType}
-                            onPass={handleSuppressionPass}
-                            onFail={handleSuppressionFail}
+                            onComplete={handleSuppressionComplete}
                         />
                     )}
                     {step === 'adjust' && (

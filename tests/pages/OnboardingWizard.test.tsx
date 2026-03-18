@@ -111,11 +111,11 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByText(/красная слева/i));
         // Select age group
         fireEvent.click(screen.getByText(/8-12 лет/i));
-        // Should now show suppression test
-        expect(screen.getByText(/оба квадрата/i)).toBeInTheDocument();
+        // Should now show quantitative suppression test
+        expect(screen.getByText(/тест на подавление/i)).toBeInTheDocument();
     });
 
-    it('navigates to /mode-select when suppression test passes', () => {
+    it('navigates to /mode-select when suppression test passes (seen at low contrast)', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
@@ -125,11 +125,12 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/красная слева/i));
         fireEvent.click(screen.getByText(/8-12 лет/i));
-        fireEvent.click(screen.getByText(/вижу оба/i));
+        // Click "Вижу обе!" at contrast 5 — balancePoint=5 <= 80, passes
+        fireEvent.click(screen.getByText(/вижу обе/i));
         expect(mockNavigate).toHaveBeenCalledWith('/mode-select');
     });
 
-    it('advances to brightness adjust step when suppression test fails', () => {
+    it('advances to brightness adjust step when suppression is full (never seen)', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
@@ -139,7 +140,12 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/красная слева/i));
         fireEvent.click(screen.getByText(/4-7 лет/i));
-        fireEvent.click(screen.getByText(/только один/i));
+        // Click "Не вижу" 20 times (contrast starts at 5, advances by 5 each click,
+        // last click at contrast=100 triggers onComplete with balancePoint=100 > 80)
+        const notSeenButton = screen.getByText(/не вижу/i);
+        for (let i = 0; i < 20; i++) {
+            fireEvent.click(notSeenButton);
+        }
         expect(screen.getByText(/подстройте яркость/i)).toBeInTheDocument();
     });
 });
