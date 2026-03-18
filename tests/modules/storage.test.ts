@@ -3,6 +3,7 @@ import {
     initStorage, getCalibration, saveCalibration,
     getSessions, addSession, isDisclaimerAccepted,
     acceptDisclaimer, isStorageAvailable,
+    getDefaultSettings, saveDefaultSettings,
 } from '../../src/modules/storage';
 
 describe('Storage Module', () => {
@@ -42,5 +43,37 @@ describe('Storage Module', () => {
 
     it('reports storage availability', () => {
         expect(isStorageAvailable()).toBe(true);
+    });
+
+    it('returns default settings with fellowEyeContrast', () => {
+        initStorage();
+        const settings = getDefaultSettings();
+        expect(settings.fellowEyeContrast).toBe(30);
+    });
+
+    it('saves and retrieves fellowEyeContrast', () => {
+        initStorage();
+        saveDefaultSettings({ ...getDefaultSettings(), fellowEyeContrast: 55 });
+        expect(getDefaultSettings().fellowEyeContrast).toBe(55);
+    });
+
+    it('returns default calibration with age_group', () => {
+        initStorage();
+        const cal = getCalibration();
+        expect(cal.age_group).toBe('8-12');
+    });
+
+    it('persists age_group in calibration', () => {
+        initStorage();
+        saveCalibration({ ...getCalibration(), age_group: '4-7' });
+        expect(getCalibration().age_group).toBe('4-7');
+    });
+
+    it('defaults fellowEyeContrast to 30 for legacy settings', () => {
+        localStorage.setItem('vt_default_settings', JSON.stringify({
+            contrastLeft: 100, contrastRight: 100, speed: 'slow', eyeConfig: 'platform_left'
+        }));
+        const settings = getDefaultSettings();
+        expect(settings.fellowEyeContrast).toBe(30);
     });
 });

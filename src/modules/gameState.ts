@@ -3,6 +3,7 @@ import { CONTRAST } from './constants';
 export interface GameSettings {
     contrastLeft: number;
     contrastRight: number;
+    fellowEyeContrast: number;
     speed: string;
     eyeConfig: string;
     glassesType: string;
@@ -15,6 +16,11 @@ export interface SessionResultInput {
     totalSpawned: number;
     durationMs: number;
     level?: number;
+    game?: string;
+    fellowContrastStart?: number;
+    fellowContrastEnd?: number;
+    windowAccuracy?: number;
+    totalTrials?: number;
 }
 
 export interface SessionResult {
@@ -29,12 +35,19 @@ export interface SessionResult {
     speed: string;
     eye_config: string;
     level?: number;
+    fellow_contrast_start?: number;
+    fellow_contrast_end?: number;
+    window_accuracy?: number;
+    total_trials?: number;
+    wellness?: { preSession: string; postEyeStrain: boolean; postHeadache: boolean; timestamp: string } | null;
+    [key: string]: unknown;
 }
 
 export const createGameSettings = (overrides: Partial<GameSettings> = {}): GameSettings => ({
     ...overrides,
     contrastLeft: overrides.contrastLeft ?? CONTRAST.DEFAULT,
     contrastRight: overrides.contrastRight ?? CONTRAST.DEFAULT,
+    fellowEyeContrast: overrides.fellowEyeContrast ?? 30,
     speed: overrides.speed ?? 'slow',
     eyeConfig: overrides.eyeConfig ?? 'platform_left',
     glassesType: overrides.glassesType ?? 'red-cyan',
@@ -46,12 +59,17 @@ export const createSessionResult = ({
     totalSpawned,
     durationMs,
     level,
+    game,
+    fellowContrastStart,
+    fellowContrastEnd,
+    windowAccuracy,
+    totalTrials,
 }: SessionResultInput): SessionResult => {
     const durationS = Math.round(durationMs / 1000);
     const hitRate = totalSpawned > 0 ? Math.round((caught / totalSpawned) * 100) / 100 : 0;
 
     return {
-        game: 'binocular-catcher',
+        game: game ?? 'binocular-catcher',
         timestamp: new Date().toISOString(),
         duration_s: durationS,
         caught,
@@ -62,5 +80,9 @@ export const createSessionResult = ({
         speed: settings.speed,
         eye_config: settings.eyeConfig,
         ...(level !== undefined ? { level } : {}),
+        fellow_contrast_start: fellowContrastStart,
+        fellow_contrast_end: fellowContrastEnd,
+        window_accuracy: windowAccuracy,
+        total_trials: totalTrials,
     };
 };

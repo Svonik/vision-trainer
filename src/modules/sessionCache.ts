@@ -1,19 +1,5 @@
 import { getSessions } from './storage';
-
-export interface SessionResult {
-    game: string;
-    timestamp: string;
-    duration_s: number;
-    caught: number;
-    total_spawned: number;
-    hit_rate: number;
-    contrast_left: number;
-    contrast_right: number;
-    speed: string;
-    eye_config: string;
-    level?: number;
-    [key: string]: unknown;
-}
+import type { SessionResult } from './gameState';
 
 const MAX_CACHED_SESSIONS = 500;
 
@@ -21,7 +7,7 @@ let cache: SessionResult[] | null = null;
 
 export function getCachedSessions(): SessionResult[] {
     if (!cache) {
-        cache = getSessions();
+        cache = getSessions() as SessionResult[];
     }
     return cache;
 }

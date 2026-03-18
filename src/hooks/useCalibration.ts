@@ -35,7 +35,9 @@ export function useCalibration() {
     }, []);
 
     const save = useCallback((overrides: CalibrationOverrides = {}) => {
+        const current = getCalibration();
         const data: CalibrationData = {
+            ...current,
             red_brightness: redRef.current,
             cyan_brightness: cyanRef.current,
             suppression_passed: passedRef.current,

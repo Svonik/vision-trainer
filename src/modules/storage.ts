@@ -6,6 +6,7 @@ export interface CalibrationData {
     suppression_passed: boolean;
     last_calibrated: string | null;
     glasses_type: string;
+    age_group: '4-7' | '8-12';
 }
 
 export interface DefaultSettings {
@@ -13,6 +14,7 @@ export interface DefaultSettings {
     contrastRight: number;
     speed: string;
     eyeConfig: string;
+    fellowEyeContrast: number;
 }
 
 const DEFAULT_CALIBRATION: CalibrationData = {
@@ -21,6 +23,7 @@ const DEFAULT_CALIBRATION: CalibrationData = {
     suppression_passed: false,
     last_calibrated: null,
     glasses_type: 'red-cyan',
+    age_group: '8-12',
 };
 
 const DEFAULT_SETTINGS: DefaultSettings = {
@@ -28,6 +31,7 @@ const DEFAULT_SETTINGS: DefaultSettings = {
     contrastRight: 100,
     speed: 'slow',
     eyeConfig: 'platform_left',
+    fellowEyeContrast: 30,
 };
 
 const read = (key: string): unknown => {
@@ -75,8 +79,10 @@ export const isDisclaimerAccepted = (): boolean => read(STORAGE_KEYS.DISCLAIMER)
 
 export const acceptDisclaimer = (): void => write(STORAGE_KEYS.DISCLAIMER, true);
 
-export const getCalibration = (): CalibrationData =>
-    (read(STORAGE_KEYS.CALIBRATION) as CalibrationData | null) || { ...DEFAULT_CALIBRATION };
+export const getCalibration = (): CalibrationData => {
+    const stored = read(STORAGE_KEYS.CALIBRATION) as Partial<CalibrationData> | null;
+    return { ...DEFAULT_CALIBRATION, ...(stored || {}) };
+};
 
 export const saveCalibration = (cal: CalibrationData): void => write(STORAGE_KEYS.CALIBRATION, cal);
 
@@ -91,8 +97,10 @@ export const addSession = (session: unknown): void => {
     write(STORAGE_KEYS.SESSIONS, [...sessions, session]);
 };
 
-export const getDefaultSettings = (): DefaultSettings =>
-    (read(STORAGE_KEYS.DEFAULT_SETTINGS) as DefaultSettings | null) || { ...DEFAULT_SETTINGS };
+export const getDefaultSettings = (): DefaultSettings => {
+    const stored = read(STORAGE_KEYS.DEFAULT_SETTINGS) as Partial<DefaultSettings> | null;
+    return { ...DEFAULT_SETTINGS, ...(stored || {}) };
+};
 
 export const saveDefaultSettings = (settings: DefaultSettings): void =>
     write(STORAGE_KEYS.DEFAULT_SETTINGS, settings);

@@ -40,4 +40,31 @@ describe('GameState Module', () => {
         const custom = createGameSettings({ glassesType: 'cyan-red' });
         expect(custom.glassesType).toBe('cyan-red');
     });
+
+    it('creates default settings with fellowEyeContrast', () => {
+        const s = createGameSettings({});
+        expect(s.fellowEyeContrast).toBe(30);
+    });
+
+    it('includes fellowEyeContrast override', () => {
+        const s = createGameSettings({ fellowEyeContrast: 50 });
+        expect(s.fellowEyeContrast).toBe(50);
+    });
+
+    it('creates session result with contrast engine fields', () => {
+        const result = createSessionResult({
+            settings: createGameSettings({}),
+            caught: 10,
+            totalSpawned: 20,
+            durationMs: 60000,
+            fellowContrastStart: 30,
+            fellowContrastEnd: 45,
+            windowAccuracy: 0.75,
+            totalTrials: 20,
+        });
+        expect(result.fellow_contrast_start).toBe(30);
+        expect(result.fellow_contrast_end).toBe(45);
+        expect(result.window_accuracy).toBe(0.75);
+        expect(result.total_trials).toBe(20);
+    });
 });

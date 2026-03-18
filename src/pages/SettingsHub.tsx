@@ -31,6 +31,7 @@ export function SettingsHub() {
 
     const handleSaveDefaults = () => {
         saveDefaultSettings({
+            ...defaults,
             contrastLeft: defaultContrast.left,
             contrastRight: defaultContrast.right,
             speed: defaultSpeed,
