@@ -10,6 +10,7 @@ interface CalibrationOverrides {
     cyan_brightness?: number;
     suppression_passed?: boolean;
     glasses_type?: string;
+    weak_eye?: 'left' | 'right';
 }
 
 export function useCalibration() {

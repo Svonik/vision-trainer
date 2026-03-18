@@ -179,20 +179,8 @@ export default class AsteroidGameScene extends Phaser.Scene {
         const ccy = fy + fh / 2;
         GameVisuals.styledCross(this, ccx, ccy, crossSize);
 
-        // Lives display (GRAY — both eyes)
-        this.livesIcons = [];
-        for (let i = 0; i < MAX_LIVES; i++) {
-            const icon = this.add.circle(
-                fx + 20 + i * 22,
-                fy + 15,
-                6,
-                COLORS.GRAY,
-            );
-            this.livesIcons.push(icon);
-        }
-
         // HUD
-        this.hud = GameVisuals.createHUD(this, this.field);
+        this.hud = GameVisuals.createHUD(this, this.field, MAX_LIVES);
 
         // Pause button
         const pauseBtn = this.add
@@ -589,6 +577,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
                 this.level,
                 this.safetyTimer.getElapsedMs(),
                 `★ ${this.asteroidsDestroyed}`,
+                this.lives,
             );
         }
     }
@@ -811,9 +800,6 @@ export default class AsteroidGameScene extends Phaser.Scene {
 
     loseLife(time) {
         this.lives--;
-        if (this.lives >= 0 && this.lives < this.livesIcons.length) {
-            this.livesIcons[this.lives].setFillStyle(0x333333);
-        }
         SynthSounds.miss();
         GameVFX.screenShake(this, 4, 150);
 

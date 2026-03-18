@@ -3,32 +3,34 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
+import { ContrastSliderStep } from '../components/calibration/ContrastSliderStep';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
-import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
+import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
-import type { SuppressionResult } from '../modules/suppressionTest';
 import { DisclaimerPage } from './DisclaimerPage';
 
 type WizardStep =
     | 'disclaimer'
     | 'glasses'
     | 'age_group'
-    | 'suppression'
+    | 'weak_eye'
+    | 'contrast'
     | 'adjust';
 
 const STEP_ORDER: WizardStep[] = [
     'disclaimer',
     'glasses',
     'age_group',
-    'suppression',
+    'weak_eye',
+    'contrast',
     'adjust',
 ];
 
 export function OnboardingWizard() {
     const navigate = useNavigate();
     const [step, setStep] = useState<WizardStep>('disclaimer');
-    const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
+    const [direction, setDirection] = useState(1);
     const reducedMotion = useReducedMotion();
     const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>(
         'red-cyan',
@@ -42,7 +44,6 @@ export function OnboardingWizard() {
     const stepRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Focus the step container when step changes (for screen readers)
         stepRef.current?.focus();
     }, []);
 
@@ -61,11 +62,17 @@ export function OnboardingWizard() {
     const handleAgeGroupSelect = (ageGroup: '4-7' | '8-12') => {
         saveAgeGroup(ageGroup);
         setDirection(1);
-        setStep('suppression');
+        setStep('weak_eye');
     };
 
-    const handleSuppressionComplete = (result: SuppressionResult) => {
-        const passed = result.balancePoint <= 80;
+    const handleWeakEyeSelect = (weakEye: 'left' | 'right') => {
+        save({ weak_eye: weakEye });
+        setDirection(1);
+        setStep('contrast');
+    };
+
+    const handleContrastComplete = (balancePoint: number) => {
+        const passed = balancePoint <= 80;
         save({ suppression_passed: passed });
         if (passed) {
             navigate('/mode-select');
@@ -79,7 +86,7 @@ export function OnboardingWizard() {
     const handleAdjustRetry = () => {
         setAdjustAttempts((prev) => prev + 1);
         setDirection(-1);
-        setStep('suppression');
+        setStep('contrast');
     };
 
     const handleAdjustComplete = () => {
@@ -126,10 +133,13 @@ export function OnboardingWizard() {
                     {step === 'age_group' && (
                         <AgeGroupStep onSelect={handleAgeGroupSelect} />
                     )}
-                    {step === 'suppression' && (
-                        <QuantitativeSuppressionStep
+                    {step === 'weak_eye' && (
+                        <WeakEyeStep onSelect={handleWeakEyeSelect} />
+                    )}
+                    {step === 'contrast' && (
+                        <ContrastSliderStep
                             glassesType={glassesType}
-                            onComplete={handleSuppressionComplete}
+                            onComplete={handleContrastComplete}
                         />
                     )}
                     {step === 'adjust' && (

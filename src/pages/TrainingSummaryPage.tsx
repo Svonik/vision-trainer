@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { AppButton } from '@/components/AppButton';
 import { CLINICAL_CONTRAST } from '@/modules/constants';
-import { t } from '@/modules/i18n';
-import { getCachedSessions } from '@/modules/sessionCache';
-import { computeWeeklySchedule } from '@/modules/scheduleTracker';
-import { hasAdverseSymptoms } from '@/modules/wellnessCheck';
 import type { SessionResult } from '@/modules/gameState';
+import { t } from '@/modules/i18n';
+import { computeWeeklySchedule } from '@/modules/scheduleTracker';
+import { getCachedSessions } from '@/modules/sessionCache';
+import { hasAdverseSymptoms } from '@/modules/wellnessCheck';
 
 function computeCourseStars(sessions: readonly SessionResult[]): 1 | 2 | 3 {
     if (sessions.length === 0) return 1;
@@ -42,10 +42,12 @@ function ContrastBar({
         <div className="space-y-2">
             <div className="flex justify-between text-xs text-[var(--text)]">
                 <span>
-                    {t('training_summary.contrast_start')}: {Math.round(startValue)}%
+                    {t('training_summary.contrast_start')}:{' '}
+                    {Math.round(startValue)}%
                 </span>
                 <span>
-                    {t('training_summary.contrast_now')}: {Math.round(endValue)}%
+                    {t('training_summary.contrast_now')}: {Math.round(endValue)}
+                    %
                 </span>
             </div>
             <div className="relative w-full h-3 bg-[var(--border)] rounded-full overflow-hidden">
@@ -107,7 +109,8 @@ export function TrainingSummaryPage() {
             firstSession?.fellow_contrast_start ??
             CLINICAL_CONTRAST.FELLOW_INITIAL;
         const contrastEnd =
-            lastSession?.fellow_contrast_end ?? CLINICAL_CONTRAST.FELLOW_INITIAL;
+            lastSession?.fellow_contrast_end ??
+            CLINICAL_CONTRAST.FELLOW_INITIAL;
 
         // Adherence
         const schedule = computeWeeklySchedule(allSessions);
@@ -145,17 +148,15 @@ export function TrainingSummaryPage() {
         };
     }, []);
 
-    const starsDisplay = '\u2605'.repeat(narrative.stars) +
-        '\u2606'.repeat(3 - narrative.stars);
+    const starsDisplay =
+        '\u2605'.repeat(narrative.stars) + '\u2606'.repeat(3 - narrative.stars);
 
     return (
         <div
             className="min-h-screen flex items-center justify-center p-4"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
-                <div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)]" />
-
+            <div className="w-full max-w-md bg-[var(--surface)] ring-1 ring-white/[0.05] rounded-3xl shadow-2xl shadow-black/40 overflow-hidden spring-enter">
                 <div className="p-6 space-y-5">
                     {/* Header */}
                     <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
@@ -187,7 +188,9 @@ export function TrainingSummaryPage() {
                                     : `${narrative.adverseCount} ${t('training_summary.wellness_count')}`
                             }
                             value={
-                                narrative.adverseCount === 0 ? '\u2713' : '\u26A0'
+                                narrative.adverseCount === 0
+                                    ? '\u2713'
+                                    : '\u26A0'
                             }
                             color={
                                 narrative.adverseCount === 0

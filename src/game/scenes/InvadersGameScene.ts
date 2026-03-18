@@ -249,21 +249,8 @@ export default class InvadersGameScene extends Phaser.Scene {
         this.playerBullets = [];
         this.enemyBullets = [];
 
-        // Lives display (GRAY — both eyes)
-        this.livesIcons = [];
-        for (let i = 0; i < MAX_LIVES; i++) {
-            const icon = this.add.rectangle(
-                fx + 20 + i * 22,
-                fy + 15,
-                10,
-                16,
-                COLORS.GRAY,
-            );
-            this.livesIcons.push(icon);
-        }
-
         // HUD
-        this.hud = GameVisuals.createHUD(this, this.field);
+        this.hud = GameVisuals.createHUD(this, this.field, MAX_LIVES);
 
         // Pause button (GRAY)
         const pauseBtn = this.add
@@ -472,6 +459,7 @@ export default class InvadersGameScene extends Phaser.Scene {
                 this.level,
                 this.safetyTimer.getElapsedMs(),
                 `★ ${this.enemiesDestroyed}/${TOTAL_ALIENS}`,
+                this.lives,
             );
         }
     }
@@ -683,9 +671,6 @@ export default class InvadersGameScene extends Phaser.Scene {
 
     loseLife() {
         this.lives--;
-        if (this.lives >= 0 && this.lives < this.livesIcons.length) {
-            this.livesIcons[this.lives].setFillStyle(0x333333);
-        }
         SynthSounds.miss();
         GameVFX.screenShake(this, 5, 150);
 

@@ -223,6 +223,7 @@ export const GameVisuals = {
     createHUD: (
         scene: Phaser.Scene,
         field: { x: number; y: number; w: number; h: number },
+        maxLives?: number,
     ) => {
         const fontSize = `${Math.max(12, Math.round(field.w * 0.022))}px`;
         const font = {
@@ -235,6 +236,23 @@ export const GameVisuals = {
         const levelText = scene.add
             .text(field.x + 8, y, 'Ур.1', font)
             .setOrigin(0, 0);
+
+        // Optional lives icons — placed right after level text
+        const livesIcons: Phaser.GameObjects.Arc[] = [];
+        if (maxLives && maxLives > 0) {
+            const livesStartX = field.x + 58;
+            const livesY = y + 6;
+            for (let i = 0; i < maxLives; i++) {
+                const icon = scene.add.circle(
+                    livesStartX + i * 16,
+                    livesY,
+                    5,
+                    0x808080,
+                );
+                livesIcons.push(icon);
+            }
+        }
+
         const timerText = scene.add
             .text(field.x + field.w / 2, y, '00:00', font)
             .setOrigin(0.5, 0);
@@ -242,7 +260,7 @@ export const GameVisuals = {
             .text(field.x + field.w - 8, y, '', font)
             .setOrigin(1, 0);
 
-        return { levelText, timerText, scoreText };
+        return { levelText, timerText, scoreText, livesIcons };
     },
 
     /**
@@ -253,10 +271,12 @@ export const GameVisuals = {
             levelText: Phaser.GameObjects.Text;
             timerText: Phaser.GameObjects.Text;
             scoreText: Phaser.GameObjects.Text;
+            livesIcons?: Phaser.GameObjects.Arc[];
         },
         level: number,
         elapsedMs: number,
         scoreStr: string,
+        lives?: number,
     ) => {
         hud.levelText.setText(`Ур.${level}`);
         const mins = String(Math.floor(elapsedMs / 60000)).padStart(2, '0');
@@ -266,5 +286,12 @@ export const GameVisuals = {
         );
         hud.timerText.setText(`${mins}:${secs}`);
         hud.scoreText.setText(scoreStr);
+
+        // Update lives icons if present
+        if (hud.livesIcons && lives !== undefined) {
+            for (let i = 0; i < hud.livesIcons.length; i++) {
+                hud.livesIcons[i].setFillStyle(i < lives ? 0x808080 : 0x333333);
+            }
+        }
     },
 };

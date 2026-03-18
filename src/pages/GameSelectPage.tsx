@@ -42,7 +42,7 @@ const GameCard = React.memo(function GameCard({
     const navigate = useNavigate();
     return (
         <Card
-            className="bg-[var(--surface)] border-[var(--border)]/50 rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer overflow-hidden spring-enter"
+            className="bg-[var(--surface)] rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer overflow-hidden spring-enter"
             style={{ animationDelay: `${index * 60}ms` }}
             onClick={() => navigate(game.route)}
             role="button"
@@ -99,7 +99,7 @@ export function GameSelectPage() {
             className="min-h-screen flex flex-col items-center p-4 py-8 relative z-10"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-6 text-balance">
+            <h1 className="font-[var(--font-display)] text-4xl text-[var(--text)] mb-6 text-balance">
                 {t('gameSelect.title')}
             </h1>
 

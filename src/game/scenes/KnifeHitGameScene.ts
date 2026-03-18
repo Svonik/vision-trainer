@@ -141,12 +141,8 @@ export default class KnifeHitGameScene extends Phaser.Scene {
         this.waitingKnife = this.add.graphics();
         this.drawWaitingKnife();
 
-        // ── Lives display ──
-        this.livesIcons = [];
-        this.drawLives();
-
         // ── HUD ──
-        this.hud = GameVisuals.createHUD(this, this.field);
+        this.hud = GameVisuals.createHUD(this, this.field, LIVES_TOTAL);
 
         // ── Pause button ──
         const pauseBtn = this.add
@@ -289,25 +285,6 @@ export default class KnifeHitGameScene extends Phaser.Scene {
         return g;
     }
 
-    drawLives() {
-        // Clear old
-        this.livesIcons.forEach((icon) => icon.destroy());
-        this.livesIcons = [];
-
-        const startX = this.field.x + this.field.w - 10;
-        const y = this.field.y + this.field.h - 14;
-        for (let i = 0; i < this.lives; i++) {
-            const icon = this.add
-                .text(startX - i * 16, y, '\u2764', {
-                    fontSize: '12px',
-                    color: COLORS.GRAY_HEX,
-                    fontFamily: 'Arial, sans-serif',
-                })
-                .setOrigin(1, 0.5);
-            this.livesIcons.push(icon);
-        }
-    }
-
     // ── Target rotation management ────────────────────────────────────
     changeRotationSpeed() {
         const sign = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
@@ -445,7 +422,6 @@ export default class KnifeHitGameScene extends Phaser.Scene {
         this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
 
         this.lives--;
-        this.drawLives();
 
         if (this.lives <= 0) {
             SynthSounds.gameOver();
@@ -613,6 +589,7 @@ export default class KnifeHitGameScene extends Phaser.Scene {
                 this.level,
                 this.safetyTimer.getElapsedMs(),
                 scoreStr,
+                this.lives,
             );
         }
     }

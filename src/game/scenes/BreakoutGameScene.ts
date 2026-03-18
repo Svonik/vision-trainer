@@ -212,19 +212,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
         // Lives
         this.lives = MAX_LIVES;
-        this.livesIcons = [];
-        for (let i = 0; i < MAX_LIVES; i++) {
-            const icon = this.add.circle(
-                fx + 20 + i * 22,
-                fy + 15,
-                6,
-                COLORS.GRAY,
-            );
-            this.livesIcons.push(icon);
-        }
 
         // HUD
-        this.hud = GameVisuals.createHUD(this, this.field);
+        this.hud = GameVisuals.createHUD(this, this.field, MAX_LIVES);
 
         // Launch hint
         this.launchHint = this.add
@@ -554,6 +544,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
                 this.level,
                 this.safetyTimer.getElapsedMs(),
                 `★ ${this.bricksDestroyed}/${this.totalBricks}`,
+                this.lives,
             );
         }
     }
@@ -785,10 +776,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
             case 'life': {
                 if (this.lives < 5) {
                     this.lives++;
-                    // Add life icon if space
-                    if (this.lives <= this.livesIcons.length) {
-                        this.livesIcons[this.lives - 1].setFillStyle(0x808080);
-                    }
                 }
                 break;
             }
@@ -797,9 +784,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
 
     loseLife() {
         this.lives--;
-        if (this.lives >= 0 && this.lives < this.livesIcons.length) {
-            this.livesIcons[this.lives].setFillStyle(0x333333);
-        }
         SynthSounds.miss();
         GameVFX.screenShake(this);
 

@@ -7,6 +7,7 @@ export interface CalibrationData {
     last_calibrated: string | null;
     glasses_type: string;
     age_group: '4-7' | '8-12';
+    weak_eye: 'left' | 'right';
 }
 
 export interface DefaultSettings {
@@ -24,6 +25,7 @@ const DEFAULT_CALIBRATION: CalibrationData = {
     last_calibrated: null,
     glasses_type: 'red-cyan',
     age_group: '8-12',
+    weak_eye: 'left',
 };
 
 const DEFAULT_SETTINGS: DefaultSettings = {

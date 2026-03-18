@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { OnboardingWizard } from '../../src/pages/OnboardingWizard';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initStorage } from '../../src/modules/storage';
+import { OnboardingWizard } from '../../src/pages/OnboardingWizard';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router', async () => {
@@ -23,6 +23,7 @@ vi.mock('../../src/modules/storage', async () => {
             last_calibrated: null,
             glasses_type: 'red-cyan',
             age_group: '8-12',
+            weak_eye: 'left',
         })),
     };
 });
@@ -32,21 +33,56 @@ vi.mock('framer-motion', async () => {
     const actual = await vi.importActual('framer-motion');
     return {
         ...actual,
-        AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+        AnimatePresence: ({ children }: { children: React.ReactNode }) =>
+            children,
         motion: {
             ...actual.motion,
             div: ({ children, ...props }: any) => {
-                const { initial, animate, exit, transition, custom, ...domProps } = props;
+                const {
+                    initial,
+                    animate,
+                    exit,
+                    transition,
+                    custom,
+                    layoutId,
+                    ...domProps
+                } = props;
                 return <div {...domProps}>{children}</div>;
             },
             button: ({ children, ...props }: any) => {
-                const { initial, animate, exit, transition, custom, whileTap, whileHover, ...domProps } = props;
+                const {
+                    initial,
+                    animate,
+                    exit,
+                    transition,
+                    custom,
+                    whileTap,
+                    whileHover,
+                    layoutId,
+                    ...domProps
+                } = props;
                 return <button {...domProps}>{children}</button>;
             },
         },
         useReducedMotion: () => false,
     };
 });
+
+/** Helper: advance through disclaimer → glasses → age group → weak eye */
+function advanceToContrastStep() {
+    // Disclaimer: accept + continue
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+    // Glasses: select + continue
+    fireEvent.click(screen.getByText(/красная слева/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+    // Age group: select + continue
+    fireEvent.click(screen.getByText(/8-12 лет/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+    // Weak eye: select + continue
+    fireEvent.click(screen.getByText(/левый/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+}
 
 describe('OnboardingWizard', () => {
     beforeEach(() => {
@@ -59,93 +95,85 @@ describe('OnboardingWizard', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
-        expect(screen.getByRole('button', { name: /продолжить/i })).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: /продолжить/i }),
+        ).toBeInTheDocument();
     });
 
-    it('shows 5 dot indicators', () => {
+    it('shows 6 dot indicators', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         const dots = document.querySelectorAll('[data-dot]');
-        expect(dots).toHaveLength(5);
+        expect(dots).toHaveLength(6);
     });
 
     it('progresses from disclaimer to glasses step after accepting', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        // Glasses step shows "красная линза" question
         expect(screen.getByText(/красная линза/i)).toBeInTheDocument();
     });
 
-    it('progresses from glasses to age group step after selecting glasses type', () => {
+    it('progresses from glasses to age group step', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        // Click the first "Красная слева" button
         fireEvent.click(screen.getByText(/красная слева/i));
-        // Should now show age group step
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         expect(screen.getByText(/возрастная группа/i)).toBeInTheDocument();
     });
 
-    it('progresses from age group to suppression test after selecting age group', () => {
+    it('progresses from age group to weak eye step', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/красная слева/i));
-        // Select age group
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/8-12 лет/i));
-        // Should now show quantitative suppression test
-        expect(screen.getByText(/тест на подавление/i)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        expect(screen.getByText(/какой глаз тренируем/i)).toBeInTheDocument();
     });
 
-    it('navigates to /mode-select when suppression test passes (seen at low contrast)', () => {
+    it('progresses from weak eye to contrast slider step', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
-        fireEvent.click(screen.getByRole('checkbox'));
-        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        fireEvent.click(screen.getByText(/красная слева/i));
-        fireEvent.click(screen.getByText(/8-12 лет/i));
-        // Click "Вижу обе!" at contrast 5 — balancePoint=5 <= 80, passes
-        fireEvent.click(screen.getByText(/вижу обе/i));
-        expect(mockNavigate).toHaveBeenCalledWith('/mode-select');
+        advanceToContrastStep();
+        expect(screen.getByText(/настройка контраста/i)).toBeInTheDocument();
     });
 
-    it('advances to brightness adjust step when suppression is full (never seen)', () => {
+    it('contrast slider step shows slider and done button', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
-            </MemoryRouter>
+            </MemoryRouter>,
         );
-        fireEvent.click(screen.getByRole('checkbox'));
-        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        fireEvent.click(screen.getByText(/красная слева/i));
-        fireEvent.click(screen.getByText(/4-7 лет/i));
-        // Click "Не вижу" 20 times (contrast starts at 5, advances by 5 each click,
-        // last click at contrast=100 triggers onComplete with balancePoint=100 > 80)
-        const notSeenButton = screen.getByText(/не вижу/i);
-        for (let i = 0; i < 20; i++) {
-            fireEvent.click(notSeenButton);
-        }
-        expect(screen.getByText(/подстройте яркость/i)).toBeInTheDocument();
+        advanceToContrastStep();
+        // Verify slider and "Готово" button are present
+        expect(screen.getByRole('slider')).toBeInTheDocument();
+        expect(screen.getByText(/готово/i)).toBeInTheDocument();
+        // Button should be enabled (slider starts at min=5)
+        expect(
+            screen.getByText(/готово/i).closest('button'),
+        ).not.toBeDisabled();
     });
 });

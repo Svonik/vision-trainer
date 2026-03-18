@@ -67,9 +67,7 @@ export function TrainingSettingsPage() {
             className="min-h-screen flex items-center justify-center p-4"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <Card className="w-full max-w-lg rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter gap-0">
-                <div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)]" />
-
+            <Card className="w-full max-w-lg rounded-3xl overflow-hidden spring-enter gap-0">
                 <CardContent className="p-6 space-y-6">
                     <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)] text-balance">
                         {t('training.settings')}

@@ -50,7 +50,7 @@ export function DisclaimerPage({ onComplete }: DisclaimerPageProps = {}) {
             style={{ background: 'var(--bg-gradient)' }}
         >
             <div className="w-full max-w-lg">
-                <Card className="w-full bg-[var(--surface)] border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 spring-enter">
+                <Card className="w-full bg-[var(--surface)] rounded-3xl spring-enter">
                     <CardHeader>
                         <h1 className="text-xl font-bold text-[var(--text)] text-balance font-[var(--font-display)]">
                             {t('disclaimer.parentGate')}
