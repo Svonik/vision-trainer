@@ -209,6 +209,8 @@ const strings = {
   'schedule.days.sun': 'Вс',
   'schedule.rest_day': 'День отдыха',
   'schedule.streak': 'Серия',
+  'gameSelect.game2048.title': '2048',
+  'gameSelect.game2048.description': 'Соединяйте числа! Нечётные степени видны одному глазу, чётные — другому. Для слияния нужны оба глаза.',
 } as const;
 
 export type TranslationKey = keyof typeof strings;
