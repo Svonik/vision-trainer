@@ -211,6 +211,8 @@ const strings = {
   'schedule.streak': 'Серия',
   'gameSelect.game2048.title': '2048',
   'gameSelect.game2048.description': 'Соединяйте числа! Нечётные степени видны одному глазу, чётные — другому. Для слияния нужны оба глаза.',
+  'gameSelect.knifehit.title': 'Бросок ножа',
+  'gameSelect.knifehit.description': 'Бросайте ножи в вращающуюся мишень! Ваши ножи видны одному глазу, застрявшие — другому.',
 } as const;
 
 export type TranslationKey = keyof typeof strings;
