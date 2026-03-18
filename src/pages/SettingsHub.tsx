@@ -6,12 +6,13 @@ import { ContrastIndicator } from '@/components/ContrastIndicator';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
-import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
+import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION, SPEEDS } from '../modules/constants';
 import type { GlassesType } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
 import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
+import type { SuppressionResult } from '../modules/suppressionTest';
 
 type CalibrationMode = 'view' | 'glasses' | 'suppression' | 'adjust';
 
@@ -56,14 +57,14 @@ export function SettingsHub() {
         setCalibMode('suppression');
     };
 
-    const handleSuppressionPass = () => {
-        save({ suppression_passed: true });
+    const handleSuppressionComplete = (result: SuppressionResult) => {
+        save({ suppression_passed: result.balancePoint <= 80 });
+        const settings = getDefaultSettings();
+        saveDefaultSettings({
+            ...settings,
+            fellowEyeContrast: result.balancePoint,
+        });
         setCalibMode('view');
-    };
-
-    const handleSuppressionFail = () => {
-        setAdjustAttempts((prev) => prev + 1);
-        setCalibMode('adjust');
     };
 
     const handleAdjustRetry = () => {
@@ -107,10 +108,9 @@ export function SettingsHub() {
                 >
                     <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                 </AppButton>
-                <SuppressionTestStep
+                <QuantitativeSuppressionStep
                     glassesType={recalibGlassesType}
-                    onPass={handleSuppressionPass}
-                    onFail={handleSuppressionFail}
+                    onComplete={handleSuppressionComplete}
                 />
             </div>
         );
