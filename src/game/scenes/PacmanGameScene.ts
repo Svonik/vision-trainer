@@ -233,17 +233,27 @@ export default class PacmanGameScene extends Phaser.Scene {
         this.touchDPad = TouchControls.createDPad(this, this.field);
         this._touchMoveFired = null;
 
-        // Keyboard input
-        this.cursors = this.input.keyboard.createCursorKeys();
-        this.wasd = {
-            up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-            down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-            left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-            right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-        };
-        this.escKey = this.input.keyboard.addKey(
-            Phaser.Input.Keyboard.KeyCodes.ESC,
-        );
+        // Keyboard input (optional — may be null on touch-only devices)
+        this.cursors = this.input.keyboard?.createCursorKeys() || null;
+        this.wasd = this.input.keyboard
+            ? {
+                  up: this.input.keyboard.addKey(
+                      Phaser.Input.Keyboard.KeyCodes.W,
+                  ),
+                  down: this.input.keyboard.addKey(
+                      Phaser.Input.Keyboard.KeyCodes.S,
+                  ),
+                  left: this.input.keyboard.addKey(
+                      Phaser.Input.Keyboard.KeyCodes.A,
+                  ),
+                  right: this.input.keyboard.addKey(
+                      Phaser.Input.Keyboard.KeyCodes.D,
+                  ),
+              }
+            : null;
+        this.escKey =
+            this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC) ||
+            null;
 
         // Safety timer
         this.safetyTimer = createSafetyTimer({
@@ -610,16 +620,20 @@ export default class PacmanGameScene extends Phaser.Scene {
         else if (touchLeftJust) this._touchMoveFired = 'left';
         else if (touchRightJust) this._touchMoveFired = 'right';
 
-        // Keyboard (arrows + WASD)
+        // Keyboard (arrows + WASD) — with null safety
         const wantUp =
-            this.cursors.up.isDown || this.wasd.up.isDown || touchUpJust;
+            this.cursors?.up?.isDown || this.wasd?.up?.isDown || touchUpJust;
         const wantDown =
-            this.cursors.down.isDown || this.wasd.down.isDown || touchDownJust;
+            this.cursors?.down?.isDown ||
+            this.wasd?.down?.isDown ||
+            touchDownJust;
         const wantLeft =
-            this.cursors.left.isDown || this.wasd.left.isDown || touchLeftJust;
+            this.cursors?.left?.isDown ||
+            this.wasd?.left?.isDown ||
+            touchLeftJust;
         const wantRight =
-            this.cursors.right.isDown ||
-            this.wasd.right.isDown ||
+            this.cursors?.right?.isDown ||
+            this.wasd?.right?.isDown ||
             touchRightJust;
 
         if (wantUp) this.pacNextDir = 'up';
