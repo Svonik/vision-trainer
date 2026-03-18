@@ -4,6 +4,7 @@ import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -73,11 +74,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
   preload() {
     this.load.image('paddle', 'assets/sprites/paddle.png');
     this.load.image('ball', 'assets/sprites/ball.png');
-    this.load.image('brick-grey', 'assets/sprites/brick-grey.png');
-    this.load.image('brick-blue', 'assets/sprites/brick-blue.png');
-    this.load.image('brick-green', 'assets/sprites/brick-green.png');
-    this.load.image('brick-purple', 'assets/sprites/brick-purple.png');
-    this.load.image('brick-red', 'assets/sprites/brick-red.png');
     this.load.image('powerup-bg', 'assets/sprites/powerup-bg.png');
   }
 
@@ -120,6 +116,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
 
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
+
     // Frame (both eyes)
     GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
     GameVisuals.styledBorder(this, fx, fy, fw, fh);
@@ -139,9 +138,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
       this.platform = this.add.image(ccx, py, 'paddle');
       this.platform.setTint(this.platformColor);
       this.platform.setAlpha(this.platformAlpha);
-      // Scale proportionally from width, preserve sprite aspect ratio
-      const paddleScale = pw / this.platform.width;
-      this.platform.setScale(paddleScale);
+      this.platform.setDisplaySize(pw, ph);
     } else {
       this.platform = this.add.rectangle(ccx, py, pw, ph, this.platformColor, this.platformAlpha);
     }
@@ -507,6 +504,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     GameVFX.particleBurst(this, brick.x, brick.y, 0x808080, 6);
     GameVFX.scorePopup(this, brick.x, brick.y);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     // Power-up drop chance
     if (Math.random() < POWERUP_CHANCE) {
       this.spawnPowerup(brick.x, brick.y);
@@ -647,6 +647,9 @@ export default class BreakoutGameScene extends Phaser.Scene {
     SynthSounds.miss();
     GameVFX.screenShake(this);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     if (this.lives <= 0) {
       SynthSounds.gameOver();
       this.endGame(false);
@@ -666,6 +669,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
         fontSize: '14px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
       }).setOrigin(0.5);
     }
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    if (this.platform) this.platform.setAlpha(alpha);
   }
 
   togglePause() {
@@ -842,6 +849,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
       lives_remaining: this.lives,
       level: this.level,
       completed: won,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

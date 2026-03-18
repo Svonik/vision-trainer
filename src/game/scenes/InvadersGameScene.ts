@@ -4,6 +4,7 @@ import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -91,6 +92,9 @@ export default class InvadersGameScene extends Phaser.Scene {
     this.alienColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.alienAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     // State
     this.level = 1;
@@ -494,6 +498,9 @@ export default class InvadersGameScene extends Phaser.Scene {
     GameVFX.particleBurst(this, alien.x, alien.y, this.alienColor);
     GameVFX.scorePopup(this, alien.x, alien.y);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     if (this.enemiesDestroyed >= TOTAL_ALIENS) {
       this.nextLevel();
     }
@@ -506,6 +513,9 @@ export default class InvadersGameScene extends Phaser.Scene {
     }
     SynthSounds.miss();
     GameVFX.screenShake(this, 5, 150);
+
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
 
     if (this.lives <= 0) {
       this.endGame(false);
@@ -549,6 +559,11 @@ export default class InvadersGameScene extends Phaser.Scene {
 
   randomEnemyFireDelay() {
     return ENEMY_FIRE_MIN_MS + Math.random() * (ENEMY_FIRE_MAX_MS - ENEMY_FIRE_MIN_MS);
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    if (this.ship) this.ship.setAlpha(alpha);
+    if (this.shipVisual) this.shipVisual.setAlpha(alpha);
   }
 
   togglePause() {
@@ -710,6 +725,10 @@ export default class InvadersGameScene extends Phaser.Scene {
       lives_remaining: this.lives,
       level: this.level,
       completed: won,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

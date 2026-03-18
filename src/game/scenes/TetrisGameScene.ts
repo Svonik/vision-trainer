@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -71,6 +72,9 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.placedColor = isLeftActive ? eyeColors.rightColor : eyeColors.leftColor;
     this.activeAlpha = (isLeftActive ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.placedAlpha = (isLeftActive ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     // Grid cell size — fit COLS x ROWS inside field with some padding
     const gridPadX = 10;
@@ -261,6 +265,8 @@ export default class TetrisGameScene extends Phaser.Scene {
     }
 
     if (fullRows.length === 0) {
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
       this.spawnPiece();
       return;
     }
@@ -293,6 +299,10 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.linesCleared += count + bonus;
     if (this.hud) this.hud.scoreText.setText(`${this.linesCleared} линий`);
     SynthSounds.score();
+
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     if (count === 4) {
       GameVFX.screenShake(this, 4, 150);
     }
@@ -566,6 +576,11 @@ export default class TetrisGameScene extends Phaser.Scene {
     }
   }
 
+  updateFellowEyeAlpha(alpha) {
+    // Update placed cells alpha for fellow eye
+    this.placedAlpha = alpha;
+  }
+
   togglePause() {
     this.isPaused = !this.isPaused;
     if (this.isPaused) {
@@ -631,6 +646,10 @@ export default class TetrisGameScene extends Phaser.Scene {
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
       level: this.level,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

@@ -4,6 +4,7 @@ import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -71,6 +72,9 @@ export default class PongGameScene extends Phaser.Scene {
     this.ballColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     this.level = 1;
     this.playerScore = 0;
@@ -335,6 +339,8 @@ export default class PongGameScene extends Phaser.Scene {
       this.aiScore++;
       SynthSounds.miss();
       this.aiScoreText.setText(String(this.aiScore));
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
       this.checkWinCondition();
       return;
     }
@@ -345,6 +351,8 @@ export default class PongGameScene extends Phaser.Scene {
       this.playerScore++;
       SynthSounds.score();
       this.playerScoreText.setText(String(this.playerScore));
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
       this.checkWinCondition();
     }
   }
@@ -365,6 +373,10 @@ export default class PongGameScene extends Phaser.Scene {
     this.time.delayedCall(1000, () => {
       if (!this.isPaused) this.serveBall();
     });
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    if (this.playerPaddle) this.playerPaddle.setAlpha(alpha);
   }
 
   togglePause() {
@@ -521,6 +533,10 @@ export default class PongGameScene extends Phaser.Scene {
       ai_score: this.aiScore,
       level: this.level,
       completed: false,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });
