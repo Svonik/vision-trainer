@@ -4,10 +4,12 @@ import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { typedEventBus } from '../game/TypedEventBus';
 import { AppButton } from '@/components/AppButton';
-import { addCachedSession } from '../modules/sessionCache';
+import { addCachedSession, getCachedSessions } from '../modules/sessionCache';
 import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
+import { SessionSummaryCard } from '../components/SessionSummaryCard';
+import { computeSessionSummary, type SessionSummary } from '../modules/sessionSummary';
 import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
 import { formatTime } from '@/lib/formatTime';
@@ -125,6 +127,9 @@ export function TrainingPlayPage() {
     const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(null);
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const [instanceKey, setInstanceKey] = useState(() => Date.now());
+    const [showSummary, setShowSummary] = useState(false);
+    const [summary, setSummary] = useState<SessionSummary | null>(null);
+    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
     const phaserRef = useRef<IRefPhaserGame>(null);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -197,11 +202,18 @@ export function TrainingPlayPage() {
             setCompletedResults(updatedResults);
             setElapsedMs(null);
 
+            const sessions = getCachedSessions();
+            const summaryData = computeSessionSummary(result, sessions);
+            setSummary(summaryData);
+            setShowSummary(true);
+
             if (currentGameIndex < 2) {
-                setShowTransition(true);
+                setPendingAction(() => () => setShowTransition(true));
             } else {
-                navigate('/training/summary', {
-                    state: { results: updatedResults, settings },
+                setPendingAction(() => () => {
+                    navigate('/training/summary', {
+                        state: { results: updatedResults, settings },
+                    });
                 });
             }
         };
@@ -387,6 +399,27 @@ export function TrainingPlayPage() {
                                 </button>
                             </div>
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showSummary && summary && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
+                    >
+                        <SessionSummaryCard
+                            summary={summary}
+                            onContinue={() => {
+                                setShowSummary(false);
+                                if (pendingAction) {
+                                    pendingAction();
+                                    setPendingAction(null);
+                                }
+                            }}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>

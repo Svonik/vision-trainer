@@ -3,11 +3,13 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { typedEventBus } from '../game/TypedEventBus';
-import { addCachedSession } from '../modules/sessionCache';
+import { addCachedSession, getCachedSessions } from '../modules/sessionCache';
 import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { LandscapePrompt } from '../components/LandscapePrompt';
+import { SessionSummaryCard } from '../components/SessionSummaryCard';
+import { computeSessionSummary, type SessionSummary } from '../modules/sessionSummary';
 import { getGameById } from '../config/games';
 import { t } from '../modules/i18n';
 import { formatTime } from '@/lib/formatTime';
@@ -28,6 +30,8 @@ export function GamePage() {
     const [instanceKey, setInstanceKey] = useState(() => Date.now());
     const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showSummary, setShowSummary] = useState(false);
+    const [summary, setSummary] = useState<SessionSummary | null>(null);
 
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
@@ -43,7 +47,10 @@ export function GamePage() {
                     fellowEyeContrast: result.fellow_contrast_end,
                 });
             }
-            navigate(`/games/${gameId}/stats`, { state: { result, settings: s } });
+            const sessions = getCachedSessions();
+            const summaryData = computeSessionSummary(result, sessions);
+            setSummary(summaryData);
+            setShowSummary(true);
         };
         const handleExit = () => {
             navigate('/games');
@@ -176,6 +183,21 @@ export function GamePage() {
                                 </button>
                             </div>
                         </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showSummary && summary && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
+                    >
+                        <SessionSummaryCard
+                            summary={summary}
+                            onContinue={() => { setShowSummary(false); navigate('/games'); }}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
