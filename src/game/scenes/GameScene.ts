@@ -4,12 +4,16 @@ import { COLORS, GAME, SPEEDS, PLATFORM_KEYBOARD_SPEED } from '../../modules/con
 import { createGameSettings, createSessionResult } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 
 export default class GameScene extends Phaser.Scene {
+  contrastState;
+  contrastConfig;
+
   constructor() {
     super('GameScene');
   }
@@ -78,6 +82,9 @@ export default class GameScene extends Phaser.Scene {
     this.targetColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.targetAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     // Frame (both eyes)
     GameVisuals.drawBgGrid(this, fx, fy, fw, fh);
@@ -302,7 +309,6 @@ export default class GameScene extends Phaser.Scene {
     target.destroy();
     this.caught++;
     this.consecutiveHits++;
-    this.consecutiveMisses = 0;
     if (this.hud) this.hud.scoreText.setText(`★ ${this.caught}/${GAME.TARGET_CATCHES}`);
 
     // White flash (both eyes)
@@ -318,7 +324,7 @@ export default class GameScene extends Phaser.Scene {
     SynthSounds.hit();
     GameVFX.particleBurst(this, target.x, target.y, this.targetColor);
     GameVFX.scorePopup(this, target.x, target.y);
-    this.checkDynamicDifficulty();
+    this.checkDynamicDifficulty(true);
 
     if (this.caught >= GAME.TARGET_CATCHES) {
       this.nextLevel();
@@ -330,28 +336,18 @@ export default class GameScene extends Phaser.Scene {
     if (target._visual) { target._visual.destroy(); target._visual = null; }
     target.destroy();
     this.consecutiveMisses++;
-    this.consecutiveHits = 0;
     SynthSounds.miss();
-    this.checkDynamicDifficulty();
+    this.checkDynamicDifficulty(false);
   }
 
-  checkDynamicDifficulty() {
-    // Therapeutic design: targets are always shown to the weak eye.
-    // The game forces the weak eye to track falling objects — that IS the therapy.
-    // Dynamic difficulty adjusts the TARGET layer (weak eye) alpha.
+  checkDynamicDifficulty(hit) {
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, hit);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+  }
 
-    if (this.consecutiveHits >= 5) {
-      // Player succeeding → reduce weak eye stimulation (make targets dimmer)
-      this.targetAlpha = Math.max(this.targetAlpha - 0.05, 0.5);
-      this.targets.getChildren().forEach((t) => { if (t.active && t._visual) t._visual.setAlpha(this.targetAlpha); });
-      this.consecutiveHits = 0;
-    }
-
-    if (this.consecutiveMisses >= 3) {
-      // Player struggling → increase weak eye stimulation (make targets brighter)
-      this.targetAlpha = Math.min(this.targetAlpha + 0.05, 1.0);
-      this.targets.getChildren().forEach((t) => { if (t.active && t._visual) t._visual.setAlpha(this.targetAlpha); });
-      this.consecutiveMisses = 0;
+  updateFellowEyeAlpha(alpha) {
+    if (this.platform) {
+      this.platform.setAlpha(alpha);
     }
   }
 
@@ -460,6 +456,10 @@ export default class GameScene extends Phaser.Scene {
       totalSpawned: this.totalSpawned,
       durationMs: this.safetyTimer.getElapsedMs(),
       level: this.level,
+      fellowContrastStart: this.settings.fellowEyeContrast ?? 30,
+      fellowContrastEnd: this.contrastState.fellowEyeContrast,
+      windowAccuracy: getAccuracy(this.contrastState),
+      totalTrials: this.contrastState.totalTrials,
     });
 
     EventBus.emit('game-complete', { result, settings: this.settings });
