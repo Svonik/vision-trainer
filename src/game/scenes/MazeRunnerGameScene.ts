@@ -453,9 +453,16 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
         const exitX = this.cellToX(this.exitRC.c);
         const exitY = this.cellToY(this.exitRC.r);
         const exitSize = Math.min(this.cellW, this.cellH) * 0.35;
-        this.exitObj = this.add.graphics();
-        this.exitObj.fillStyle(this.ballColor, this.ballAlpha);
-        this.exitObj.fillStar(exitX, exitY, 5, exitSize * 0.5, exitSize, 0);
+        this.exitObj = this.add.star(
+            exitX,
+            exitY,
+            5,
+            exitSize * 0.5,
+            exitSize,
+            this.ballColor,
+            this.ballAlpha,
+        );
+        this.exitObj.setDepth(5);
         // Pulsing glow around exit
         this.exitGlow = this.add.circle(
             exitX,
@@ -478,6 +485,19 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             Math.max(this.platformAlpha, 0.8),
         );
         this.playerObj.setDepth(10); // above maze walls
+        console.log(
+            '[MazeRunner] Player created at',
+            startX,
+            startY,
+            'radius=',
+            playerRadius,
+            'color=',
+            this.platformColor.toString(16),
+            'alpha=',
+            Math.max(this.platformAlpha, 0.8),
+            'startRC=',
+            JSON.stringify(this.startRC),
+        );
 
         // Player state
         this.playerCol = this.startRC.c;
