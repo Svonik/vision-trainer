@@ -11,6 +11,8 @@ import { createGameSettings } from '../../modules/gameState';
 import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
+import { getCalibration } from '../../modules/storage';
+import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
@@ -148,11 +150,14 @@ export default class WhackMoleGameScene extends Phaser.Scene {
         });
 
         // Safety timer
+        const calibration = getCalibration();
+        const protocol = getProtocol(calibration.age_group || '8-12');
         this.safetyTimer = createSafetyTimer({
             onWarning: () =>
                 EventBus.emit('safety-timer-warning', { type: 'warning' }),
             onBreak: () =>
                 EventBus.emit('safety-timer-warning', { type: 'break' }),
+            protocol,
         });
 
         this.isPaused = false;
