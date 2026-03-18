@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router';
 import { t } from '@/modules/i18n';
 import { GameIllustration } from '@/components/GameIllustration';
+import { WeeklyProgress } from '@/components/WeeklyProgress';
 import { getCachedSessions } from '../modules/sessionCache';
 import { GAMES as GAMES_DATA } from '../config/games';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,6 +80,8 @@ export function GameSelectPage() {
             <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-6">
                 {t('gameSelect.title')}
             </h1>
+
+            <WeeklyProgress sessions={sessions} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl w-full">
                 {GAMES.map((game, index) => (
