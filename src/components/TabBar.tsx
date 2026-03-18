@@ -1,6 +1,6 @@
-import { useLocation, useNavigate } from 'react-router';
-import { Target, Gamepad2, TrendingUp, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Gamepad2, Settings, Target, TrendingUp } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router';
 import { t } from '../modules/i18n';
 
 interface Tab {
@@ -22,7 +22,10 @@ export function TabBar() {
 
     const isActive = (route: string): boolean => {
         if (route === '/mode-select') {
-            return location.pathname === '/mode-select' || location.pathname.startsWith('/training');
+            return (
+                location.pathname === '/mode-select' ||
+                location.pathname.startsWith('/training')
+            );
         }
         if (route === '/games') {
             return location.pathname.startsWith('/games');
@@ -44,18 +47,30 @@ export function TabBar() {
 
                 return (
                     <button
+                        type="button"
                         key={route}
                         onClick={() => navigate(route)}
                         className={`flex-1 flex flex-col items-center justify-center gap-1 btn-press relative ${colorClass}`}
                         aria-current={active ? 'page' : undefined}
                     >
                         <Icon size={22} />
-                        <span className="text-xs leading-none tab-label" style={{ display: 'var(--tab-label-display, inline)' }}>{t(labelKey)}</span>
+                        <span
+                            className="text-xs leading-none tab-label"
+                            style={{
+                                display: 'var(--tab-label-display, inline)',
+                            }}
+                        >
+                            {t(labelKey)}
+                        </span>
                         {active && (
                             <motion.span
                                 layoutId="tab-indicator"
                                 className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--cta)]"
-                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 500,
+                                    damping: 30,
+                                }}
                             />
                         )}
                     </button>

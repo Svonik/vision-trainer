@@ -10,7 +10,9 @@ export function SuspenseFallback() {
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ repeat: Infinity, duration: 2 }}
             >
-                <span className="text-xl font-display text-[var(--accent)]">Vision Trainer</span>
+                <span className="text-xl font-display text-[var(--accent)]">
+                    Vision Trainer
+                </span>
             </motion.div>
         </div>
     );

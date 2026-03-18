@@ -1,5 +1,5 @@
-import { type ReactNode } from 'react';
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import { type HTMLMotionProps, motion } from 'framer-motion';
+import type { ReactNode } from 'react';
 
 type Variant = 'cta' | 'primary' | 'outline' | 'ghost' | 'toggle';
 type Size = 'sm' | 'md' | 'lg';
@@ -14,7 +14,8 @@ interface AppButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 const VARIANT_CLASSES: Record<Variant, string> = {
     cta: 'bg-[var(--cta)] text-[var(--cta-text)] font-semibold',
     primary: 'bg-[var(--accent)] text-[var(--bg)] font-semibold',
-    outline: 'border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50',
+    outline:
+        'border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50',
     ghost: 'text-[var(--text-secondary)] hover:bg-[var(--surface)]',
     toggle: '', // handled dynamically via `selected`
 };
@@ -34,17 +35,18 @@ export function AppButton({
     disabled,
     ...rest
 }: AppButtonProps) {
-    const toggleClass = variant === 'toggle'
-        ? selected
-            ? 'bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]'
-            : 'bg-transparent text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
-        : VARIANT_CLASSES[variant];
+    const toggleClass =
+        variant === 'toggle'
+            ? selected
+                ? 'bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]'
+                : 'bg-transparent text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
+            : VARIANT_CLASSES[variant];
 
     return (
         <motion.button
             whileTap={disabled ? undefined : { scale: 0.95 }}
             whileHover={disabled ? undefined : { scale: 1.02 }}
-            className={`rounded-full transition-colors inline-flex items-center justify-center gap-2 ${SIZE_CLASSES[size]} ${toggleClass} disabled:opacity-50 disabled:pointer-events-none ${className}`}
+            className={`rounded-full transition-colors inline-flex items-center justify-center gap-2 ${SIZE_CLASSES[size]} ${toggleClass} disabled:opacity-40 disabled:cursor-not-allowed disabled:saturate-0 ${className}`}
             disabled={disabled}
             {...rest}
         >

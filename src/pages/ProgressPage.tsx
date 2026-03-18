@@ -1,29 +1,41 @@
+import { Clock, Gamepad2, Star, TrendingUp } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Star, TrendingUp, Clock, Gamepad2 } from 'lucide-react';
 import { AppButton } from '@/components/AppButton';
-import { getCachedSessions } from '../modules/sessionCache';
-import { SPEEDS } from '../modules/constants';
-import { getGameById } from '../config/games';
-import { t } from '../modules/i18n';
 import { formatDuration, formatTotalTime } from '@/lib/formatTime';
+import { getGameById } from '../config/games';
+import { SPEEDS } from '../modules/constants';
+import { t } from '../modules/i18n';
+import { getCachedSessions } from '../modules/sessionCache';
 
 function formatDate(iso: string): string {
     try {
         const d = new Date(iso);
-        return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        return d.toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit',
+        });
     } catch {
         return iso;
     }
 }
 
-const SessionRow = React.memo(function SessionRow({ session }: { session: any }) {
+const SessionRow = React.memo(function SessionRow({
+    session,
+}: {
+    session: any;
+}) {
     const game = session.game ? getGameById(session.game) : undefined;
-    const gameName = game ? t(game.titleKey) : (session.game ?? t('progress.unknownGame'));
-    const hitPct = session.hit_rate != null ? Math.round(session.hit_rate * 100) : 0;
-    const speedLabel = session.speed && SPEEDS[session.speed as keyof typeof SPEEDS]
-        ? SPEEDS[session.speed as keyof typeof SPEEDS].label
-        : session.speed ?? '—';
+    const gameName = game
+        ? t(game.titleKey)
+        : (session.game ?? t('progress.unknownGame'));
+    const hitPct =
+        session.hit_rate != null ? Math.round(session.hit_rate * 100) : 0;
+    const speedLabel =
+        session.speed && SPEEDS[session.speed as keyof typeof SPEEDS]
+            ? SPEEDS[session.speed as keyof typeof SPEEDS].label
+            : (session.speed ?? '—');
 
     return (
         <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-4 flex items-center justify-between">
@@ -38,14 +50,16 @@ const SessionRow = React.memo(function SessionRow({ session }: { session: any })
                 </p>
             </div>
             <div className="text-right space-y-1">
-                <p className="font-[var(--font-display)] text-lg text-[var(--text)]">
+                <p className="font-[var(--font-display)] text-lg text-[var(--text)] tabular-nums">
                     {hitPct}%
                 </p>
-                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-1 justify-end">
+                <p className="text-[var(--text-secondary)] text-sm flex items-center gap-1 justify-end tabular-nums">
                     <Star className="w-3 h-3 text-[var(--warning)]" />
                     {session.caught ?? 0}
                     <Clock className="w-3 h-3 ml-1" />
-                    {session.duration_s != null ? formatDuration(session.duration_s) : '—'}
+                    {session.duration_s != null
+                        ? formatDuration(session.duration_s)
+                        : '—'}
                 </p>
             </div>
         </div>
@@ -67,7 +81,11 @@ export function ProgressPage() {
                 <p className="text-[var(--text-secondary)] text-base max-w-xs">
                     {t('progress.historyHint')}
                 </p>
-                <AppButton variant="cta" size="md" onClick={() => navigate('/games')}>
+                <AppButton
+                    variant="cta"
+                    size="md"
+                    onClick={() => navigate('/games')}
+                >
                     <Gamepad2 className="w-5 h-5" />
                     {t('progress.chooseGame')}
                 </AppButton>
@@ -76,44 +94,75 @@ export function ProgressPage() {
     }
 
     const totalSessions = sessions.length;
-    const avgHitRate = sessions.length > 0
-        ? Math.round(sessions.reduce((sum: number, s: any) => sum + (s.hit_rate ?? 0), 0) / sessions.length * 100)
-        : 0;
-    const totalTime = sessions.reduce((sum: number, s: any) => sum + (s.duration_s ?? 0), 0);
+    const avgHitRate =
+        sessions.length > 0
+            ? Math.round(
+                  (sessions.reduce(
+                      (sum: number, s: any) => sum + (s.hit_rate ?? 0),
+                      0,
+                  ) /
+                      sessions.length) *
+                      100,
+              )
+            : 0;
+    const totalTime = sessions.reduce(
+        (sum: number, s: any) => sum + (s.duration_s ?? 0),
+        0,
+    );
 
     return (
         <div className="p-4 space-y-4 max-w-lg mx-auto">
-            <h1 className="font-[var(--font-display)] text-2xl text-[var(--text)] pt-2">
+            <h1 className="font-[var(--font-display)] text-2xl text-[var(--text)] pt-2 text-balance">
                 {t('progress.title')}
             </h1>
 
             {/* Summary card */}
             <div className="bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl p-5 grid grid-cols-3 gap-4">
                 <div className="text-center">
-                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)]">{totalSessions}</p>
-                    <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.totalSessions')}</p>
+                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)] tabular-nums">
+                        {totalSessions}
+                    </p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">
+                        {t('progress.totalSessions')}
+                    </p>
                 </div>
                 <div className="text-center">
-                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)]">{avgHitRate}%</p>
-                    <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.avgHitRate')}</p>
+                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)] tabular-nums">
+                        {avgHitRate}%
+                    </p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">
+                        {t('progress.avgHitRate')}
+                    </p>
                 </div>
                 <div className="text-center">
-                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)]">{formatTotalTime(totalTime)}</p>
-                    <p className="text-[var(--text-secondary)] text-sm mt-1">{t('progress.totalTime')}</p>
+                    <p className="font-[var(--font-display)] text-3xl text-[var(--text)] tabular-nums">
+                        {formatTotalTime(totalTime)}
+                    </p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">
+                        {t('progress.totalTime')}
+                    </p>
                 </div>
             </div>
 
             {/* Session list */}
             <div className="space-y-3">
                 {sorted.map((session, idx) => (
-                    <SessionRow key={session.timestamp ?? idx} session={session} />
+                    <SessionRow
+                        key={session.timestamp ?? idx}
+                        session={session}
+                    />
                 ))}
             </div>
 
             <div className="flex items-center justify-center gap-1 pt-2 pb-4">
                 <TrendingUp className="w-4 h-4 text-[var(--text-secondary)]" />
                 <p className="text-[var(--text-secondary)] text-sm">
-                    {totalSessions} {totalSessions === 1 ? t('progress.sessionsOne') : totalSessions < 5 ? t('progress.sessionsFew') : t('progress.sessionsMany')}
+                    {totalSessions}{' '}
+                    {totalSessions === 1
+                        ? t('progress.sessionsOne')
+                        : totalSessions < 5
+                          ? t('progress.sessionsFew')
+                          : t('progress.sessionsMany')}
                 </p>
             </div>
         </div>

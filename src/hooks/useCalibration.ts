@@ -1,5 +1,9 @@
-import { useState, useCallback, useRef } from 'react';
-import { getCalibration, saveCalibration, CalibrationData } from '../modules/storage';
+import { useCallback, useRef, useState } from 'react';
+import {
+    type CalibrationData,
+    getCalibration,
+    saveCalibration,
+} from '../modules/storage';
 
 interface CalibrationOverrides {
     red_brightness?: number;
@@ -11,10 +15,14 @@ interface CalibrationOverrides {
 export function useCalibration() {
     const [stored] = useState(() => getCalibration());
     const [redBrightness, setRedBrightness] = useState(stored.red_brightness);
-    const [cyanBrightness, setCyanBrightness] = useState(stored.cyan_brightness);
+    const [cyanBrightness, setCyanBrightness] = useState(
+        stored.cyan_brightness,
+    );
     const [attempts, setAttempts] = useState(0);
     const [passed, setPassed] = useState(stored.suppression_passed);
-    const [glassesType, setGlassesType] = useState(stored.glasses_type || 'red-cyan');
+    const [glassesType, setGlassesType] = useState(
+        stored.glasses_type || 'red-cyan',
+    );
     const [ageGroup, setAgeGroup] = useState(stored.age_group || '8-12');
 
     // Use refs to avoid stale closure in save()
@@ -30,7 +38,7 @@ export function useCalibration() {
     ageGroupRef.current = ageGroup;
 
     const addAttempt = useCallback(() => {
-        setAttempts(prev => prev + 1);
+        setAttempts((prev) => prev + 1);
     }, []);
 
     const pass = useCallback(() => {
@@ -53,12 +61,18 @@ export function useCalibration() {
     }, []);
 
     return {
-        redBrightness, setRedBrightness,
-        cyanBrightness, setCyanBrightness,
-        attempts, addAttempt,
-        passed, pass,
-        glassesType, setGlassesType,
-        ageGroup, setAgeGroup,
+        redBrightness,
+        setRedBrightness,
+        cyanBrightness,
+        setCyanBrightness,
+        attempts,
+        addAttempt,
+        passed,
+        pass,
+        glassesType,
+        setGlassesType,
+        ageGroup,
+        setAgeGroup,
         save,
     };
 }

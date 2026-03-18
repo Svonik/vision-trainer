@@ -1,23 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
-import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
-import { typedEventBus } from '../game/TypedEventBus';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { AppButton } from '@/components/AppButton';
-import { addCachedSession, getCachedSessions, updateLastSessionWellness } from '../modules/sessionCache';
-import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
-import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
-import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
-import { SessionSummaryCard } from '../components/SessionSummaryCard';
-import { computeSessionSummary, type SessionSummary } from '../modules/sessionSummary';
-import { t } from '../modules/i18n';
-import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
-import { formatTime } from '@/lib/formatTime';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
-import { WellnessPreCheck } from '../components/WellnessPreCheck';
+import { formatTime } from '@/lib/formatTime';
 import type { WellnessLevel } from '@/modules/wellnessCheck';
+import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
+import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
+import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { SessionSummaryCard } from '../components/SessionSummaryCard';
+import { WellnessPreCheck } from '../components/WellnessPreCheck';
+import { type IRefPhaserGame, PhaserGame } from '../game/PhaserGame';
+import { typedEventBus } from '../game/TypedEventBus';
+import { t } from '../modules/i18n';
+import {
+    addCachedSession,
+    getCachedSessions,
+    updateLastSessionWellness,
+} from '../modules/sessionCache';
+import { GAME_TITLE_KEYS } from '../modules/sessionEngine';
+import {
+    computeSessionSummary,
+    type SessionSummary,
+} from '../modules/sessionSummary';
+import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 
 interface GameResult {
     game: string;
@@ -38,7 +45,12 @@ interface TransitionScreenProps {
     countdown: number;
 }
 
-function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }: TransitionScreenProps) {
+function TransitionScreen({
+    completedIndex,
+    nextGameId,
+    onContinue,
+    countdown,
+}: TransitionScreenProps) {
     const total = 3;
     return (
         <motion.div
@@ -60,7 +72,10 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
                 >
-                    <CheckCircle size={48} className="mx-auto text-[var(--success)]" />
+                    <CheckCircle
+                        size={48}
+                        className="mx-auto text-[var(--success)]"
+                    />
                 </motion.div>
                 <div>
                     <h2 className="font-[var(--font-display)] text-2xl text-[var(--text)]">
@@ -76,9 +91,13 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                     {Array.from({ length: total }).map((_, i) => (
                         <motion.span
                             key={i}
-                            initial={i === completedIndex ? { scale: 0.5 } : false}
-                            animate={i === completedIndex ? { scale: 1 } : undefined}
-                            className={`rounded-full transition-all duration-300 ${
+                            initial={
+                                i === completedIndex ? { scale: 0.5 } : false
+                            }
+                            animate={
+                                i === completedIndex ? { scale: 1 } : undefined
+                            }
+                            className={`rounded-full transition-colors duration-300 ${
                                 i <= completedIndex
                                     ? 'w-4 h-3 bg-[var(--cta)]'
                                     : 'w-3 h-3 bg-[var(--border)]'
@@ -107,7 +126,12 @@ function TransitionScreen({ completedIndex, nextGameId, onContinue, countdown }:
                     />
                 </div>
 
-                <AppButton variant="cta" size="md" onClick={onContinue} className="w-full">
+                <AppButton
+                    variant="cta"
+                    size="md"
+                    onClick={onContinue}
+                    className="w-full"
+                >
                     {t('training.continue')} ({countdown}s)
                 </AppButton>
             </motion.div>
@@ -126,18 +150,24 @@ export function TrainingPlayPage() {
     const [completedResults, setCompletedResults] = useState<GameResult[]>([]);
     const [showTransition, setShowTransition] = useState(false);
     const [transitionCountdown, setTransitionCountdown] = useState(5);
-    const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(null);
+    const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(
+        null,
+    );
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const [instanceKey, setInstanceKey] = useState(() => Date.now());
     const [showSummary, setShowSummary] = useState(false);
     const [summary, setSummary] = useState<SessionSummary | null>(null);
-    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+    const [pendingAction, setPendingAction] = useState<(() => void) | null>(
+        null,
+    );
 
     const phaserRef = useRef<IRefPhaserGame>(null);
     const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(null);
+    const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(
+        null,
+    );
 
     // Ref tracks wellness level for use inside effect closures without
     // adding it to the dependency array (avoids listener teardown/re-add
@@ -173,7 +203,7 @@ export function TrainingPlayPage() {
         }
 
         countdownRef.current = setInterval(() => {
-            setTransitionCountdown(prev => {
+            setTransitionCountdown((prev) => {
                 if (prev <= 1) {
                     if (countdownRef.current !== null) {
                         clearInterval(countdownRef.current);
@@ -190,8 +220,8 @@ export function TrainingPlayPage() {
                 clearInterval(countdownRef.current);
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showTransition]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showTransition, handleAdvance]);
 
     // Register game event listeners for the current game
     useEffect(() => {
@@ -203,7 +233,15 @@ export function TrainingPlayPage() {
         const handleComplete = ({ result }: { result: GameResult }) => {
             const level = wellnessRef.current;
             const resultWithWellness = level
-                ? { ...result, wellness: { preSession: level, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
+                ? {
+                      ...result,
+                      wellness: {
+                          preSession: level,
+                          postEyeStrain: false,
+                          postHeadache: false,
+                          timestamp: new Date().toISOString(),
+                      },
+                  }
                 : result;
             addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
@@ -252,7 +290,8 @@ export function TrainingPlayPage() {
             if (wellnessRef.current !== null) {
                 typedEventBus.emit(startEvent, settings);
             } else {
-                pendingStartRef.current = () => typedEventBus.emit(startEvent, settings);
+                pendingStartRef.current = () =>
+                    typedEventBus.emit(startEvent, settings);
             }
         };
 
@@ -274,8 +313,15 @@ export function TrainingPlayPage() {
             typedEventBus.removeListener('timer-tick', handleTick);
             setElapsedMs(null);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentGameId, currentGameIndex, showTransition]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        currentGameId,
+        currentGameIndex,
+        showTransition,
+        completedResults,
+        navigate,
+        settings,
+    ]);
 
     const handleAdvance = () => {
         if (countdownRef.current !== null) {
@@ -283,7 +329,7 @@ export function TrainingPlayPage() {
         }
         setShowTransition(false);
         setLoading(true);
-        setCurrentGameIndex(prev => prev + 1);
+        setCurrentGameIndex((prev) => prev + 1);
     };
 
     const handleWellnessSelect = (level: WellnessLevel) => {
@@ -335,6 +381,7 @@ export function TrainingPlayPage() {
             {/* Minimal overlay header */}
             <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
+                    type="button"
                     onClick={() => navigate('/mode-select')}
                     className="text-[var(--text-secondary)] hover:text-[var(--accent)] text-sm transition-colors"
                 >
@@ -342,6 +389,7 @@ export function TrainingPlayPage() {
                 </button>
                 <div className="flex items-center gap-3">
                     <button
+                        type="button"
                         onClick={handlePause}
                         aria-label={t('game.pause')}
                         className="text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors p-1"
@@ -349,14 +397,17 @@ export function TrainingPlayPage() {
                         <Pause size={18} />
                     </button>
                     <span className="text-[var(--text-secondary)] text-sm">
-                        {t('training.gameOf').replace('{n}', String(currentGameIndex + 1))}
+                        {t('training.gameOf').replace(
+                            '{n}',
+                            String(currentGameIndex + 1),
+                        )}
                     </span>
                     <span className="text-[var(--text-secondary)] text-sm truncate max-w-28">
                         {t(GAME_TITLE_KEYS[currentGameId] ?? 'app.title')}
                     </span>
                     {elapsedMs !== null && (
                         <span
-                            className="text-[var(--text-secondary)] text-sm font-mono"
+                            className="text-[var(--text-secondary)] text-sm font-mono tabular-nums"
                             style={{ fontFamily: 'var(--font-display)' }}
                         >
                             {formatTime(elapsedMs)}
@@ -369,12 +420,12 @@ export function TrainingPlayPage() {
                     {sessionGames.map((_, i) => (
                         <span
                             key={i}
-                            className={`rounded-full transition-all duration-300 ${
+                            className={`rounded-full transition-colors duration-300 ${
                                 i < currentGameIndex
                                     ? 'w-2.5 h-2 bg-[var(--success)]'
                                     : i === currentGameIndex
-                                    ? 'w-4 h-2 bg-[var(--cta)]'
-                                    : 'w-2 h-2 bg-[var(--border)]'
+                                      ? 'w-4 h-2 bg-[var(--cta)]'
+                                      : 'w-2 h-2 bg-[var(--border)]'
                             }`}
                         />
                     ))}
@@ -402,8 +453,13 @@ export function TrainingPlayPage() {
             {safetyWarning && (
                 <SafetyTimerBanner
                     type={safetyWarning.type}
-                    onExtend={() => { typedEventBus.emit('safety-extend'); setSafetyWarning(null); }}
-                    onFinish={() => { typedEventBus.emit('safety-finish'); }}
+                    onExtend={() => {
+                        typedEventBus.emit('safety-extend');
+                        setSafetyWarning(null);
+                    }}
+                    onFinish={() => {
+                        typedEventBus.emit('safety-finish');
+                    }}
                 />
             )}
             <AnimatePresence>
@@ -415,15 +471,19 @@ export function TrainingPlayPage() {
                         className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
                     >
                         <div className="text-center space-y-6">
-                            <h2 className="text-2xl font-display text-[var(--text)]">{t('game.paused')}</h2>
+                            <h2 className="text-2xl font-display text-[var(--text)]">
+                                {t('game.paused')}
+                            </h2>
                             <div className="flex flex-col gap-3">
                                 <button
+                                    type="button"
                                     onClick={handleResume}
                                     className="w-full bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                                 >
                                     {t('game.resume')}
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={handleFinishPause}
                                     className="w-full border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
                                 >

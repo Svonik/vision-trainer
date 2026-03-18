@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { EventBus } from './EventBus';
 
 export interface IRefPhaserGame {
@@ -28,7 +28,10 @@ export function PhaserGame({ currentActiveScene, ref }: IProps) {
             if (typeof ref === 'function') {
                 ref({ game: game.current, scene: null });
             } else if (ref && typeof ref === 'object') {
-                (ref as React.MutableRefObject<IRefPhaserGame>).current = { game: game.current, scene: null };
+                (ref as React.MutableRefObject<IRefPhaserGame>).current = {
+                    game: game.current,
+                    scene: null,
+                };
             }
         })();
 
@@ -40,17 +43,23 @@ export function PhaserGame({ currentActiveScene, ref }: IProps) {
                 game.current = null;
             }
         };
-    }, []);
+    }, [ref]);
 
     useEffect(() => {
         const handler = (scene_instance: Phaser.Scene) => {
-            if (currentActiveScene && typeof currentActiveScene === 'function') {
+            if (
+                currentActiveScene &&
+                typeof currentActiveScene === 'function'
+            ) {
                 currentActiveScene(scene_instance);
             }
             if (typeof ref === 'function') {
                 ref({ game: game.current, scene: scene_instance });
             } else if (ref && typeof ref === 'object') {
-                (ref as React.MutableRefObject<IRefPhaserGame>).current = { game: game.current, scene: scene_instance };
+                (ref as React.MutableRefObject<IRefPhaserGame>).current = {
+                    game: game.current,
+                    scene: scene_instance,
+                };
             }
         };
         EventBus.on('current-scene-ready', handler);
@@ -70,15 +79,19 @@ export function PhaserGame({ currentActiveScene, ref }: IProps) {
                         alignItems: 'center',
                         justifyContent: 'center',
                         background: '#000',
-                        color: 'var(--text, #e8e0f0)',
-                        fontFamily: 'var(--font-display, Fredoka, system-ui, sans-serif)',
+                        color: 'var(--text)',
+                        fontFamily:
+                            'var(--font-display, Fredoka, system-ui, sans-serif)',
                         fontSize: '18px',
                     }}
                 >
                     Загрузка...
                 </div>
             )}
-            <div id="game-container" style={{ display: loading ? 'none' : 'block' }} />
+            <div
+                id="game-container"
+                style={{ display: loading ? 'none' : 'block' }}
+            />
         </>
     );
 }

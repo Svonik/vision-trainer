@@ -1,32 +1,40 @@
-import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, Pause } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { ArrowLeft } from 'lucide-react';
-import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
-import { typedEventBus } from '../game/TypedEventBus';
-import { addCachedSession, getCachedSessions, updateLastSessionWellness } from '../modules/sessionCache';
-import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
-import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
-import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
-import { LandscapePrompt } from '../components/LandscapePrompt';
-import { SessionSummaryCard } from '../components/SessionSummaryCard';
-import { computeSessionSummary, type SessionSummary } from '../modules/sessionSummary';
-import { getGameById } from '../config/games';
-import { t } from '../modules/i18n';
-import { formatTime } from '@/lib/formatTime';
-import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
-import { Pause } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
-import { WellnessPreCheck } from '../components/WellnessPreCheck';
-import type { WellnessLevel } from '@/modules/wellnessCheck';
 import { AppButton } from '@/components/AppButton';
+import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
+import { formatTime } from '@/lib/formatTime';
+import type { WellnessLevel } from '@/modules/wellnessCheck';
+import { LandscapePrompt } from '../components/LandscapePrompt';
+import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
+import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
+import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
+import { SessionSummaryCard } from '../components/SessionSummaryCard';
+import { WellnessPreCheck } from '../components/WellnessPreCheck';
+import { getGameById } from '../config/games';
+import { type IRefPhaserGame, PhaserGame } from '../game/PhaserGame';
+import { typedEventBus } from '../game/TypedEventBus';
+import { t } from '../modules/i18n';
+import {
+    addCachedSession,
+    getCachedSessions,
+    updateLastSessionWellness,
+} from '../modules/sessionCache';
+import {
+    computeSessionSummary,
+    type SessionSummary,
+} from '../modules/sessionSummary';
+import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 
 export function GamePage() {
     const location = useLocation();
     const navigate = useNavigate();
     const { gameId } = useParams();
     const settings = location.state?.settings;
-    const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(null);
+    const [safetyWarning, setSafetyWarning] = useState<{ type: string } | null>(
+        null,
+    );
     const [elapsedMs, setElapsedMs] = useState<number | null>(null);
     const phaserRef = useRef<IRefPhaserGame>(null);
 
@@ -35,7 +43,9 @@ export function GamePage() {
     const [loading, setLoading] = useState(true);
     const [showSummary, setShowSummary] = useState(false);
     const [summary, setSummary] = useState<SessionSummary | null>(null);
-    const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(null);
+    const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(
+        null,
+    );
 
     // Ref tracks wellness level for use inside effect closures without
     // adding it to the dependency array (avoids listener teardown/re-add
@@ -53,7 +63,15 @@ export function GamePage() {
         const handleComplete = ({ result, settings: s }: any) => {
             const level = wellnessRef.current;
             const resultWithWellness = level
-                ? { ...result, wellness: { preSession: level, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
+                ? {
+                      ...result,
+                      wellness: {
+                          preSession: level,
+                          postEyeStrain: false,
+                          postHeadache: false,
+                          timestamp: new Date().toISOString(),
+                      },
+                  }
                 : result;
             addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
@@ -85,10 +103,13 @@ export function GamePage() {
             if (wellnessRef.current !== null) {
                 typedEventBus.emit(startEvent, settings);
             } else {
-                pendingStartRef.current = () => typedEventBus.emit(startEvent, settings);
+                pendingStartRef.current = () =>
+                    typedEventBus.emit(startEvent, settings);
             }
         };
-        const handleTick = (ms: number) => { setElapsedMs(ms); };
+        const handleTick = (ms: number) => {
+            setElapsedMs(ms);
+        };
 
         typedEventBus.on('game-complete', handleComplete);
         typedEventBus.on('game-exit', handleExit);
@@ -104,7 +125,7 @@ export function GamePage() {
             typedEventBus.removeListener('timer-tick', handleTick);
             setElapsedMs(null);
         };
-    }, [settings, navigate, gameId, targetScene, startEvent]);
+    }, [settings, navigate, targetScene, startEvent]);
 
     const handleWellnessSelect = (level: WellnessLevel) => {
         wellnessRef.current = level;
@@ -133,7 +154,10 @@ export function GamePage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'var(--bg-gradient)' }}>
+        <div
+            className="min-h-screen flex flex-col bg-[var(--bg)]"
+            style={{ background: 'var(--bg-gradient)' }}
+        >
             <header className="flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
                 <button
                     onClick={() => navigate(-1)}
@@ -186,8 +210,13 @@ export function GamePage() {
             {safetyWarning && (
                 <SafetyTimerBanner
                     type={safetyWarning.type}
-                    onExtend={() => { typedEventBus.emit('safety-extend'); setSafetyWarning(null); }}
-                    onFinish={() => { typedEventBus.emit('safety-finish'); }}
+                    onExtend={() => {
+                        typedEventBus.emit('safety-extend');
+                        setSafetyWarning(null);
+                    }}
+                    onFinish={() => {
+                        typedEventBus.emit('safety-finish');
+                    }}
                 />
             )}
             <LandscapePrompt />
@@ -198,9 +227,12 @@ export function GamePage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
+                        style={{ overscrollBehavior: 'contain' }}
                     >
                         <div className="text-center space-y-6">
-                            <h2 className="text-2xl font-display text-[var(--text)]">{t('game.paused')}</h2>
+                            <h2 className="text-2xl font-display text-[var(--text)]">
+                                {t('game.paused')}
+                            </h2>
                             <div className="flex flex-col gap-3">
                                 <AppButton
                                     variant="cta"
@@ -230,11 +262,15 @@ export function GamePage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-[var(--bg)]/95 backdrop-blur-md z-50 flex items-center justify-center"
+                        style={{ overscrollBehavior: 'contain' }}
                     >
                         <SessionSummaryCard
                             summary={summary}
                             onWellnessPost={updateLastSessionWellness}
-                            onContinue={() => { setShowSummary(false); navigate('/games'); }}
+                            onContinue={() => {
+                                setShowSummary(false);
+                                navigate('/games');
+                            }}
                         />
                     </motion.div>
                 )}

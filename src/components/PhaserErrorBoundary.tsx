@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface Props {
     children: ReactNode;
@@ -29,34 +29,40 @@ export class PhaserErrorBoundary extends Component<Props, State> {
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: '#000',
-                    color: 'var(--text, #e8e0f0)',
-                    fontFamily: 'Fredoka, system-ui, sans-serif',
-                    textAlign: 'center',
-                    padding: '24px',
-                }}>
+                <div
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#000',
+                        color: 'var(--text)',
+                        fontFamily: 'Fredoka, system-ui, sans-serif',
+                        textAlign: 'center',
+                        padding: '24px',
+                    }}
+                >
                     <div>
                         <h2 style={{ fontSize: '22px', marginBottom: '12px' }}>
                             Игра не загрузилась
                         </h2>
-                        <p style={{
-                            color: 'var(--text-secondary, #8b7fa0)',
-                            marginBottom: '20px',
-                            fontSize: '14px',
-                        }}>
-                            {this.state.error?.message || 'Произошла ошибка при загрузке игры'}
+                        <p
+                            style={{
+                                color: 'var(--text-secondary)',
+                                marginBottom: '20px',
+                                fontSize: '14px',
+                            }}
+                        >
+                            {this.state.error?.message ||
+                                'Произошла ошибка при загрузке игры'}
                         </p>
                         <button
+                            type="button"
                             onClick={this.handleRetry}
                             style={{
-                                background: 'var(--cta, #ff9f43)',
-                                color: 'var(--cta-text, #12101a)',
+                                background: 'var(--cta)',
+                                color: 'var(--cta-text)',
                                 border: 'none',
                                 borderRadius: '999px',
                                 padding: '12px 32px',

@@ -35,12 +35,14 @@ export function SuppressionTestStep({ glassesType, onPass, onFail }: Props) {
             </div>
             <div className="flex flex-col gap-3 w-full max-w-sm">
                 <button
+                    type="button"
                     onClick={onPass}
                     className="w-full rounded-full bg-[var(--cta)] text-[var(--cta-text)] py-3 font-semibold btn-press"
                 >
                     {t('calibration.seeBoth')}
                 </button>
                 <button
+                    type="button"
                     onClick={onFail}
                     className="w-full rounded-full border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 py-3 btn-press"
                 >

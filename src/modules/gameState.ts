@@ -39,11 +39,18 @@ export interface SessionResult {
     fellow_contrast_end?: number;
     window_accuracy?: number;
     total_trials?: number;
-    wellness?: { preSession: string; postEyeStrain: boolean; postHeadache: boolean; timestamp: string } | null;
+    wellness?: {
+        preSession: string;
+        postEyeStrain: boolean;
+        postHeadache: boolean;
+        timestamp: string;
+    } | null;
     [key: string]: unknown;
 }
 
-export const createGameSettings = (overrides: Partial<GameSettings> = {}): GameSettings => ({
+export const createGameSettings = (
+    overrides: Partial<GameSettings> = {},
+): GameSettings => ({
     ...overrides,
     contrastLeft: overrides.contrastLeft ?? CONTRAST.DEFAULT,
     contrastRight: overrides.contrastRight ?? CONTRAST.DEFAULT,
@@ -66,7 +73,8 @@ export const createSessionResult = ({
     totalTrials,
 }: SessionResultInput): SessionResult => {
     const durationS = Math.round(durationMs / 1000);
-    const hitRate = totalSpawned > 0 ? Math.round((caught / totalSpawned) * 100) / 100 : 0;
+    const hitRate =
+        totalSpawned > 0 ? Math.round((caught / totalSpawned) * 100) / 100 : 0;
 
     return {
         game: game ?? 'binocular-catcher',

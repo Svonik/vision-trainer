@@ -1,14 +1,15 @@
+import { Grid } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Grid } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
 import { AppButton } from '@/components/AppButton';
-import { useGameSettings } from '../hooks/useGameSettings';
-import { SPEEDS, CONTRAST } from '../modules/constants';
-import { t } from '../modules/i18n';
-import { getEyeColors } from '../modules/glassesColors';
-import { getCalibration, getDefaultSettings } from '../modules/storage';
+import { ContrastIndicator } from '@/components/ContrastIndicator';
+import { Card, CardContent } from '@/components/ui/card';
 import { getGameById } from '../config/games';
+import { useGameSettings } from '../hooks/useGameSettings';
+import { CONTRAST, SPEEDS } from '../modules/constants';
+import type { GlassesType } from '../modules/glassesColors';
+import { t } from '../modules/i18n';
+import { getCalibration, getDefaultSettings } from '../modules/storage';
 
 const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
 
@@ -26,11 +27,12 @@ export function SettingsPage() {
             contrastRight: defaults.contrastRight ?? CONTRAST.DEFAULT,
             speed: defaults.speed ?? 'slow',
             eyeConfig: defaults.eyeConfig ?? 'platform_left',
+            fellowEyeContrast: defaults.fellowEyeContrast ?? 30,
         });
-    }, []);
+    }, [updateSettings]);
 
     const game = getGameById(gameId ?? '');
-    const eyeColors = getEyeColors(settings.glassesType ?? 'red-cyan');
+    const defaults = getDefaultSettings();
 
     const handleStart = () => {
         navigate(`/games/${gameId}/play`, { state: { settings } });
@@ -41,86 +43,31 @@ export function SettingsPage() {
             className="min-h-screen flex items-center justify-center p-4"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
+            <Card className="w-full max-w-lg rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter gap-0">
                 {/* Game illustration bar */}
                 <div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)]" />
 
-                <div className="p-6 space-y-8">
-                    <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
-                        {game ? `${t('settingsPage.title')}${t(game.titleKey)}` : t('settingsPage.titleDefault')}
+                <CardContent className="p-6 space-y-6">
+                    <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)] text-balance">
+                        {game
+                            ? `${t('settingsPage.title')}${t(game.titleKey)}`
+                            : t('settingsPage.titleDefault')}
                     </h2>
 
-                    {/* Contrast section */}
-                    <div className="space-y-4">
-                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.contrastBalance')}</p>
-
-                        {/* Hint box */}
-                        <div className="rounded-3xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] px-3 py-2 text-base text-[var(--accent)]">
-                            {t('settings.contrastHint')}
-                        </div>
-
-                        {/* Preview circles */}
-                        <div className="flex justify-center gap-8">
-                            <div className="text-center">
-                                <div
-                                    className="w-12 h-12 rounded-full mx-auto mb-1"
-                                    style={{
-                                        backgroundColor: `rgba(${eyeColors.leftRgbCss}, ${settings.contrastLeft / 100})`,
-                                        boxShadow: '0 0 12px rgba(255,107,138,0.4)',
-                                    }}
-                                />
-                                <span className="text-sm text-[var(--text-secondary)]">{t('settingsPage.eyeLeft')}{settings.contrastLeft}%</span>
-                            </div>
-                            <div className="text-center">
-                                <div
-                                    className="w-12 h-12 rounded-full mx-auto mb-1"
-                                    style={{
-                                        backgroundColor: `rgba(${eyeColors.rightRgbCss}, ${settings.contrastRight / 100})`,
-                                        boxShadow: '0 0 12px rgba(107,223,255,0.4)',
-                                    }}
-                                />
-                                <span className="text-sm text-[var(--text-secondary)]">{t('settingsPage.eyeRight')}{settings.contrastRight}%</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.leftHex }}>{`${t('settings.leftEye')} (${eyeColors.leftLabel})`}</span>
-                                    <span className="text-[var(--text-secondary)]">{settings.contrastLeft}%</span>
-                                </div>
-                                <Slider
-                                    min={CONTRAST.MIN}
-                                    max={CONTRAST.MAX}
-                                    step={CONTRAST.STEP}
-                                    value={[settings.contrastLeft]}
-                                    onValueChange={([val]) => updateSettings({ contrastLeft: val })}
-                                    className="w-full"
-                                    aria-label="Контраст левого глаза"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.rightHex }}>{`${t('settings.rightEye')} (${eyeColors.rightLabel})`}</span>
-                                    <span className="text-[var(--text-secondary)]">{settings.contrastRight}%</span>
-                                </div>
-                                <Slider
-                                    min={CONTRAST.MIN}
-                                    max={CONTRAST.MAX}
-                                    step={CONTRAST.STEP}
-                                    value={[settings.contrastRight]}
-                                    onValueChange={([val]) => updateSettings({ contrastRight: val })}
-                                    className="w-full"
-                                    aria-label="Контраст правого глаза"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    {/* Contrast indicator (read-only) */}
+                    <ContrastIndicator
+                        fellowEyeContrast={defaults.fellowEyeContrast ?? 30}
+                        eyeConfig={settings.eyeConfig}
+                        glassesType={
+                            (settings.glassesType ?? 'red-cyan') as GlassesType
+                        }
+                    />
 
                     {/* Speed section */}
                     <div className="space-y-3">
-                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.speed')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">
+                            {t('settings.speed')}
+                        </p>
                         <div className="grid grid-cols-2 gap-2">
                             {SPEED_KEYS.map((key) => (
                                 <AppButton
@@ -128,7 +75,9 @@ export function SettingsPage() {
                                     variant="toggle"
                                     size="md"
                                     selected={settings.speed === key}
-                                    onClick={() => updateSettings({ speed: key })}
+                                    onClick={() =>
+                                        updateSettings({ speed: key })
+                                    }
                                     aria-pressed={settings.speed === key}
                                 >
                                     {SPEEDS[key].label}
@@ -139,23 +88,41 @@ export function SettingsPage() {
 
                     {/* Eye config section */}
                     <div className="space-y-3">
-                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.eyeSelect')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">
+                            {t('settings.eyeSelect')}
+                        </p>
                         <div className="grid grid-cols-2 gap-2">
                             <AppButton
                                 variant="toggle"
                                 size="md"
-                                selected={settings.eyeConfig === 'platform_left'}
-                                onClick={() => updateSettings({ eyeConfig: 'platform_left' })}
-                                aria-pressed={settings.eyeConfig === 'platform_left'}
+                                selected={
+                                    settings.eyeConfig === 'platform_left'
+                                }
+                                onClick={() =>
+                                    updateSettings({
+                                        eyeConfig: 'platform_left',
+                                    })
+                                }
+                                aria-pressed={
+                                    settings.eyeConfig === 'platform_left'
+                                }
                             >
                                 {t('settings.eyeLeft')}
                             </AppButton>
                             <AppButton
                                 variant="toggle"
                                 size="md"
-                                selected={settings.eyeConfig === 'platform_right'}
-                                onClick={() => updateSettings({ eyeConfig: 'platform_right' })}
-                                aria-pressed={settings.eyeConfig === 'platform_right'}
+                                selected={
+                                    settings.eyeConfig === 'platform_right'
+                                }
+                                onClick={() =>
+                                    updateSettings({
+                                        eyeConfig: 'platform_right',
+                                    })
+                                }
+                                aria-pressed={
+                                    settings.eyeConfig === 'platform_right'
+                                }
                             >
                                 {t('settings.eyeRight')}
                             </AppButton>
@@ -182,8 +149,8 @@ export function SettingsPage() {
                         <Grid className="w-4 h-4" />
                         {t('nav.otherGame')}
                     </AppButton>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -1,12 +1,12 @@
+import { Hourglass } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { Hourglass } from 'lucide-react';
 import { AppButton } from '@/components/AppButton';
+import { ProgressRing } from '@/components/ProgressRing';
+import { formatDuration } from '@/lib/formatTime';
 import { t } from '../modules/i18n';
 import { getCachedSessions } from '../modules/sessionCache';
-import { recommendContrast, GAME_TITLE_KEYS } from '../modules/sessionEngine';
-import { formatDuration } from '@/lib/formatTime';
-import { ProgressRing } from '@/components/ProgressRing';
+import { GAME_TITLE_KEYS, recommendContrast } from '../modules/sessionEngine';
 
 interface GameResult {
     game: string;
@@ -23,11 +23,18 @@ function CountUp({ target }: { target: number }) {
     const [count, setCount] = useState(0);
     useEffect(() => {
         if (count < target) {
-            const timer = setTimeout(() => setCount(c => Math.min(c + 1, target)), 30);
+            const timer = setTimeout(
+                () => setCount((c) => Math.min(c + 1, target)),
+                30,
+            );
             return () => clearTimeout(timer);
         }
     }, [count, target]);
-    return <span className="font-[var(--font-display)] text-4xl font-semibold text-[var(--text)]">{count}</span>;
+    return (
+        <span className="font-[var(--font-display)] text-4xl font-semibold text-[var(--text)]">
+            {count}
+        </span>
+    );
 }
 
 export function TrainingSummaryPage() {
@@ -36,10 +43,18 @@ export function TrainingSummaryPage() {
 
     const results: GameResult[] = location.state?.results ?? [];
 
-    const totalTimeSecs = results.reduce((sum, r) => sum + (r.duration_s ?? 0), 0);
-    const avgHitRate = results.length > 0
-        ? Math.round(results.reduce((sum, r) => sum + (r.hit_rate ?? 0), 0) / results.length * 100)
-        : 0;
+    const totalTimeSecs = results.reduce(
+        (sum, r) => sum + (r.duration_s ?? 0),
+        0,
+    );
+    const avgHitRate =
+        results.length > 0
+            ? Math.round(
+                  (results.reduce((sum, r) => sum + (r.hit_rate ?? 0), 0) /
+                      results.length) *
+                      100,
+              )
+            : 0;
 
     const sessions = getCachedSessions();
     const recommendation = recommendContrast(sessions);
@@ -71,7 +86,9 @@ export function TrainingSummaryPage() {
                             <Hourglass className="w-5 h-5 text-[var(--text-secondary)]" />
                             {formatDuration(totalTimeSecs)}
                         </p>
-                        <p className="text-[var(--text-secondary)] text-sm">{t('training.totalTime')}</p>
+                        <p className="text-[var(--text-secondary)] text-sm">
+                            {t('training.totalTime')}
+                        </p>
                     </div>
 
                     {/* Per-game breakdown */}
@@ -79,7 +96,9 @@ export function TrainingSummaryPage() {
                         <div className="space-y-2">
                             {results.map((result, i) => {
                                 const gameKey = result.game ?? '';
-                                const hitPercent = Math.round((result.hit_rate ?? 0) * 100);
+                                const hitPercent = Math.round(
+                                    (result.hit_rate ?? 0) * 100,
+                                );
                                 return (
                                     <div
                                         key={i}
@@ -90,12 +109,19 @@ export function TrainingSummaryPage() {
                                                 {i + 1}
                                             </span>
                                             <span className="text-sm text-[var(--text)] truncate">
-                                                {t(GAME_TITLE_KEYS[gameKey] ?? 'app.title')}
+                                                {t(
+                                                    GAME_TITLE_KEYS[gameKey] ??
+                                                        'app.title',
+                                                )}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)] flex-shrink-0">
                                             <span>{hitPercent}%</span>
-                                            <span>{formatDuration(result.duration_s ?? 0)}</span>
+                                            <span>
+                                                {formatDuration(
+                                                    result.duration_s ?? 0,
+                                                )}
+                                            </span>
                                         </div>
                                     </div>
                                 );
@@ -104,13 +130,15 @@ export function TrainingSummaryPage() {
                     )}
 
                     {/* Contrast recommendation */}
-                    <div className={`rounded-xl px-4 py-3 border-l-2 text-sm ${
-                        recommendation.suggestion === 'decrease'
-                            ? 'bg-[var(--success)]/10 border-[var(--success)] text-[var(--success)]'
-                            : recommendation.suggestion === 'increase'
-                            ? 'bg-[var(--warning)]/10 border-[var(--warning)] text-[var(--warning)]'
-                            : 'bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]'
-                    }`}>
+                    <div
+                        className={`rounded-xl px-4 py-3 border-l-2 text-sm ${
+                            recommendation.suggestion === 'decrease'
+                                ? 'bg-[var(--success)]/10 border-[var(--success)] text-[var(--success)]'
+                                : recommendation.suggestion === 'increase'
+                                  ? 'bg-[var(--warning)]/10 border-[var(--warning)] text-[var(--warning)]'
+                                  : 'bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]'
+                        }`}
+                    >
                         <p className="font-medium text-sm uppercase tracking-wide mb-1 opacity-70">
                             {t('training.contrastSuggestion')}
                         </p>
@@ -118,8 +146,8 @@ export function TrainingSummaryPage() {
                             {recommendation.suggestion === 'decrease'
                                 ? t('training.suggestDecrease')
                                 : recommendation.suggestion === 'increase'
-                                ? t('training.suggestIncrease')
-                                : t('training.suggestKeep')}
+                                  ? t('training.suggestIncrease')
+                                  : t('training.suggestKeep')}
                         </p>
                         {recommendation.suggestion !== 'keep' && (
                             <p className="text-sm opacity-60 mt-1">

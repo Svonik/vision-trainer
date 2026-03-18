@@ -1,14 +1,23 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { AppButton } from '@/components/AppButton';
+import { ContrastIndicator } from '@/components/ContrastIndicator';
+import { Card, CardContent } from '@/components/ui/card';
 import { useGameSettings } from '../hooks/useGameSettings';
-import { SPEEDS, CONTRAST } from '../modules/constants';
+import { CONTRAST, SPEEDS } from '../modules/constants';
+import type { GlassesType } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
-import { getEyeColors } from '../modules/glassesColors';
-import { getCalibration, getDefaultSettings, getSessions } from '../modules/storage';
-import { generateSession, recommendContrast, GAME_TITLE_KEYS } from '../modules/sessionEngine';
+import {
+    GAME_TITLE_KEYS,
+    generateSession,
+    recommendContrast,
+} from '../modules/sessionEngine';
+import {
+    getCalibration,
+    getDefaultSettings,
+    getSessions,
+} from '../modules/storage';
 
 const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
 
@@ -32,7 +41,8 @@ export function TrainingSettingsPage() {
 
     const sessions = getSessions();
     // Accept session passed via navigation state (allows re-entry without regenerating)
-    const sessionGames: string[] = location.state?.sessionGames ?? generateSession(sessions);
+    const sessionGames: string[] =
+        location.state?.sessionGames ?? generateSession(sessions);
     const recommendation = recommendContrast(sessions);
 
     useEffect(() => {
@@ -40,15 +50,22 @@ export function TrainingSettingsPage() {
         const defaults = getDefaultSettings();
         updateSettings({
             glassesType: calibration.glasses_type ?? 'red-cyan',
-            contrastLeft: recommendation.left ?? defaults.contrastLeft ?? CONTRAST.DEFAULT,
-            contrastRight: recommendation.right ?? defaults.contrastRight ?? CONTRAST.DEFAULT,
+            contrastLeft:
+                recommendation.left ??
+                defaults.contrastLeft ??
+                CONTRAST.DEFAULT,
+            contrastRight:
+                recommendation.right ??
+                defaults.contrastRight ??
+                CONTRAST.DEFAULT,
             speed: defaults.speed ?? 'slow',
             eyeConfig: defaults.eyeConfig ?? 'platform_left',
+            fellowEyeContrast: defaults.fellowEyeContrast ?? 30,
         });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recommendation.left, recommendation.right, updateSettings]);
 
-    const eyeColors = getEyeColors(settings.glassesType ?? 'red-cyan');
+    const defaults = getDefaultSettings();
 
     const handleStart = () => {
         navigate('/training/play', {
@@ -61,11 +78,11 @@ export function TrainingSettingsPage() {
             className="min-h-screen flex items-center justify-center p-4"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)]/50 rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter">
+            <Card className="w-full max-w-lg rounded-3xl shadow-lg shadow-purple-900/20 overflow-hidden spring-enter gap-0">
                 <div className="h-2 w-full bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)]" />
 
-                <div className="p-6 space-y-7">
-                    <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)]">
+                <CardContent className="p-6 space-y-6">
+                    <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)] text-balance">
                         {t('training.settings')}
                     </h2>
 
@@ -76,7 +93,11 @@ export function TrainingSettingsPage() {
                         </p>
                         <div className="space-y-2">
                             {sessionGames.map((gameId, i) => (
-                                <GamePill key={gameId} gameId={gameId} index={i} />
+                                <GamePill
+                                    key={gameId}
+                                    gameId={gameId}
+                                    index={i}
+                                />
                             ))}
                         </div>
                     </div>
@@ -91,71 +112,20 @@ export function TrainingSettingsPage() {
                         </div>
                     )}
 
-                    {/* Contrast section */}
-                    <div className="space-y-4">
-                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.contrastBalance')}</p>
-
-                        <div className="flex justify-center gap-8">
-                            <div className="text-center">
-                                <div
-                                    className="w-12 h-12 rounded-full mx-auto mb-1"
-                                    style={{
-                                        backgroundColor: `rgba(${eyeColors.leftRgbCss}, ${settings.contrastLeft / 100})`,
-                                        boxShadow: '0 0 12px rgba(255,107,138,0.4)',
-                                    }}
-                                />
-                                <span className="text-sm text-[var(--text-secondary)]">{t('stats.contrastL')}: {settings.contrastLeft}%</span>
-                            </div>
-                            <div className="text-center">
-                                <div
-                                    className="w-12 h-12 rounded-full mx-auto mb-1"
-                                    style={{
-                                        backgroundColor: `rgba(${eyeColors.rightRgbCss}, ${settings.contrastRight / 100})`,
-                                        boxShadow: '0 0 12px rgba(107,223,255,0.4)',
-                                    }}
-                                />
-                                <span className="text-sm text-[var(--text-secondary)]">{t('stats.contrastR')}: {settings.contrastRight}%</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.leftHex }}>{`${t('settings.leftEye')} (${eyeColors.leftLabel})`}</span>
-                                    <span className="text-[var(--text-secondary)]">{settings.contrastLeft}%</span>
-                                </div>
-                                <Slider
-                                    min={CONTRAST.MIN}
-                                    max={CONTRAST.MAX}
-                                    step={CONTRAST.STEP}
-                                    value={[settings.contrastLeft]}
-                                    onValueChange={([val]) => updateSettings({ contrastLeft: val })}
-                                    className="w-full"
-                                    aria-label="Контраст левого глаза"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-base">
-                                    <span style={{ color: eyeColors.rightHex }}>{`${t('settings.rightEye')} (${eyeColors.rightLabel})`}</span>
-                                    <span className="text-[var(--text-secondary)]">{settings.contrastRight}%</span>
-                                </div>
-                                <Slider
-                                    min={CONTRAST.MIN}
-                                    max={CONTRAST.MAX}
-                                    step={CONTRAST.STEP}
-                                    value={[settings.contrastRight]}
-                                    onValueChange={([val]) => updateSettings({ contrastRight: val })}
-                                    className="w-full"
-                                    aria-label="Контраст правого глаза"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    {/* Contrast indicator (read-only) */}
+                    <ContrastIndicator
+                        fellowEyeContrast={defaults.fellowEyeContrast ?? 30}
+                        eyeConfig={settings.eyeConfig}
+                        glassesType={
+                            (settings.glassesType ?? 'red-cyan') as GlassesType
+                        }
+                    />
 
                     {/* Speed section */}
                     <div className="space-y-3">
-                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.speed')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">
+                            {t('settings.speed')}
+                        </p>
                         <div className="grid grid-cols-2 gap-2">
                             {SPEED_KEYS.map((key) => (
                                 <AppButton
@@ -163,7 +133,9 @@ export function TrainingSettingsPage() {
                                     variant="toggle"
                                     size="md"
                                     selected={settings.speed === key}
-                                    onClick={() => updateSettings({ speed: key })}
+                                    onClick={() =>
+                                        updateSettings({ speed: key })
+                                    }
                                     aria-pressed={settings.speed === key}
                                 >
                                     {SPEEDS[key].label}
@@ -174,23 +146,41 @@ export function TrainingSettingsPage() {
 
                     {/* Eye config section */}
                     <div className="space-y-3">
-                        <p className="text-base font-semibold text-[var(--text)]">{t('settings.eyeSelect')}</p>
+                        <p className="text-base font-semibold text-[var(--text)]">
+                            {t('settings.eyeSelect')}
+                        </p>
                         <div className="grid grid-cols-2 gap-2">
                             <AppButton
                                 variant="toggle"
                                 size="md"
-                                selected={settings.eyeConfig === 'platform_left'}
-                                onClick={() => updateSettings({ eyeConfig: 'platform_left' })}
-                                aria-pressed={settings.eyeConfig === 'platform_left'}
+                                selected={
+                                    settings.eyeConfig === 'platform_left'
+                                }
+                                onClick={() =>
+                                    updateSettings({
+                                        eyeConfig: 'platform_left',
+                                    })
+                                }
+                                aria-pressed={
+                                    settings.eyeConfig === 'platform_left'
+                                }
                             >
                                 {t('settings.eyeLeft')}
                             </AppButton>
                             <AppButton
                                 variant="toggle"
                                 size="md"
-                                selected={settings.eyeConfig === 'platform_right'}
-                                onClick={() => updateSettings({ eyeConfig: 'platform_right' })}
-                                aria-pressed={settings.eyeConfig === 'platform_right'}
+                                selected={
+                                    settings.eyeConfig === 'platform_right'
+                                }
+                                onClick={() =>
+                                    updateSettings({
+                                        eyeConfig: 'platform_right',
+                                    })
+                                }
+                                aria-pressed={
+                                    settings.eyeConfig === 'platform_right'
+                                }
                             >
                                 {t('settings.eyeRight')}
                             </AppButton>
@@ -215,8 +205,8 @@ export function TrainingSettingsPage() {
                     >
                         <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                     </AppButton>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

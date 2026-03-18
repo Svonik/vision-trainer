@@ -1,11 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { t } from '@/modules/i18n';
+import { AppButton } from '@/components/AppButton';
 import { GameIllustration } from '@/components/GameIllustration';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { WeeklyProgress } from '@/components/WeeklyProgress';
-import { getCachedSessions } from '../modules/sessionCache';
+import { t } from '@/modules/i18n';
 import { GAMES as GAMES_DATA } from '../config/games';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCachedSessions } from '../modules/sessionCache';
 
 interface GameDisplayConfig {
     id: string;
@@ -15,7 +22,7 @@ interface GameDisplayConfig {
     route: string;
 }
 
-const GAMES: GameDisplayConfig[] = GAMES_DATA.map(g => ({
+const GAMES: GameDisplayConfig[] = GAMES_DATA.map((g) => ({
     id: g.id,
     titleKey: g.titleKey,
     descriptionKey: g.descriptionKey,
@@ -23,11 +30,19 @@ const GAMES: GameDisplayConfig[] = GAMES_DATA.map(g => ({
     route: g.route,
 }));
 
-const GameCard = React.memo(function GameCard({ game, index, count }: { game: GameDisplayConfig; index: number; count: number }) {
+const GameCard = React.memo(function GameCard({
+    game,
+    index,
+    count,
+}: {
+    game: GameDisplayConfig;
+    index: number;
+    count: number;
+}) {
     const navigate = useNavigate();
     return (
         <Card
-            className="bg-[var(--surface)] border-[var(--border)]/50 rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-all duration-200 cursor-pointer overflow-hidden spring-enter"
+            className="bg-[var(--surface)] border-[var(--border)]/50 rounded-3xl hover:scale-[1.03] hover:shadow-xl hover:shadow-purple-900/30 transition-[transform,box-shadow] duration-200 cursor-pointer overflow-hidden spring-enter"
             style={{ animationDelay: `${index * 60}ms` }}
             onClick={() => navigate(game.route)}
             role="button"
@@ -37,7 +52,10 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
         >
             <GameIllustration gameId={game.id} />
             <CardHeader>
-                <CardTitle as="h2" className="font-[var(--font-display)] text-lg text-[var(--text)]">
+                <CardTitle
+                    as="h2"
+                    className="font-[var(--font-display)] text-lg text-[var(--text)]"
+                >
                     {t(game.titleKey)}
                 </CardTitle>
                 <div className="flex items-center gap-2">
@@ -46,7 +64,8 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                     </span>
                     {count > 0 && (
                         <span className="text-sm text-[var(--text-secondary)]">
-                            {t('gameSelect.played')}: {count} {t('gameSelect.times')}
+                            {t('gameSelect.played')}: {count}{' '}
+                            {t('gameSelect.times')}
                         </span>
                     )}
                 </div>
@@ -57,12 +76,14 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
                 </p>
             </CardContent>
             <CardFooter>
-                <span
-                    className="rounded-full flex items-center justify-center py-3 text-base min-h-[44px] bg-[var(--cta)] text-[var(--cta-text)] font-semibold w-full btn-press"
+                <AppButton
+                    variant="cta"
+                    size="md"
+                    className="w-full"
                     aria-hidden="true"
                 >
                     {t('gameSelect.play')}
-                </span>
+                </AppButton>
             </CardFooter>
         </Card>
     );
@@ -70,14 +91,15 @@ const GameCard = React.memo(function GameCard({ game, index, count }: { game: Ga
 
 export function GameSelectPage() {
     const sessions = getCachedSessions();
-    const getGameCount = (gameId: string) => sessions.filter((s: any) => s.game === gameId).length;
+    const getGameCount = (gameId: string) =>
+        sessions.filter((s: any) => s.game === gameId).length;
 
     return (
         <div
             className="min-h-screen flex flex-col items-center p-4 py-8 relative z-10"
             style={{ background: 'var(--bg-gradient)' }}
         >
-            <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-6">
+            <h1 className="font-[var(--font-display)] text-3xl text-[var(--text)] mb-6 text-balance">
                 {t('gameSelect.title')}
             </h1>
 

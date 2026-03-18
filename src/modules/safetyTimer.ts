@@ -17,9 +17,15 @@ export interface SafetyTimer {
     extend: () => void;
 }
 
-export const createSafetyTimer = ({ onWarning, onBreak, protocol }: SafetyTimerCallbacks): SafetyTimer => {
-    const sessionDurationMs = protocol?.sessionDurationMs ?? SAFETY.BREAK_TIME_MS;
-    const warningBeforeMs = protocol?.warningBeforeMs ?? SAFETY.WARNING_BEFORE_MS;
+export const createSafetyTimer = ({
+    onWarning,
+    onBreak,
+    protocol,
+}: SafetyTimerCallbacks): SafetyTimer => {
+    const sessionDurationMs =
+        protocol?.sessionDurationMs ?? SAFETY.BREAK_TIME_MS;
+    const warningBeforeMs =
+        protocol?.warningBeforeMs ?? SAFETY.WARNING_BEFORE_MS;
     const extensionMs = protocol?.extensionMs ?? SAFETY.EXTENSION_MS;
     const maxExtensions = protocol?.maxExtensions ?? SAFETY.MAX_EXTENSIONS;
 

@@ -1,8 +1,8 @@
-import { ColoredSlider } from '@/components/ColoredSlider';
 import { AppButton } from '@/components/AppButton';
+import { ColoredSlider } from '@/components/ColoredSlider';
 import { useCalibration } from '../../hooks/useCalibration';
-import { getEyeColors } from '../../modules/glassesColors';
 import { CALIBRATION } from '../../modules/constants';
+import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 
 interface Props {
@@ -13,8 +13,19 @@ interface Props {
     maxAttempts: number;
 }
 
-export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempts, maxAttempts }: Props) {
-    const { redBrightness, setRedBrightness, cyanBrightness, setCyanBrightness } = useCalibration();
+export function BrightnessAdjustStep({
+    glassesType,
+    onRetry,
+    onComplete,
+    attempts,
+    maxAttempts,
+}: Props) {
+    const {
+        redBrightness,
+        setRedBrightness,
+        cyanBrightness,
+        setCyanBrightness,
+    } = useCalibration();
     const eyeColors = getEyeColors(glassesType as 'red-cyan' | 'cyan-red');
     const maxAttemptsReached = attempts >= maxAttempts;
 
@@ -56,12 +67,18 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
             <div className="w-full max-w-sm space-y-4">
                 {/* Red channel slider */}
                 <div className="space-y-2">
-                    <label className="text-base" style={{ color: 'var(--red-soft)' }}>
+                    <label
+                        className="text-base"
+                        style={{ color: 'var(--red-soft)' }}
+                    >
                         {t('calibration.red')}: {redBrightness}
                     </label>
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => setRedBrightness(Math.max(0, redBrightness - 5))}
+                            type="button"
+                            onClick={() =>
+                                setRedBrightness(Math.max(0, redBrightness - 5))
+                            }
                             className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
                         >
                             −
@@ -77,7 +94,12 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                             aria-label="Яркость красного канала"
                         />
                         <button
-                            onClick={() => setRedBrightness(Math.min(100, redBrightness + 5))}
+                            type="button"
+                            onClick={() =>
+                                setRedBrightness(
+                                    Math.min(100, redBrightness + 5),
+                                )
+                            }
                             className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
                         >
                             +
@@ -87,12 +109,20 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
                 {/* Cyan channel slider */}
                 <div className="space-y-2">
-                    <label className="text-base" style={{ color: 'var(--cyan-soft)' }}>
+                    <label
+                        className="text-base"
+                        style={{ color: 'var(--cyan-soft)' }}
+                    >
                         {t('calibration.cyan')}: {cyanBrightness}
                     </label>
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => setCyanBrightness(Math.max(0, cyanBrightness - 5))}
+                            type="button"
+                            onClick={() =>
+                                setCyanBrightness(
+                                    Math.max(0, cyanBrightness - 5),
+                                )
+                            }
                             className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
                         >
                             −
@@ -108,7 +138,12 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
                             aria-label="Яркость голубого канала"
                         />
                         <button
-                            onClick={() => setCyanBrightness(Math.min(100, cyanBrightness + 5))}
+                            type="button"
+                            onClick={() =>
+                                setCyanBrightness(
+                                    Math.min(100, cyanBrightness + 5),
+                                )
+                            }
                             className="w-10 h-10 rounded-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-lg btn-press flex items-center justify-center"
                         >
                             +
@@ -119,24 +154,47 @@ export function BrightnessAdjustStep({ glassesType, onRetry, onComplete, attempt
 
             {maxAttemptsReached ? (
                 <div className="w-full max-w-sm space-y-3">
-                    <p role="alert" className="text-[var(--warning)] text-base text-center">
+                    <p
+                        role="alert"
+                        className="text-[var(--warning)] text-base text-center"
+                    >
                         {t('calibration.doctorWarning')}
                     </p>
                     <div className="flex gap-2">
-                        <AppButton variant="outline" size="md" onClick={onComplete} className="flex-1">
+                        <AppButton
+                            variant="outline"
+                            size="md"
+                            onClick={onComplete}
+                            className="flex-1"
+                        >
                             {t('calibration.continueAnyway')}
                         </AppButton>
-                        <AppButton variant="cta" size="md" onClick={onRetry} className="flex-1">
+                        <AppButton
+                            variant="cta"
+                            size="md"
+                            onClick={onRetry}
+                            className="flex-1"
+                        >
                             {t('calibration.recalibrate')}
                         </AppButton>
                     </div>
                 </div>
             ) : (
                 <div className="w-full max-w-sm flex gap-2">
-                    <AppButton variant="outline" size="md" onClick={onRetry} className="flex-1">
+                    <AppButton
+                        variant="outline"
+                        size="md"
+                        onClick={onRetry}
+                        className="flex-1"
+                    >
                         {t('calibration.retry')}
                     </AppButton>
-                    <AppButton variant="cta" size="md" onClick={onComplete} className="flex-1">
+                    <AppButton
+                        variant="cta"
+                        size="md"
+                        onClick={onComplete}
+                        className="flex-1"
+                    >
                         {t('calibration.save')}
                     </AppButton>
                 </div>

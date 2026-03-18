@@ -1,4 +1,7 @@
-interface ProgressRingProps { percent: number; size?: number; }
+interface ProgressRingProps {
+    percent: number;
+    size?: number;
+}
 
 export function ProgressRing({ percent, size = 100 }: ProgressRingProps) {
     const radius = size * 0.4;
@@ -6,17 +9,33 @@ export function ProgressRing({ percent, size = 100 }: ProgressRingProps) {
     const cy = size / 2;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (percent / 100) * circumference;
-    const color = percent > 70
-        ? 'var(--success)'
-        : percent > 40
-            ? 'var(--warning)'
-            : 'var(--accent-secondary)';
+    const color =
+        percent > 70
+            ? 'var(--success)'
+            : percent > 40
+              ? 'var(--warning)'
+              : 'var(--accent-secondary)';
     return (
-        <svg width={size} height={size} className="mx-auto" role="img" aria-label={`Точность: ${percent}%`}>
+        <svg
+            width={size}
+            height={size}
+            className="mx-auto"
+            role="img"
+            aria-label={`Точность: ${percent}%`}
+        >
             <title>Точность: {percent}%</title>
-            <circle cx={cx} cy={cy} r={radius} fill="none" stroke="var(--border)" strokeWidth="8" />
             <circle
-                cx={cx} cy={cy} r={radius}
+                cx={cx}
+                cy={cy}
+                r={radius}
+                fill="none"
+                stroke="var(--border)"
+                strokeWidth="8"
+            />
+            <circle
+                cx={cx}
+                cy={cy}
+                r={radius}
                 fill="none"
                 stroke={color}
                 strokeWidth="8"
@@ -24,9 +43,18 @@ export function ProgressRing({ percent, size = 100 }: ProgressRingProps) {
                 strokeDasharray={circumference}
                 strokeDashoffset={offset}
                 transform={`rotate(-90 ${cx} ${cy})`}
-                className="transition-all duration-1000"
+                className="transition-[stroke-dashoffset] duration-1000"
             />
-            <text x={cx} y={cy} textAnchor="middle" dy="6" fill="var(--text)" fontSize="18" fontWeight="bold">
+            <text
+                x={cx}
+                y={cy}
+                textAnchor="middle"
+                dy="6"
+                fill="var(--text)"
+                fontSize="18"
+                fontWeight="bold"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
                 {percent}%
             </text>
         </svg>

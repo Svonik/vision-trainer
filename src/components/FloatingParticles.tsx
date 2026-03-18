@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 function useReducedMotion(): boolean {
     const [prefersReduced, setPrefersReduced] = useState(() =>
         typeof window !== 'undefined'
             ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            : false
+            : false,
     );
 
     useEffect(() => {
         const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
+        const handler = (e: MediaQueryListEvent) =>
+            setPrefersReduced(e.matches);
         mql.addEventListener('change', handler);
         return () => mql.removeEventListener('change', handler);
     }, []);
@@ -32,7 +33,10 @@ export function FloatingParticles() {
     if (shouldReduceMotion) return null;
 
     return (
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div
+            className="fixed inset-0 z-0 pointer-events-none overflow-hidden"
+            aria-hidden="true"
+        >
             {particles.map((p, i) => (
                 <div
                     key={i}

@@ -1,12 +1,15 @@
-import { useRef, useEffect } from 'react';
-import { createSafetyTimer, SafetyTimer } from '../modules/safetyTimer';
+import { useEffect, useRef } from 'react';
+import { createSafetyTimer, type SafetyTimer } from '../modules/safetyTimer';
 
 interface SafetyTimerCallbacks {
     onWarning: () => void;
     onBreak: () => void;
 }
 
-export function useSafetyTimer({ onWarning, onBreak }: SafetyTimerCallbacks): SafetyTimer {
+export function useSafetyTimer({
+    onWarning,
+    onBreak,
+}: SafetyTimerCallbacks): SafetyTimer {
     const onWarningRef = useRef(onWarning);
     const onBreakRef = useRef(onBreak);
     onWarningRef.current = onWarning;
@@ -22,7 +25,9 @@ export function useSafetyTimer({ onWarning, onBreak }: SafetyTimerCallbacks): Sa
     }
 
     useEffect(() => {
-        return () => { timerRef.current?.stop(); };
+        return () => {
+            timerRef.current?.stop();
+        };
     }, []);
 
     return timerRef.current;

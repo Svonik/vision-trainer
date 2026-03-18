@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../modules/i18n';
 
 export function LandscapePrompt() {
@@ -6,12 +6,16 @@ export function LandscapePrompt() {
 
     useEffect(() => {
         const check = () => {
-            const show = window.innerWidth < 768 && window.innerHeight > window.innerWidth;
-            setShouldShow(prev => prev === show ? prev : show);
+            const show =
+                window.innerWidth < 768 &&
+                window.innerHeight > window.innerWidth;
+            setShouldShow((prev) => (prev === show ? prev : show));
         };
         check();
         window.addEventListener('resize', check);
-        window.addEventListener('orientationchange', () => requestAnimationFrame(check));
+        window.addEventListener('orientationchange', () =>
+            requestAnimationFrame(check),
+        );
         return () => {
             window.removeEventListener('resize', check);
             window.removeEventListener('orientationchange', check);

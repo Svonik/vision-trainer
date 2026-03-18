@@ -5,7 +5,11 @@ interface GameIllustrationProps {
 export function GameIllustration({ gameId }: GameIllustrationProps) {
     return (
         <div className="h-24 bg-[var(--surface)] rounded-t-3xl overflow-hidden flex items-center justify-center">
-            <svg viewBox="0 0 120 60" className="h-full w-full" aria-hidden="true">
+            <svg
+                viewBox="0 0 120 60"
+                className="h-full w-full"
+                aria-hidden="true"
+            >
                 {renderIllustration(gameId)}
             </svg>
         </div>
@@ -18,142 +22,604 @@ function renderIllustration(gameId: string): JSX.Element | null {
             return (
                 <>
                     {/* 3 falling circles + 1 platform */}
-                    <circle cx="35" cy="10" r="6" fill="var(--cyan-soft)" opacity="0.7" />
-                    <circle cx="62" cy="18" r="5" fill="var(--cyan-soft)" opacity="0.5" />
-                    <circle cx="85" cy="8" r="4" fill="var(--warning)" opacity="0.6" />
-                    <rect x="30" y="48" width="60" height="6" rx="3" fill="var(--red-soft)" opacity="0.8" />
+                    <circle
+                        cx="35"
+                        cy="10"
+                        r="6"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
+                    />
+                    <circle
+                        cx="62"
+                        cy="18"
+                        r="5"
+                        fill="var(--cyan-soft)"
+                        opacity="0.5"
+                    />
+                    <circle
+                        cx="85"
+                        cy="8"
+                        r="4"
+                        fill="var(--warning)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="30"
+                        y="48"
+                        width="60"
+                        height="6"
+                        rx="3"
+                        fill="var(--red-soft)"
+                        opacity="0.8"
+                    />
                 </>
             );
         case 'breakout':
             return (
                 <>
                     {/* Bricks + ball + platform */}
-                    <rect x="20" y="8" width="16" height="6" rx="2" fill="var(--cyan-soft)" opacity="0.6" />
-                    <rect x="40" y="8" width="16" height="6" rx="2" fill="var(--cyan-soft)" opacity="0.4" />
-                    <rect x="60" y="8" width="16" height="6" rx="2" fill="var(--accent)" opacity="0.6" />
-                    <rect x="30" y="16" width="16" height="6" rx="2" fill="var(--accent)" opacity="0.4" />
-                    <rect x="50" y="16" width="16" height="6" rx="2" fill="var(--cyan-soft)" opacity="0.5" />
+                    <rect
+                        x="20"
+                        y="8"
+                        width="16"
+                        height="6"
+                        rx="2"
+                        fill="var(--cyan-soft)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="40"
+                        y="8"
+                        width="16"
+                        height="6"
+                        rx="2"
+                        fill="var(--cyan-soft)"
+                        opacity="0.4"
+                    />
+                    <rect
+                        x="60"
+                        y="8"
+                        width="16"
+                        height="6"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="30"
+                        y="16"
+                        width="16"
+                        height="6"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.4"
+                    />
+                    <rect
+                        x="50"
+                        y="16"
+                        width="16"
+                        height="6"
+                        rx="2"
+                        fill="var(--cyan-soft)"
+                        opacity="0.5"
+                    />
                     <circle cx="60" cy="36" r="3" fill="white" opacity="0.7" />
-                    <rect x="42" y="50" width="36" height="5" rx="2.5" fill="var(--red-soft)" opacity="0.6" />
+                    <rect
+                        x="42"
+                        y="50"
+                        width="36"
+                        height="5"
+                        rx="2.5"
+                        fill="var(--red-soft)"
+                        opacity="0.6"
+                    />
                 </>
             );
         case 'tetris':
             return (
                 <>
                     {/* L-piece (3 rects) */}
-                    <rect x="28" y="20" width="10" height="10" rx="1.5" fill="var(--cyan-soft)" opacity="0.7" />
-                    <rect x="28" y="30" width="10" height="10" rx="1.5" fill="var(--cyan-soft)" opacity="0.7" />
-                    <rect x="38" y="30" width="10" height="10" rx="1.5" fill="var(--cyan-soft)" opacity="0.7" />
+                    <rect
+                        x="28"
+                        y="20"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
+                    />
+                    <rect
+                        x="28"
+                        y="30"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
+                    />
+                    <rect
+                        x="38"
+                        y="30"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
+                    />
                     {/* T-piece (4 rects) */}
-                    <rect x="56" y="20" width="10" height="10" rx="1.5" fill="var(--accent)" opacity="0.6" />
-                    <rect x="66" y="20" width="10" height="10" rx="1.5" fill="var(--accent)" opacity="0.6" />
-                    <rect x="76" y="20" width="10" height="10" rx="1.5" fill="var(--accent)" opacity="0.6" />
-                    <rect x="66" y="30" width="10" height="10" rx="1.5" fill="var(--accent)" opacity="0.6" />
+                    <rect
+                        x="56"
+                        y="20"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="66"
+                        y="20"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="76"
+                        y="20"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="66"
+                        y="30"
+                        width="10"
+                        height="10"
+                        rx="1.5"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
                 </>
             );
         case 'invaders':
             return (
                 <>
                     {/* 3 enemy squares in a row */}
-                    <rect x="22" y="12" width="16" height="16" rx="2" fill="var(--accent)" opacity="0.7" />
-                    <rect x="52" y="12" width="16" height="16" rx="2" fill="var(--accent)" opacity="0.7" />
-                    <rect x="82" y="12" width="16" height="16" rx="2" fill="var(--accent)" opacity="0.6" />
+                    <rect
+                        x="22"
+                        y="12"
+                        width="16"
+                        height="16"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.7"
+                    />
+                    <rect
+                        x="52"
+                        y="12"
+                        width="16"
+                        height="16"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.7"
+                    />
+                    <rect
+                        x="82"
+                        y="12"
+                        width="16"
+                        height="16"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
                     {/* Shield */}
-                    <rect x="42" y="38" width="36" height="6" rx="2" fill="var(--border)" opacity="0.4" />
+                    <rect
+                        x="42"
+                        y="38"
+                        width="36"
+                        height="6"
+                        rx="2"
+                        fill="var(--border)"
+                        opacity="0.4"
+                    />
                     {/* Player ship (rect) */}
-                    <rect x="46" y="48" width="28" height="6" rx="2" fill="var(--cyan-soft)" opacity="0.8" />
+                    <rect
+                        x="46"
+                        y="48"
+                        width="28"
+                        height="6"
+                        rx="2"
+                        fill="var(--cyan-soft)"
+                        opacity="0.8"
+                    />
                 </>
             );
         case 'pong':
             return (
                 <>
                     {/* Two paddles + ball */}
-                    <rect x="12" y="18" width="4" height="24" rx="2" fill="var(--cyan-soft)" opacity="0.6" />
-                    <rect x="104" y="18" width="4" height="24" rx="2" fill="var(--red-soft)" opacity="0.6" />
+                    <rect
+                        x="12"
+                        y="18"
+                        width="4"
+                        height="24"
+                        rx="2"
+                        fill="var(--cyan-soft)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="104"
+                        y="18"
+                        width="4"
+                        height="24"
+                        rx="2"
+                        fill="var(--red-soft)"
+                        opacity="0.6"
+                    />
                     <circle cx="60" cy="30" r="4" fill="white" opacity="0.8" />
-                    <line x1="60" y1="2" x2="60" y2="58" stroke="var(--border)" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+                    <line
+                        x1="60"
+                        y1="2"
+                        x2="60"
+                        y2="58"
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                        strokeDasharray="4 4"
+                        opacity="0.3"
+                    />
                 </>
             );
         case 'snake':
             return (
                 <>
                     {/* Snake + apple */}
-                    <rect x="30" y="28" width="8" height="8" rx="2" fill="var(--accent)" opacity="0.8" />
-                    <rect x="40" y="28" width="8" height="8" rx="2" fill="var(--accent)" opacity="0.6" />
-                    <rect x="50" y="28" width="8" height="8" rx="2" fill="var(--accent)" opacity="0.4" />
-                    <rect x="60" y="28" width="8" height="8" rx="2" fill="var(--accent)" opacity="0.2" />
-                    <circle cx="84" cy="20" r="4" fill="var(--red-soft)" opacity="0.8" />
+                    <rect
+                        x="30"
+                        y="28"
+                        width="8"
+                        height="8"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.8"
+                    />
+                    <rect
+                        x="40"
+                        y="28"
+                        width="8"
+                        height="8"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="50"
+                        y="28"
+                        width="8"
+                        height="8"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.4"
+                    />
+                    <rect
+                        x="60"
+                        y="28"
+                        width="8"
+                        height="8"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.2"
+                    />
+                    <circle
+                        cx="84"
+                        cy="20"
+                        r="4"
+                        fill="var(--red-soft)"
+                        opacity="0.8"
+                    />
                 </>
             );
         case 'flappy':
             return (
                 <>
                     {/* 2 pipe rects + 2 pipe cap rects + 1 circle bird */}
-                    <rect x="32" y="0" width="14" height="18" rx="3" fill="var(--accent)" opacity="0.5" />
-                    <rect x="32" y="44" width="14" height="16" rx="3" fill="var(--accent)" opacity="0.5" />
-                    <rect x="29" y="15" width="20" height="5" rx="2" fill="var(--accent)" opacity="0.6" />
-                    <rect x="29" y="42" width="20" height="5" rx="2" fill="var(--accent)" opacity="0.6" />
+                    <rect
+                        x="32"
+                        y="0"
+                        width="14"
+                        height="18"
+                        rx="3"
+                        fill="var(--accent)"
+                        opacity="0.5"
+                    />
+                    <rect
+                        x="32"
+                        y="44"
+                        width="14"
+                        height="16"
+                        rx="3"
+                        fill="var(--accent)"
+                        opacity="0.5"
+                    />
+                    <rect
+                        x="29"
+                        y="15"
+                        width="20"
+                        height="5"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="29"
+                        y="42"
+                        width="20"
+                        height="5"
+                        rx="2"
+                        fill="var(--accent)"
+                        opacity="0.6"
+                    />
                     {/* Bird */}
-                    <circle cx="70" cy="30" r="7" fill="var(--warning)" opacity="0.8" />
+                    <circle
+                        cx="70"
+                        cy="30"
+                        r="7"
+                        fill="var(--warning)"
+                        opacity="0.8"
+                    />
                 </>
             );
         case 'asteroid':
             return (
                 <>
                     {/* 3 asteroid circles (different sizes) + 1 ship rect */}
-                    <circle cx="30" cy="16" r="10" fill="var(--accent)" opacity="0.5" />
-                    <circle cx="82" cy="18" r="7" fill="var(--accent)" opacity="0.45" />
-                    <circle cx="58" cy="10" r="5" fill="var(--accent)" opacity="0.4" />
+                    <circle
+                        cx="30"
+                        cy="16"
+                        r="10"
+                        fill="var(--accent)"
+                        opacity="0.5"
+                    />
+                    <circle
+                        cx="82"
+                        cy="18"
+                        r="7"
+                        fill="var(--accent)"
+                        opacity="0.45"
+                    />
+                    <circle
+                        cx="58"
+                        cy="10"
+                        r="5"
+                        fill="var(--accent)"
+                        opacity="0.4"
+                    />
                     {/* Ship */}
-                    <rect x="54" y="44" width="12" height="8" rx="2" fill="var(--cyan-soft)" opacity="0.8" />
+                    <rect
+                        x="54"
+                        y="44"
+                        width="12"
+                        height="8"
+                        rx="2"
+                        fill="var(--cyan-soft)"
+                        opacity="0.8"
+                    />
                 </>
             );
         case 'balloonpop':
             return (
                 <>
                     {/* 3 balloons */}
-                    <ellipse cx="36" cy="24" rx="8" ry="10" fill="var(--red-soft)" opacity="0.6" />
-                    <ellipse cx="60" cy="20" rx="7" ry="9" fill="var(--cyan-soft)" opacity="0.5" />
-                    <ellipse cx="84" cy="24" rx="8" ry="10" fill="var(--accent)" opacity="0.5" />
-                    <line x1="36" y1="34" x2="36" y2="50" stroke="var(--border)" strokeWidth="1" opacity="0.4" />
-                    <line x1="60" y1="29" x2="60" y2="50" stroke="var(--border)" strokeWidth="1" opacity="0.4" />
-                    <line x1="84" y1="34" x2="84" y2="50" stroke="var(--border)" strokeWidth="1" opacity="0.4" />
+                    <ellipse
+                        cx="36"
+                        cy="24"
+                        rx="8"
+                        ry="10"
+                        fill="var(--red-soft)"
+                        opacity="0.6"
+                    />
+                    <ellipse
+                        cx="60"
+                        cy="20"
+                        rx="7"
+                        ry="9"
+                        fill="var(--cyan-soft)"
+                        opacity="0.5"
+                    />
+                    <ellipse
+                        cx="84"
+                        cy="24"
+                        rx="8"
+                        ry="10"
+                        fill="var(--accent)"
+                        opacity="0.5"
+                    />
+                    <line
+                        x1="36"
+                        y1="34"
+                        x2="36"
+                        y2="50"
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                        opacity="0.4"
+                    />
+                    <line
+                        x1="60"
+                        y1="29"
+                        x2="60"
+                        y2="50"
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                        opacity="0.4"
+                    />
+                    <line
+                        x1="84"
+                        y1="34"
+                        x2="84"
+                        y2="50"
+                        stroke="var(--border)"
+                        strokeWidth="1"
+                        opacity="0.4"
+                    />
                 </>
             );
         case 'memorytiles':
             return (
                 <>
                     {/* 2x2 grid, one flipped */}
-                    <rect x="30" y="12" width="20" height="16" rx="3" fill="var(--cyan-soft)" opacity="0.5" />
-                    <rect x="54" y="12" width="20" height="16" rx="3" fill="var(--border)" opacity="0.6" />
-                    <rect x="30" y="32" width="20" height="16" rx="3" fill="var(--border)" opacity="0.6" />
-                    <rect x="54" y="32" width="20" height="16" rx="3" fill="var(--red-soft)" opacity="0.5" />
+                    <rect
+                        x="30"
+                        y="12"
+                        width="20"
+                        height="16"
+                        rx="3"
+                        fill="var(--cyan-soft)"
+                        opacity="0.5"
+                    />
+                    <rect
+                        x="54"
+                        y="12"
+                        width="20"
+                        height="16"
+                        rx="3"
+                        fill="var(--border)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="30"
+                        y="32"
+                        width="20"
+                        height="16"
+                        rx="3"
+                        fill="var(--border)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="54"
+                        y="32"
+                        width="20"
+                        height="16"
+                        rx="3"
+                        fill="var(--red-soft)"
+                        opacity="0.5"
+                    />
                 </>
             );
         case 'frogger':
             return (
                 <>
                     {/* 3 road lane rects + 2 car rects + 1 frog circle */}
-                    <rect x="10" y="8" width="100" height="10" rx="2" fill="var(--border)" opacity="0.3" />
-                    <rect x="10" y="22" width="100" height="10" rx="2" fill="var(--border)" opacity="0.3" />
-                    <rect x="10" y="36" width="100" height="10" rx="2" fill="var(--border)" opacity="0.3" />
-                    <rect x="20" y="10" width="20" height="6" rx="3" fill="var(--red-soft)" opacity="0.6" />
-                    <rect x="65" y="24" width="20" height="6" rx="3" fill="var(--warning)" opacity="0.5" />
+                    <rect
+                        x="10"
+                        y="8"
+                        width="100"
+                        height="10"
+                        rx="2"
+                        fill="var(--border)"
+                        opacity="0.3"
+                    />
+                    <rect
+                        x="10"
+                        y="22"
+                        width="100"
+                        height="10"
+                        rx="2"
+                        fill="var(--border)"
+                        opacity="0.3"
+                    />
+                    <rect
+                        x="10"
+                        y="36"
+                        width="100"
+                        height="10"
+                        rx="2"
+                        fill="var(--border)"
+                        opacity="0.3"
+                    />
+                    <rect
+                        x="20"
+                        y="10"
+                        width="20"
+                        height="6"
+                        rx="3"
+                        fill="var(--red-soft)"
+                        opacity="0.6"
+                    />
+                    <rect
+                        x="65"
+                        y="24"
+                        width="20"
+                        height="6"
+                        rx="3"
+                        fill="var(--warning)"
+                        opacity="0.5"
+                    />
                     {/* Frog */}
-                    <circle cx="55" cy="41" r="5" fill="var(--accent)" opacity="0.7" />
+                    <circle
+                        cx="55"
+                        cy="41"
+                        r="5"
+                        fill="var(--accent)"
+                        opacity="0.7"
+                    />
                 </>
             );
         case 'catchmonsters':
             return (
                 <>
                     {/* 3 monster circles (different colors/sizes) + crosshair (circle + 2 lines) */}
-                    <circle cx="28" cy="22" r="10" fill="var(--cyan-soft)" opacity="0.6" />
-                    <circle cx="62" cy="18" r="7" fill="var(--accent)" opacity="0.5" />
-                    <circle cx="90" cy="24" r="8" fill="var(--warning)" opacity="0.4" />
+                    <circle
+                        cx="28"
+                        cy="22"
+                        r="10"
+                        fill="var(--cyan-soft)"
+                        opacity="0.6"
+                    />
+                    <circle
+                        cx="62"
+                        cy="18"
+                        r="7"
+                        fill="var(--accent)"
+                        opacity="0.5"
+                    />
+                    <circle
+                        cx="90"
+                        cy="24"
+                        r="8"
+                        fill="var(--warning)"
+                        opacity="0.4"
+                    />
                     {/* Crosshair */}
-                    <circle cx="55" cy="44" r="9" fill="none" stroke="var(--red-soft)" strokeWidth="1.5" opacity="0.5" />
-                    <line x1="55" y1="33" x2="55" y2="55" stroke="var(--red-soft)" strokeWidth="1" opacity="0.4" />
-                    <line x1="44" y1="44" x2="66" y2="44" stroke="var(--red-soft)" strokeWidth="1" opacity="0.4" />
+                    <circle
+                        cx="55"
+                        cy="44"
+                        r="9"
+                        fill="none"
+                        stroke="var(--red-soft)"
+                        strokeWidth="1.5"
+                        opacity="0.5"
+                    />
+                    <line
+                        x1="55"
+                        y1="33"
+                        x2="55"
+                        y2="55"
+                        stroke="var(--red-soft)"
+                        strokeWidth="1"
+                        opacity="0.4"
+                    />
+                    <line
+                        x1="44"
+                        y1="44"
+                        x2="66"
+                        y2="44"
+                        stroke="var(--red-soft)"
+                        strokeWidth="1"
+                        opacity="0.4"
+                    />
                 </>
             );
         default:

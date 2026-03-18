@@ -1,33 +1,50 @@
-import { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { DisclaimerPage } from './DisclaimerPage';
-import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
-import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
-import type { SuppressionResult } from '../modules/suppressionTest';
+import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
+import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
+import type { SuppressionResult } from '../modules/suppressionTest';
+import { DisclaimerPage } from './DisclaimerPage';
 
-type WizardStep = 'disclaimer' | 'glasses' | 'age_group' | 'suppression' | 'adjust';
+type WizardStep =
+    | 'disclaimer'
+    | 'glasses'
+    | 'age_group'
+    | 'suppression'
+    | 'adjust';
 
-const STEP_ORDER: WizardStep[] = ['disclaimer', 'glasses', 'age_group', 'suppression', 'adjust'];
+const STEP_ORDER: WizardStep[] = [
+    'disclaimer',
+    'glasses',
+    'age_group',
+    'suppression',
+    'adjust',
+];
 
 export function OnboardingWizard() {
     const navigate = useNavigate();
     const [step, setStep] = useState<WizardStep>('disclaimer');
     const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
     const reducedMotion = useReducedMotion();
-    const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>('red-cyan');
+    const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>(
+        'red-cyan',
+    );
     const [adjustAttempts, setAdjustAttempts] = useState(0);
-    const { save, setGlassesType: saveGlassesType, setAgeGroup: saveAgeGroup } = useCalibration();
+    const {
+        save,
+        setGlassesType: saveGlassesType,
+        setAgeGroup: saveAgeGroup,
+    } = useCalibration();
     const stepRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Focus the step container when step changes (for screen readers)
         stepRef.current?.focus();
-    }, [step]);
+    }, []);
 
     const handleDisclaimerComplete = () => {
         setDirection(1);
@@ -53,14 +70,14 @@ export function OnboardingWizard() {
         if (passed) {
             navigate('/mode-select');
         } else {
-            setAdjustAttempts(prev => prev + 1);
+            setAdjustAttempts((prev) => prev + 1);
             setDirection(1);
             setStep('adjust');
         }
     };
 
     const handleAdjustRetry = () => {
-        setAdjustAttempts(prev => prev + 1);
+        setAdjustAttempts((prev) => prev + 1);
         setDirection(-1);
         setStep('suppression');
     };
@@ -73,16 +90,27 @@ export function OnboardingWizard() {
     const currentStepIndex = STEP_ORDER.indexOf(step);
 
     return (
-        <div ref={stepRef} tabIndex={-1} className="outline-none min-h-screen relative"
+        <div
+            ref={stepRef}
+            tabIndex={-1}
+            className="outline-none min-h-screen relative"
             style={{ background: 'var(--bg-gradient)' }}
         >
             <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                     key={step}
                     custom={direction}
-                    initial={reducedMotion ? false : { opacity: 0, x: direction * 60 }}
+                    initial={
+                        reducedMotion
+                            ? false
+                            : { opacity: 0, x: direction * 60 }
+                    }
                     animate={{ opacity: 1, x: 0 }}
-                    exit={reducedMotion ? undefined : { opacity: 0, x: direction * -60 }}
+                    exit={
+                        reducedMotion
+                            ? undefined
+                            : { opacity: 0, x: direction * -60 }
+                    }
                     transition={{ duration: 0.25, ease: 'easeOut' }}
                     className="min-h-screen"
                 >
@@ -123,12 +151,12 @@ export function OnboardingWizard() {
                         key={s}
                         data-dot={s}
                         aria-label={`Шаг ${i + 1} из ${STEP_ORDER.length}`}
-                        className={`w-2 h-2 rounded-full transition-all ${
+                        className={`w-2 h-2 rounded-full transition-colors ${
                             i < currentStepIndex
                                 ? 'bg-[var(--cta)] opacity-60'
                                 : i === currentStepIndex
-                                ? 'bg-[var(--cta)] w-4'
-                                : 'bg-[var(--border)]'
+                                  ? 'bg-[var(--cta)] w-4'
+                                  : 'bg-[var(--border)]'
                         }`}
                     />
                 ))}

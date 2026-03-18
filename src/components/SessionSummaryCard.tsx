@@ -8,15 +8,20 @@ interface SessionSummaryCardProps {
     readonly onWellnessPost?: (eyeStrain: boolean, headache: boolean) => void;
 }
 
-export function SessionSummaryCard({ summary, onContinue, onWellnessPost }: SessionSummaryCardProps) {
+export function SessionSummaryCard({
+    summary,
+    onContinue,
+    onWellnessPost,
+}: SessionSummaryCardProps) {
     const [eyeStrain, setEyeStrain] = useState(false);
     const [headache, setHeadache] = useState(false);
 
-    const message = summary.stars === 3
-        ? t('summary.excellent')
-        : summary.stars === 2
-            ? t('summary.good')
-            : t('summary.try_again');
+    const message =
+        summary.stars === 3
+            ? t('summary.excellent')
+            : summary.stars === 2
+              ? t('summary.good')
+              : t('summary.try_again');
 
     const handleContinue = () => {
         onWellnessPost?.(eyeStrain, headache);
@@ -26,13 +31,16 @@ export function SessionSummaryCard({ summary, onContinue, onWellnessPost }: Sess
     return (
         <div className="flex flex-col items-center gap-4 p-8 bg-[var(--surface)] rounded-2xl shadow-lg max-w-sm mx-auto">
             <div className="text-4xl">
-                {'★'.repeat(summary.stars)}{'☆'.repeat(3 - summary.stars)}
+                {'★'.repeat(summary.stars)}
+                {'☆'.repeat(3 - summary.stars)}
             </div>
 
             <h2 className="text-2xl font-bold text-[var(--text)]">{message}</h2>
 
             {summary.isNewRecord && (
-                <div className="text-[var(--warning)] font-bold">{t('summary.new_record')}</div>
+                <div className="text-[var(--warning)] font-bold">
+                    {t('summary.new_record')}
+                </div>
             )}
 
             <div className="w-full space-y-2 text-sm text-[var(--text)]">
@@ -44,12 +52,16 @@ export function SessionSummaryCard({ summary, onContinue, onWellnessPost }: Sess
                 <div>
                     <div className="flex justify-between mb-1">
                         <span>{t('summary.contrast_progress')}</span>
-                        <span className="font-bold">{Math.round(summary.contrastProgress)}%</span>
+                        <span className="font-bold">
+                            {Math.round(summary.contrastProgress)}%
+                        </span>
                     </div>
                     <div className="w-full bg-[var(--border)] rounded-full h-2">
                         <div
-                            className="bg-[var(--accent)] h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min(100, summary.contrastProgress)}%` }}
+                            className="bg-[var(--accent)] h-2 rounded-full transition-[width] duration-500"
+                            style={{
+                                width: `${Math.min(100, summary.contrastProgress)}%`,
+                            }}
                         />
                     </div>
                 </div>
@@ -70,6 +82,7 @@ export function SessionSummaryCard({ summary, onContinue, onWellnessPost }: Sess
             </div>
 
             <button
+                type="button"
                 onClick={handleContinue}
                 className="mt-4 px-8 py-3 bg-[var(--cta)] text-[var(--cta-text)] rounded-full text-lg font-bold btn-press transition-colors"
             >
@@ -88,21 +101,27 @@ interface WellnessToggleProps {
 function WellnessToggle({ label, value, onChange }: WellnessToggleProps) {
     return (
         <div className="flex items-center justify-between">
-            <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+            <span className="text-sm text-[var(--text-secondary)]">
+                {label}
+            </span>
             <div className="flex gap-2">
                 <button
+                    type="button"
                     onClick={() => onChange(false)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold btn-press transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold btn-press transition-[transform,box-shadow,border-color] ${
                         !value
                             ? 'bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]'
                             : 'bg-transparent text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
                     }`}
                 >
-                    {t('wellness.good').charAt(0).toUpperCase() === 'Х' ? 'Нет' : 'Нет'}
+                    {t('wellness.good').charAt(0).toUpperCase() === 'Х'
+                        ? 'Нет'
+                        : 'Нет'}
                 </button>
                 <button
+                    type="button"
                     onClick={() => onChange(true)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-semibold btn-press transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-sm font-semibold btn-press transition-[transform,box-shadow,border-color] ${
                         value
                             ? 'bg-[var(--warning)]/20 text-[var(--warning)] border border-[var(--warning)]'
                             : 'bg-transparent text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'

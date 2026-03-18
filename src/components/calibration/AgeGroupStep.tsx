@@ -13,16 +13,18 @@ export function AgeGroupStep({ onSelect }: Props) {
             </h2>
             <div className="grid grid-cols-2 gap-4 w-full max-w-md">
                 <button
+                    type="button"
                     onClick={() => onSelect('4-7')}
-                    className="rounded-3xl border-2 border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] p-6 btn-press transition-all"
+                    className="rounded-3xl border-2 border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] p-6 btn-press transition-[transform,box-shadow,border-color]"
                 >
                     <p className="font-[var(--font-display)] text-2xl font-bold text-[var(--text)]">
                         {t('age_group.4_7')}
                     </p>
                 </button>
                 <button
+                    type="button"
                     onClick={() => onSelect('8-12')}
-                    className="rounded-3xl border-2 border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] p-6 btn-press transition-all"
+                    className="rounded-3xl border-2 border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] p-6 btn-press transition-[transform,box-shadow,border-color]"
                 >
                     <p className="font-[var(--font-display)] text-2xl font-bold text-[var(--text)]">
                         {t('age_group.8_12')}

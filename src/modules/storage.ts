@@ -1,4 +1,4 @@
-import { STORAGE_KEYS, CURRENT_VERSION } from './constants';
+import { CURRENT_VERSION, STORAGE_KEYS } from './constants';
 
 export interface CalibrationData {
     red_brightness: number;
@@ -75,18 +75,24 @@ export const initStorage = (): void => {
     }
 };
 
-export const isDisclaimerAccepted = (): boolean => read(STORAGE_KEYS.DISCLAIMER) === true;
+export const isDisclaimerAccepted = (): boolean =>
+    read(STORAGE_KEYS.DISCLAIMER) === true;
 
-export const acceptDisclaimer = (): void => write(STORAGE_KEYS.DISCLAIMER, true);
+export const acceptDisclaimer = (): void =>
+    write(STORAGE_KEYS.DISCLAIMER, true);
 
 export const getCalibration = (): CalibrationData => {
-    const stored = read(STORAGE_KEYS.CALIBRATION) as Partial<CalibrationData> | null;
+    const stored = read(
+        STORAGE_KEYS.CALIBRATION,
+    ) as Partial<CalibrationData> | null;
     return { ...DEFAULT_CALIBRATION, ...(stored || {}) };
 };
 
-export const saveCalibration = (cal: CalibrationData): void => write(STORAGE_KEYS.CALIBRATION, cal);
+export const saveCalibration = (cal: CalibrationData): void =>
+    write(STORAGE_KEYS.CALIBRATION, cal);
 
-export const getSessions = (): unknown[] => (read(STORAGE_KEYS.SESSIONS) as unknown[] | null) || [];
+export const getSessions = (): unknown[] =>
+    (read(STORAGE_KEYS.SESSIONS) as unknown[] | null) || [];
 
 export const writeSessions = (sessions: unknown[]): void => {
     write(STORAGE_KEYS.SESSIONS, sessions);
@@ -98,7 +104,9 @@ export const addSession = (session: unknown): void => {
 };
 
 export const getDefaultSettings = (): DefaultSettings => {
-    const stored = read(STORAGE_KEYS.DEFAULT_SETTINGS) as Partial<DefaultSettings> | null;
+    const stored = read(
+        STORAGE_KEYS.DEFAULT_SETTINGS,
+    ) as Partial<DefaultSettings> | null;
     return { ...DEFAULT_SETTINGS, ...(stored || {}) };
 };
 
