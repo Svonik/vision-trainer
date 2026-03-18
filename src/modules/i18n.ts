@@ -144,6 +144,7 @@ const strings = {
     'mode.freePlayDesc': 'Выберите любую игру из 12 доступных',
     'mode.startTraining': 'Начать тренировку',
     'mode.chooseGame': 'Выбрать игру',
+    'mode.subtitle': 'Как хотите заниматься сегодня?',
     'training.todaySession': 'Сегодня',
     'training.settings': 'Настройки тренировки',
     'training.contrastRecommendation': 'Рекомендуемый контраст',

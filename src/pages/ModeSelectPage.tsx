@@ -28,7 +28,7 @@ export function ModeSelectPage() {
                 {t('mode.title')}
             </h1>
             <p className="text-[var(--text-secondary)] text-base mb-8 text-center max-w-xs">
-                Vision Trainer
+                {t('mode.subtitle')}
             </p>
 
             <div className="flex flex-col gap-5 max-w-sm w-full">
