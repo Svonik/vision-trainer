@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -71,6 +72,9 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     this.colorB = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.alphaA = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.alphaB = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     this.level = 1;
     const gridConfig = GRID_CONFIG[this.settings.speed] || GRID_CONFIG.normal;
@@ -355,6 +359,9 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       // Match!
       SynthSounds.score();
       this.pairsMatched++;
+
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
       if (this.hud) this.hud.scoreText.setText(`★ ${this.pairsMatched}/${this.totalPairs}`);
 
       // White flash on both tiles, then remove
@@ -382,6 +389,9 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       this.isLocked = true;
     } else {
       // Mismatch — show briefly then flip back
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
       this.isLocked = true;
       this.time.delayedCall(MISMATCH_SHOW_MS, () => {
         if (!this.scene.isActive()) return;
@@ -414,6 +424,11 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
     if (this.hud) {
       GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.pairsMatched}/${this.totalPairs}`);
     }
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    // Update tile back alpha for fellow eye
+    this.alphaA = alpha;
   }
 
   togglePause() {
@@ -544,6 +559,10 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
       eye_config: this.settings.eyeConfig,
       level: this.level,
       completed: won,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

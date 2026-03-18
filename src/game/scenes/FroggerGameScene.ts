@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -63,6 +64,9 @@ export default class FroggerGameScene extends Phaser.Scene {
     this.ballColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     this.level = 1;
     this.baseSpeed = OBSTACLE_SPEEDS[this.settings.speed] || 100;
@@ -347,6 +351,9 @@ export default class FroggerGameScene extends Phaser.Scene {
     GameVFX.screenShake(this);
     GameVFX.particleBurst(this, this.player.x, this.player.y, this.platformColor, 6);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     if (this.lives <= 0) {
       SynthSounds.gameOver();
       this.endGame(false);
@@ -379,6 +386,9 @@ export default class FroggerGameScene extends Phaser.Scene {
     GameVFX.scorePopup(this, this.player.x, this.player.y - 20, '+1');
     GameVFX.circleFlash(this, this.player.x, this.player.y, 20, COLORS.WHITE);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     // Fix: apply speed multiplier multiplicatively using per-lane stored factors
     this.speedMultiplier = 1 + this.crossings * 0.08;
     for (const lane of this.obstacleObjects) {
@@ -396,6 +406,10 @@ export default class FroggerGameScene extends Phaser.Scene {
       this.isInGoalAnimation = false;
       this.respawnPlayer();
     });
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    if (this.player) this.player.setAlpha(alpha);
   }
 
   togglePause() {
@@ -500,6 +514,10 @@ export default class FroggerGameScene extends Phaser.Scene {
       lives_remaining: this.lives,
       level: this.level,
       completed: won,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });
