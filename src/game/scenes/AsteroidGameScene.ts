@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -92,6 +93,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     this.ballColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     // State
     this.lives = MAX_LIVES;
@@ -596,6 +600,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     GameVFX.particleBurst(this, asteroid.x, asteroid.y, this.ballColor, 10);
     GameVFX.scorePopup(this, asteroid.x, asteroid.y);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     // Flash effect at asteroid position
     this.spawnFlash(asteroid.x, asteroid.y, asteroid.radius);
 
@@ -665,6 +672,9 @@ export default class AsteroidGameScene extends Phaser.Scene {
     SynthSounds.miss();
     GameVFX.screenShake(this, 4, 150);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     // Reset ship to center with brief invulnerability
     this.shipX = this.field.x + this.field.w / 2;
     this.shipY = this.field.y + this.field.h / 2;
@@ -675,6 +685,10 @@ export default class AsteroidGameScene extends Phaser.Scene {
     if (this.lives <= 0) {
       this.endGame(false);
     }
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    this.ballAlpha = alpha;
   }
 
   // ---- Pause / UI ----
@@ -762,6 +776,10 @@ export default class AsteroidGameScene extends Phaser.Scene {
       lives_remaining: this.lives,
       completed: won,
       level: this.level,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

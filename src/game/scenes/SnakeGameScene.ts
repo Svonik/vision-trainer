@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -67,6 +68,9 @@ export default class SnakeGameScene extends Phaser.Scene {
     this.ballColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.platformAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.ballAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     // Background fill
     this.add.rectangle(fx + fw / 2, fy + fh / 2, fw, fh, COLORS.BLACK, 1);
@@ -272,6 +276,8 @@ export default class SnakeGameScene extends Phaser.Scene {
       this.isGameOver = true;
       SynthSounds.gameOver();
       GameVFX.screenShake(this, 5, 200);
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
       this.endGame();
       return;
     }
@@ -282,6 +288,8 @@ export default class SnakeGameScene extends Phaser.Scene {
         this.isGameOver = true;
         SynthSounds.gameOver();
         GameVFX.screenShake(this, 5, 200);
+        this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
         this.endGame();
         return;
       }
@@ -297,6 +305,9 @@ export default class SnakeGameScene extends Phaser.Scene {
       SynthSounds.score();
       GameVFX.particleBurst(this, foodPx, foodPy, this.ballColor);
       GameVFX.scorePopup(this, foodPx, foodPy);
+
+      this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+      this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
 
       // Level up every nextLevelAt food
       if (this.score >= this.nextLevelAt) {
@@ -419,6 +430,11 @@ export default class SnakeGameScene extends Phaser.Scene {
     this.foodGraphics.fillCircle(px, py, radius * 0.4);
   }
 
+  updateFellowEyeAlpha(alpha) {
+    // Update food alpha for fellow eye
+    this.ballAlpha = alpha;
+  }
+
   togglePause() {
     this.isPaused = !this.isPaused;
     if (this.isPaused) {
@@ -484,6 +500,10 @@ export default class SnakeGameScene extends Phaser.Scene {
       speed: this.settings.speed,
       eye_config: this.settings.eyeConfig,
       level: this.level,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

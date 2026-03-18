@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -57,6 +58,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.crosshairColor = isLeftBalloon ? eyeColors.rightColor : eyeColors.leftColor;
     this.balloonAlpha = (isLeftBalloon ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.crosshairAlpha = (isLeftBalloon ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     this.level = 1;
     this.balloonLifespan = LIFESPAN_MS[this.settings.speed] || LIFESPAN_MS.normal;
@@ -233,6 +237,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     GameVFX.particleBurst(this, x, y, this.balloonColor, 8);
     GameVFX.scorePopup(this, x, y);
 
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
     this.popped++;
     if (this.hud) this.hud.scoreText.setText(`★ ${this.popped}/${WIN_COUNT}`);
 
@@ -257,6 +264,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     this.balloons.splice(index, 1);
 
     SynthSounds.miss();
+
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
 
     this.time.delayedCall(200, () => {
       if (!this.isPaused) this.spawnBalloon();
@@ -301,6 +311,10 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     if (this.hud) {
       GameVisuals.updateHUD(this.hud, this.level, this.safetyTimer.getElapsedMs(), `★ ${this.popped}/${WIN_COUNT}`);
     }
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    this.balloonAlpha = alpha;
   }
 
   togglePause() {
@@ -405,6 +419,10 @@ export default class BalloonPopGameScene extends Phaser.Scene {
       eye_config: this.settings.eyeConfig,
       level: this.level,
       completed: won,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });

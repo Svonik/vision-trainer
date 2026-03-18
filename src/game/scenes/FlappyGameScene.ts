@@ -4,6 +4,7 @@ import { COLORS, GAME } from '../../modules/constants';
 import { createGameSettings } from '../../modules/gameState';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getEyeColors } from '../../modules/glassesColors';
+import { createContrastState, createContrastConfig, recordTrial, getAccuracy } from '../../modules/contrastEngine';
 import { EventBus } from '../EventBus';
 import { SynthSounds } from '../audio/SynthSounds';
 import { GameVFX } from '../vfx/GameVFX';
@@ -62,6 +63,9 @@ export default class FlappyGameScene extends Phaser.Scene {
     this.pipeColor = isLeftPlatform ? eyeColors.rightColor : eyeColors.leftColor;
     this.birdAlpha = (isLeftPlatform ? this.settings.contrastLeft : this.settings.contrastRight) / 100;
     this.pipeAlpha = (isLeftPlatform ? this.settings.contrastRight : this.settings.contrastLeft) / 100;
+
+    this.contrastConfig = createContrastConfig();
+    this.contrastState = createContrastState(this.settings.fellowEyeContrast ?? 30);
 
     this.scrollSpeed = SCROLL_SPEEDS[this.settings.speed] || 150;
     this.score = 0;
@@ -236,6 +240,9 @@ export default class FlappyGameScene extends Phaser.Scene {
         SynthSounds.score();
         GameVFX.scorePopup(this, this.bird.x, this.bird.y);
 
+        this.contrastState = recordTrial(this.contrastState, this.contrastConfig, true);
+        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
         // Level up every pipesForNextLevel pipes
         if (this.score >= this.pipesForNextLevel) {
           this.level++;
@@ -362,9 +369,16 @@ export default class FlappyGameScene extends Phaser.Scene {
     }
     SynthSounds.gameOver();
     GameVFX.screenShake(this);
+
+    this.contrastState = recordTrial(this.contrastState, this.contrastConfig, false);
+    this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
     this.time.delayedCall(300, () => {
       this.endGame();
     });
+  }
+
+  updateFellowEyeAlpha(alpha) {
+    this.pipeAlpha = alpha;
   }
 
   togglePause() {
@@ -436,6 +450,10 @@ export default class FlappyGameScene extends Phaser.Scene {
       eye_config: this.settings.eyeConfig,
       completed: false,
       level: this.level,
+      fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
+      fellow_contrast_end: this.contrastState.fellowEyeContrast,
+      window_accuracy: getAccuracy(this.contrastState),
+      total_trials: this.contrastState.totalTrials,
     };
 
     EventBus.emit('game-complete', { result, settings: this.settings });
