@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { DisclaimerPage } from './DisclaimerPage';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
+import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
 
-type WizardStep = 'disclaimer' | 'glasses' | 'suppression' | 'adjust';
+type WizardStep = 'disclaimer' | 'glasses' | 'age_group' | 'suppression' | 'adjust';
 
-const STEP_ORDER: WizardStep[] = ['disclaimer', 'glasses', 'suppression', 'adjust'];
+const STEP_ORDER: WizardStep[] = ['disclaimer', 'glasses', 'age_group', 'suppression', 'adjust'];
 
 export function OnboardingWizard() {
     const navigate = useNavigate();
@@ -19,7 +20,7 @@ export function OnboardingWizard() {
     const reducedMotion = useReducedMotion();
     const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>('red-cyan');
     const [adjustAttempts, setAdjustAttempts] = useState(0);
-    const { save, setGlassesType: saveGlassesType } = useCalibration();
+    const { save, setGlassesType: saveGlassesType, setAgeGroup: saveAgeGroup } = useCalibration();
     const stepRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -35,6 +36,12 @@ export function OnboardingWizard() {
     const handleGlassesSelect = (type: 'red-cyan' | 'cyan-red') => {
         setGlassesType(type);
         saveGlassesType(type);
+        setDirection(1);
+        setStep('age_group');
+    };
+
+    const handleAgeGroupSelect = (ageGroup: '4-7' | '8-12') => {
+        saveAgeGroup(ageGroup);
         setDirection(1);
         setStep('suppression');
     };
@@ -85,6 +92,9 @@ export function OnboardingWizard() {
                             glassesType={glassesType}
                             onSelect={handleGlassesSelect}
                         />
+                    )}
+                    {step === 'age_group' && (
+                        <AgeGroupStep onSelect={handleAgeGroupSelect} />
                     )}
                     {step === 'suppression' && (
                         <SuppressionTestStep

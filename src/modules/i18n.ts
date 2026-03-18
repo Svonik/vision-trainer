@@ -175,6 +175,16 @@ const strings = {
   'game.paused': 'Пауза',
   'settings.saved': 'Настройки сохранены',
   'settings.glassesChanged': 'Тип очков изменён',
+  'age_group.title': 'Возрастная группа',
+  'age_group.4_7': '4-7 лет',
+  'age_group.8_12': '8-12 лет',
+  'summary.excellent': 'Отлично!',
+  'summary.good': 'Хорошая работа!',
+  'summary.try_again': 'Попробуй ещё!',
+  'summary.continue': 'Продолжить',
+  'summary.streak': 'Дней подряд',
+  'summary.contrast_progress': 'Прогресс контраста',
+  'summary.new_record': 'Новый рекорд!',
 } as const;
 
 export type TranslationKey = keyof typeof strings;

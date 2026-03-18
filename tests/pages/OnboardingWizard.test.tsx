@@ -22,6 +22,7 @@ vi.mock('../../src/modules/storage', async () => {
             suppression_passed: false,
             last_calibrated: null,
             glasses_type: 'red-cyan',
+            age_group: '8-12',
         })),
     };
 });
@@ -63,14 +64,14 @@ describe('OnboardingWizard', () => {
         expect(screen.getByRole('button', { name: /продолжить/i })).toBeInTheDocument();
     });
 
-    it('shows 4 dot indicators', () => {
+    it('shows 5 dot indicators', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
             </MemoryRouter>
         );
         const dots = document.querySelectorAll('[data-dot]');
-        expect(dots).toHaveLength(4);
+        expect(dots).toHaveLength(5);
     });
 
     it('progresses from disclaimer to glasses step after accepting', () => {
@@ -85,7 +86,7 @@ describe('OnboardingWizard', () => {
         expect(screen.getByText(/красная линза/i)).toBeInTheDocument();
     });
 
-    it('progresses from glasses to suppression test after selecting glasses type', () => {
+    it('progresses from glasses to age group step after selecting glasses type', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
@@ -95,11 +96,11 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         // Click the first "Красная слева" button
         fireEvent.click(screen.getByText(/красная слева/i));
-        // Should now show suppression test
-        expect(screen.getByText(/оба квадрата/i)).toBeInTheDocument();
+        // Should now show age group step
+        expect(screen.getByText(/возрастная группа/i)).toBeInTheDocument();
     });
 
-    it('navigates to /games when suppression test passes', () => {
+    it('progresses from age group to suppression test after selecting age group', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
@@ -108,6 +109,22 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/красная слева/i));
+        // Select age group
+        fireEvent.click(screen.getByText(/8-12 лет/i));
+        // Should now show suppression test
+        expect(screen.getByText(/оба квадрата/i)).toBeInTheDocument();
+    });
+
+    it('navigates to /mode-select when suppression test passes', () => {
+        render(
+            <MemoryRouter>
+                <OnboardingWizard />
+            </MemoryRouter>
+        );
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        fireEvent.click(screen.getByText(/красная слева/i));
+        fireEvent.click(screen.getByText(/8-12 лет/i));
         fireEvent.click(screen.getByText(/вижу оба/i));
         expect(mockNavigate).toHaveBeenCalledWith('/mode-select');
     });
@@ -121,6 +138,7 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('checkbox'));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/красная слева/i));
+        fireEvent.click(screen.getByText(/4-7 лет/i));
         fireEvent.click(screen.getByText(/только один/i));
         expect(screen.getByText(/подстройте яркость/i)).toBeInTheDocument();
     });

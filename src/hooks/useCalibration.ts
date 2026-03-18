@@ -15,6 +15,7 @@ export function useCalibration() {
     const [attempts, setAttempts] = useState(0);
     const [passed, setPassed] = useState(stored.suppression_passed);
     const [glassesType, setGlassesType] = useState(stored.glasses_type || 'red-cyan');
+    const [ageGroup, setAgeGroup] = useState(stored.age_group || '8-12');
 
     // Use refs to avoid stale closure in save()
     const redRef = useRef(redBrightness);
@@ -25,6 +26,8 @@ export function useCalibration() {
     passedRef.current = passed;
     const glassesRef = useRef(glassesType);
     glassesRef.current = glassesType;
+    const ageGroupRef = useRef(ageGroup);
+    ageGroupRef.current = ageGroup;
 
     const addAttempt = useCallback(() => {
         setAttempts(prev => prev + 1);
@@ -43,6 +46,7 @@ export function useCalibration() {
             suppression_passed: passedRef.current,
             last_calibrated: new Date().toISOString(),
             glasses_type: glassesRef.current,
+            age_group: ageGroupRef.current as '4-7' | '8-12',
             ...overrides,
         };
         saveCalibration(data);
@@ -54,6 +58,7 @@ export function useCalibration() {
         attempts, addAttempt,
         passed, pass,
         glassesType, setGlassesType,
+        ageGroup, setAgeGroup,
         save,
     };
 }
