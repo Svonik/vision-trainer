@@ -5,6 +5,7 @@ import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { typedEventBus } from '../game/TypedEventBus';
 import { AppButton } from '@/components/AppButton';
 import { addCachedSession } from '../modules/sessionCache';
+import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { t } from '../modules/i18n';
@@ -185,6 +186,13 @@ export function TrainingPlayPage() {
 
         const handleComplete = ({ result }: { result: GameResult }) => {
             addCachedSession(result);
+            if (result.fellow_contrast_end !== undefined) {
+                const currentSettings = getDefaultSettings();
+                saveDefaultSettings({
+                    ...currentSettings,
+                    fellowEyeContrast: result.fellow_contrast_end,
+                });
+            }
             const updatedResults = [...completedResults, result];
             setCompletedResults(updatedResults);
             setElapsedMs(null);

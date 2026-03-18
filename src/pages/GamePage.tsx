@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { PhaserGame, IRefPhaserGame } from '../game/PhaserGame';
 import { typedEventBus } from '../game/TypedEventBus';
 import { addCachedSession } from '../modules/sessionCache';
+import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { LandscapePrompt } from '../components/LandscapePrompt';
@@ -35,6 +36,13 @@ export function GamePage() {
     useEffect(() => {
         const handleComplete = ({ result, settings: s }: any) => {
             addCachedSession(result);
+            if (result.fellow_contrast_end !== undefined) {
+                const currentSettings = getDefaultSettings();
+                saveDefaultSettings({
+                    ...currentSettings,
+                    fellowEyeContrast: result.fellow_contrast_end,
+                });
+            }
             navigate(`/games/${gameId}/stats`, { state: { result, settings: s } });
         };
         const handleExit = () => {
