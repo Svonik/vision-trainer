@@ -213,6 +213,8 @@ const strings = {
   'gameSelect.game2048.description': 'Соединяйте числа! Нечётные степени видны одному глазу, чётные — другому. Для слияния нужны оба глаза.',
   'gameSelect.knifehit.title': 'Бросок ножа',
   'gameSelect.knifehit.description': 'Бросайте ножи в вращающуюся мишень! Ваши ножи видны одному глазу, застрявшие — другому.',
+  'gameSelect.runner.title': 'Бегун',
+  'gameSelect.runner.description': 'Бегите и прыгайте через препятствия! Тренирует smooth pursuit.',
 } as const;
 
 export type TranslationKey = keyof typeof strings;

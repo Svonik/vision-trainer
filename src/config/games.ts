@@ -22,6 +22,7 @@ export const GAMES: GameConfig[] = [
     { id: 'whackmole', titleKey: 'gameSelect.whackmole.title', descriptionKey: 'gameSelect.whackmole.description', difficultyKey: 'gameSelect.difficulty.beginner', route: '/games/whackmole/settings' },
     { id: 'game2048', titleKey: 'gameSelect.game2048.title', descriptionKey: 'gameSelect.game2048.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/game2048/settings' },
     { id: 'knifehit', titleKey: 'gameSelect.knifehit.title', descriptionKey: 'gameSelect.knifehit.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/knifehit/settings' },
+    { id: 'runner', titleKey: 'gameSelect.runner.title', descriptionKey: 'gameSelect.runner.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/runner/settings' },
 ];
 
 // Map from URL gameId param (e.g. 'catcher') to GAMES entry id (e.g. 'binocular-catcher')
@@ -41,6 +42,7 @@ const ROUTE_ID_MAP: Record<string, string> = {
     whackmole: 'whackmole',
     game2048: 'game2048',
     knifehit: 'knifehit',
+    runner: 'runner',
 };
 
 /** Look up a game by its internal id (e.g. 'binocular-catcher') or URL route param (e.g. 'catcher'). */

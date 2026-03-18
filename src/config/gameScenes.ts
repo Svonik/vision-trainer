@@ -14,6 +14,7 @@ export const GAME_SCENE_MAP: Record<string, string> = {
     whackmole: 'WhackMoleGameScene',
     game2048: 'Game2048Scene',
     knifehit: 'KnifeHitGameScene',
+    runner: 'RunnerGameScene',
 };
 
 export const START_EVENT_MAP: Record<string, string> = {
@@ -32,4 +33,5 @@ export const START_EVENT_MAP: Record<string, string> = {
     whackmole: 'start-whackmole-game',
     game2048: 'start-game2048-game',
     knifehit: 'start-knifehit-game',
+    runner: 'start-runner-game',
 };
