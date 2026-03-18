@@ -17,6 +17,8 @@ import KnifeHitGameScene from './scenes/KnifeHitGameScene';
 import RunnerGameScene from './scenes/RunnerGameScene';
 import ColorFloodGameScene from './scenes/ColorFloodGameScene';
 import Match3GameScene from './scenes/Match3GameScene';
+import SlidingPuzzleGameScene from './scenes/SlidingPuzzleGameScene';
+import PacmanGameScene from './scenes/PacmanGameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
@@ -33,7 +35,7 @@ const config: Phaser.Types.Core.GameConfig = {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 } }
     },
-    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene, BalloonPopGameScene, MemoryTilesGameScene, FroggerGameScene, CatchMonstersGameScene, WhackMoleGameScene, Game2048Scene, KnifeHitGameScene, RunnerGameScene, ColorFloodGameScene, Match3GameScene]
+    scene: [GameScene, BreakoutGameScene, TetrisGameScene, InvadersGameScene, PongGameScene, SnakeGameScene, FlappyGameScene, AsteroidGameScene, BalloonPopGameScene, MemoryTilesGameScene, FroggerGameScene, CatchMonstersGameScene, WhackMoleGameScene, Game2048Scene, KnifeHitGameScene, RunnerGameScene, ColorFloodGameScene, Match3GameScene, SlidingPuzzleGameScene, PacmanGameScene]
 };
 
 const StartGame = (parent: string) => {

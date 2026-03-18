@@ -25,6 +25,8 @@ export const GAMES: GameConfig[] = [
     { id: 'runner', titleKey: 'gameSelect.runner.title', descriptionKey: 'gameSelect.runner.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/runner/settings' },
     { id: 'colorflood', titleKey: 'gameSelect.colorflood.title', descriptionKey: 'gameSelect.colorflood.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/colorflood/settings' },
     { id: 'match3', titleKey: 'gameSelect.match3.title', descriptionKey: 'gameSelect.match3.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/match3/settings' },
+    { id: 'slidingpuzzle', titleKey: 'gameSelect.slidingpuzzle.title', descriptionKey: 'gameSelect.slidingpuzzle.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/slidingpuzzle/settings' },
+    { id: 'pacman', titleKey: 'gameSelect.pacman.title', descriptionKey: 'gameSelect.pacman.description', difficultyKey: 'gameSelect.difficulty.medium', route: '/games/pacman/settings' },
 ];
 
 // Map from URL gameId param (e.g. 'catcher') to GAMES entry id (e.g. 'binocular-catcher')
@@ -47,6 +49,8 @@ const ROUTE_ID_MAP: Record<string, string> = {
     runner: 'runner',
     colorflood: 'colorflood',
     match3: 'match3',
+    slidingpuzzle: 'slidingpuzzle',
+    pacman: 'pacman',
 };
 
 /** Look up a game by its internal id (e.g. 'binocular-catcher') or URL route param (e.g. 'catcher'). */

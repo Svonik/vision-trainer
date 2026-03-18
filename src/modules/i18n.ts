@@ -219,6 +219,10 @@ const strings = {
   'gameSelect.colorflood.description': 'Залейте всё поле одним цветом! Тренирует цветовую дискриминацию.',
   'gameSelect.match3.title': 'Три в ряд',
   'gameSelect.match3.description': 'Меняйте местами фигуры для совпадений! Тренирует визуальный поиск.',
+  'gameSelect.slidingpuzzle.title': 'Пятнашки',
+  'gameSelect.slidingpuzzle.description': 'Расставьте плитки по порядку! Тренирует пространственное мышление.',
+  'gameSelect.pacman.title': 'Пакмен',
+  'gameSelect.pacman.description': 'Ешьте точки и уклоняйтесь от призраков! Комплексная тренировка.',
 } as const;
 
 export type TranslationKey = keyof typeof strings;

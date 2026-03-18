@@ -17,6 +17,8 @@ export const GAME_SCENE_MAP: Record<string, string> = {
     runner: 'RunnerGameScene',
     colorflood: 'ColorFloodGameScene',
     match3: 'Match3GameScene',
+    slidingpuzzle: 'SlidingPuzzleGameScene',
+    pacman: 'PacmanGameScene',
 };
 
 export const START_EVENT_MAP: Record<string, string> = {
@@ -38,4 +40,6 @@ export const START_EVENT_MAP: Record<string, string> = {
     runner: 'start-runner-game',
     colorflood: 'start-colorflood-game',
     match3: 'start-match3-game',
+    slidingpuzzle: 'start-slidingpuzzle-game',
+    pacman: 'start-pacman-game',
 };
