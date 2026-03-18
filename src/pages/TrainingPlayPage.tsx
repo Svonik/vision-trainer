@@ -139,6 +139,14 @@ export function TrainingPlayPage() {
     const [loading, setLoading] = useState(true);
     const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(null);
 
+    // Ref tracks wellness level for use inside effect closures without
+    // adding it to the dependency array (avoids listener teardown/re-add
+    // that can race with Phaser scene-ready events).
+    const wellnessRef = useRef<WellnessLevel | null>(null);
+    // When the scene is ready but wellness hasn't been selected yet,
+    // we store a callback to emit the start event later.
+    const pendingStartRef = useRef<(() => void) | null>(null);
+
     const currentGameId = sessionGames[currentGameIndex] ?? '';
 
     // Clear countdown interval on unmount
@@ -193,8 +201,9 @@ export function TrainingPlayPage() {
         const startEvent = START_EVENT_MAP[currentGameId] ?? 'start-game';
 
         const handleComplete = ({ result }: { result: GameResult }) => {
-            const resultWithWellness = wellnessLevel
-                ? { ...result, wellness: { preSession: wellnessLevel, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
+            const level = wellnessRef.current;
+            const resultWithWellness = level
+                ? { ...result, wellness: { preSession: level, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
                 : result;
             addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
@@ -238,7 +247,13 @@ export function TrainingPlayPage() {
                 return;
             }
             setLoading(false);
-            typedEventBus.emit(startEvent, settings);
+            // If wellness check already completed, start immediately.
+            // Otherwise queue the start for when wellness is selected.
+            if (wellnessRef.current !== null) {
+                typedEventBus.emit(startEvent, settings);
+            } else {
+                pendingStartRef.current = () => typedEventBus.emit(startEvent, settings);
+            }
         };
 
         const handleTick = (ms: number) => {
@@ -260,7 +275,7 @@ export function TrainingPlayPage() {
             setElapsedMs(null);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentGameId, currentGameIndex, showTransition, wellnessLevel]);
+    }, [currentGameId, currentGameIndex, showTransition]);
 
     const handleAdvance = () => {
         if (countdownRef.current !== null) {
@@ -269,6 +284,17 @@ export function TrainingPlayPage() {
         setShowTransition(false);
         setLoading(true);
         setCurrentGameIndex(prev => prev + 1);
+    };
+
+    const handleWellnessSelect = (level: WellnessLevel) => {
+        wellnessRef.current = level;
+        setWellnessLevel(level);
+        // If the scene was already ready before wellness was selected,
+        // fire the queued start event now.
+        if (pendingStartRef.current) {
+            pendingStartRef.current();
+            pendingStartRef.current = null;
+        }
     };
 
     const handlePause = () => {
@@ -287,15 +313,6 @@ export function TrainingPlayPage() {
     };
 
     const nextGameId = sessionGames[currentGameIndex + 1] ?? '';
-
-    if (wellnessLevel === null) {
-        return (
-            <WellnessPreCheck
-                onSelect={(level) => setWellnessLevel(level)}
-                onSkipSession={() => navigate('/mode-select')}
-            />
-        );
-    }
 
     if (showTransition) {
         return (
@@ -438,6 +455,12 @@ export function TrainingPlayPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {wellnessLevel === null && (
+                <WellnessPreCheck
+                    onSelect={handleWellnessSelect}
+                    onSkipSession={() => navigate('/mode-select')}
+                />
+            )}
         </div>
     );
 }

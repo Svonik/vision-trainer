@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
 import { WellnessPreCheck } from '../components/WellnessPreCheck';
 import type { WellnessLevel } from '@/modules/wellnessCheck';
+import { AppButton } from '@/components/AppButton';
 
 export function GamePage() {
     const location = useLocation();
@@ -36,14 +37,23 @@ export function GamePage() {
     const [summary, setSummary] = useState<SessionSummary | null>(null);
     const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(null);
 
+    // Ref tracks wellness level for use inside effect closures without
+    // adding it to the dependency array (avoids listener teardown/re-add
+    // that can race with Phaser scene-ready events).
+    const wellnessRef = useRef<WellnessLevel | null>(null);
+    // When the scene is ready but wellness hasn't been selected yet,
+    // we store a callback to emit the start event later.
+    const pendingStartRef = useRef<(() => void) | null>(null);
+
     const currentGame = gameId ? getGameById(gameId) : undefined;
     const targetScene = GAME_SCENE_MAP[gameId ?? 'catcher'] ?? 'GameScene';
     const startEvent = START_EVENT_MAP[gameId ?? 'catcher'] ?? 'start-game';
 
     useEffect(() => {
         const handleComplete = ({ result, settings: s }: any) => {
-            const resultWithWellness = wellnessLevel
-                ? { ...result, wellness: { preSession: wellnessLevel, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
+            const level = wellnessRef.current;
+            const resultWithWellness = level
+                ? { ...result, wellness: { preSession: level, postEyeStrain: false, postHeadache: false, timestamp: new Date().toISOString() } }
                 : result;
             addCachedSession(resultWithWellness);
             if (result.fellow_contrast_end !== undefined) {
@@ -70,7 +80,13 @@ export function GamePage() {
                 return;
             }
             setLoading(false);
-            typedEventBus.emit(startEvent, settings);
+            // If wellness check already completed, start immediately.
+            // Otherwise queue the start for when wellness is selected.
+            if (wellnessRef.current !== null) {
+                typedEventBus.emit(startEvent, settings);
+            } else {
+                pendingStartRef.current = () => typedEventBus.emit(startEvent, settings);
+            }
         };
         const handleTick = (ms: number) => { setElapsedMs(ms); };
 
@@ -88,7 +104,18 @@ export function GamePage() {
             typedEventBus.removeListener('timer-tick', handleTick);
             setElapsedMs(null);
         };
-    }, [settings, navigate, gameId, targetScene, startEvent, wellnessLevel]);
+    }, [settings, navigate, gameId, targetScene, startEvent]);
+
+    const handleWellnessSelect = (level: WellnessLevel) => {
+        wellnessRef.current = level;
+        setWellnessLevel(level);
+        // If the scene was already ready before wellness was selected,
+        // fire the queued start event now.
+        if (pendingStartRef.current) {
+            pendingStartRef.current();
+            pendingStartRef.current = null;
+        }
+    };
 
     const handlePause = () => {
         setIsPaused(true);
@@ -104,15 +131,6 @@ export function GamePage() {
         setIsPaused(false);
         typedEventBus.emit('game-exit');
     };
-
-    if (wellnessLevel === null) {
-        return (
-            <WellnessPreCheck
-                onSelect={(level) => setWellnessLevel(level)}
-                onSkipSession={() => navigate(-1)}
-            />
-        );
-    }
 
     return (
         <div className="min-h-screen flex flex-col bg-[var(--bg)]" style={{ background: 'var(--bg-gradient)' }}>
@@ -184,18 +202,22 @@ export function GamePage() {
                         <div className="text-center space-y-6">
                             <h2 className="text-2xl font-display text-[var(--text)]">{t('game.paused')}</h2>
                             <div className="flex flex-col gap-3">
-                                <button
+                                <AppButton
+                                    variant="cta"
+                                    size="md"
+                                    className="w-48"
                                     onClick={handleResume}
-                                    className="w-48 bg-[var(--cta)] text-[var(--cta-text)] rounded-full py-3 font-semibold btn-press"
                                 >
                                     {t('game.resume')}
-                                </button>
-                                <button
+                                </AppButton>
+                                <AppButton
+                                    variant="outline"
+                                    size="md"
+                                    className="w-48"
                                     onClick={handleFinish}
-                                    className="w-48 border border-[var(--border)] text-[var(--text-secondary)] rounded-full py-3 font-semibold btn-press hover:bg-[var(--surface)]"
                                 >
                                     {t('game.quit')}
-                                </button>
+                                </AppButton>
                             </div>
                         </div>
                     </motion.div>
@@ -216,6 +238,12 @@ export function GamePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {wellnessLevel === null && (
+                <WellnessPreCheck
+                    onSelect={handleWellnessSelect}
+                    onSkipSession={() => navigate(-1)}
+                />
+            )}
         </div>
     );
 }

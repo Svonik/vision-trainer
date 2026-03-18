@@ -22,7 +22,7 @@ vi.mock('../../src/modules/sessionCache', () => ({
 import { GamePage } from '../../src/pages/GamePage';
 
 describe('GamePage', () => {
-    it('renders game container after wellness check', () => {
+    it('renders game container and wellness overlay simultaneously', () => {
         render(
             <MemoryRouter initialEntries={[{ pathname: '/games/catcher/play', state: { settings: { speed: 'slow' } } }]}>
                 <Routes>
@@ -30,11 +30,28 @@ describe('GamePage', () => {
                 </Routes>
             </MemoryRouter>
         );
-        // Wellness pre-check modal appears first
+        // Game container is always rendered (Phaser loads in background)
+        expect(document.getElementById('game-container')).toBeInTheDocument();
+        // Wellness pre-check modal appears as an overlay
         expect(screen.getByText('Как ты себя чувствуешь?')).toBeInTheDocument();
-        // Click first emoji button (good) to proceed past wellness check
-        const emojiButtons = screen.getAllByRole('button');
+    });
+
+    it('dismisses wellness overlay after selection', () => {
+        render(
+            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/play', state: { settings: { speed: 'slow' } } }]}>
+                <Routes>
+                    <Route path="/games/:gameId/play" element={<GamePage />} />
+                </Routes>
+            </MemoryRouter>
+        );
+        // Click the first emoji (good) to dismiss wellness check
+        const wellnessHeading = screen.getByText('Как ты себя чувствуешь?');
+        const wellnessModal = wellnessHeading.closest('div.fixed');
+        const emojiButtons = wellnessModal!.querySelectorAll('button');
         fireEvent.click(emojiButtons[0]);
+        // Wellness overlay should be gone
+        expect(screen.queryByText('Как ты себя чувствуешь?')).not.toBeInTheDocument();
+        // Game container remains
         expect(document.getElementById('game-container')).toBeInTheDocument();
     });
 });
