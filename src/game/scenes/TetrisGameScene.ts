@@ -17,17 +17,93 @@ const FALL_INTERVALS = { slow: 1000, normal: 600, fast: 400, pro: 250 };
 const COLS = 10;
 const ROWS = 20;
 
-// Standard tetromino shapes (each piece: array of [col, row] offsets from pivot)
-const TETROMINOES = {
-  I: { cells: [[0,1],[1,1],[2,1],[3,1]], color: 0x00ffff },
-  O: { cells: [[0,0],[1,0],[0,1],[1,1]], color: 0xffff00 },
-  T: { cells: [[0,1],[1,1],[2,1],[1,0]], color: 0x800080 },
-  S: { cells: [[1,0],[2,0],[0,1],[1,1]], color: 0x00ff00 },
-  Z: { cells: [[0,0],[1,0],[1,1],[2,1]], color: 0xff0000 },
-  L: { cells: [[0,1],[1,1],[2,1],[2,0]], color: 0xff7f00 },
-  J: { cells: [[0,0],[0,1],[1,1],[2,1]], color: 0x0000ff },
+// SRS shape tables: 4 rotation states per piece, cells as [col, row] in bounding box
+const SRS_SHAPES = {
+  I: [
+    [[0,1],[1,1],[2,1],[3,1]], // state 0
+    [[2,0],[2,1],[2,2],[2,3]], // state R
+    [[0,2],[1,2],[2,2],[3,2]], // state 2
+    [[1,0],[1,1],[1,2],[1,3]], // state L
+  ],
+  O: [
+    [[0,0],[1,0],[0,1],[1,1]],
+    [[0,0],[1,0],[0,1],[1,1]],
+    [[0,0],[1,0],[0,1],[1,1]],
+    [[0,0],[1,0],[0,1],[1,1]],
+  ],
+  T: [
+    [[1,0],[0,1],[1,1],[2,1]],
+    [[1,0],[1,1],[2,1],[1,2]],
+    [[0,1],[1,1],[2,1],[1,2]],
+    [[1,0],[0,1],[1,1],[1,2]],
+  ],
+  S: [
+    [[1,0],[2,0],[0,1],[1,1]],
+    [[1,0],[1,1],[2,1],[2,2]],
+    [[1,1],[2,1],[0,2],[1,2]],
+    [[0,0],[0,1],[1,1],[1,2]],
+  ],
+  Z: [
+    [[0,0],[1,0],[1,1],[2,1]],
+    [[2,0],[1,1],[2,1],[1,2]],
+    [[0,1],[1,1],[1,2],[2,2]],
+    [[1,0],[0,1],[1,1],[0,2]],
+  ],
+  J: [
+    [[0,0],[0,1],[1,1],[2,1]],
+    [[1,0],[2,0],[1,1],[1,2]],
+    [[0,1],[1,1],[2,1],[2,2]],
+    [[1,0],[1,1],[0,2],[1,2]],
+  ],
+  L: [
+    [[2,0],[0,1],[1,1],[2,1]],
+    [[1,0],[1,1],[1,2],[2,2]],
+    [[0,1],[1,1],[2,1],[0,2]],
+    [[0,0],[1,0],[1,1],[1,2]],
+  ],
 };
-const PIECE_KEYS = Object.keys(TETROMINOES);
+
+const PIECE_COLORS = {
+  I: 0x00ffff, O: 0xffff00, T: 0x800080,
+  S: 0x00ff00, Z: 0xff0000, L: 0xff7f00, J: 0x0000ff,
+};
+
+const PIECE_KEYS = Object.keys(SRS_SHAPES);
+
+// SRS wall kick tables — Y positive = down (screen coords)
+// Standard kicks for J, L, S, T, Z pieces
+const JLSTZ_KICKS = {
+  '0>1': [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '1>0': [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '1>2': [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '2>1': [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '2>3': [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  '3>2': [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '3>0': [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '0>3': [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+};
+
+// I-piece has its own kick table
+const I_KICKS = {
+  '0>1': [[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+  '1>0': [[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+  '1>2': [[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
+  '2>1': [[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+  '2>3': [[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+  '3>2': [[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+  '3>0': [[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+  '0>3': [[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
+};
+
+// Fisher-Yates shuffle (returns new array)
+function shuffleArray(arr) {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
 export default class TetrisGameScene extends Phaser.Scene {
   constructor() {
@@ -125,6 +201,23 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.previewX = previewX;
     this.previewY = previewY + 16;
 
+    // Hold piece label + preview area (above next piece, to the left of grid)
+    const holdX = this.gridOriginX - 12 - this.cellSize * 4;
+    const holdY = this.gridOriginY + 10;
+    this.add.text(holdX, holdY, 'Запас', {
+      fontSize: '11px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
+    }).setOrigin(0, 0);
+    this.holdGraphics = this.add.graphics();
+    this.holdPreviewX = holdX;
+    this.holdPreviewY = holdY + 16;
+
+    // Hold piece state
+    this.holdType = null;
+    this.holdUsed = false;
+
+    // 7-bag randomizer state
+    this.bag = [];
+
     // Pause button
     const pauseBtn = this.add.text(fx + 10, fy + fh - 20, t('game.pause'), {
       fontSize: '13px', color: COLORS.GRAY_HEX, fontFamily: 'Arial, sans-serif',
@@ -139,6 +232,10 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.xKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    this.cKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+    this.shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
     // Touch controls (tablet support — only shown when touch device detected)
     this.touchDPad = TouchControls.createDPad(this, this.field);
@@ -159,8 +256,8 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.blurHandler = () => { if (!this.isPaused) this.togglePause(); };
     this.game.events.on('blur', this.blurHandler);
 
-    // Prepare first two pieces (for preview) but don't start falling yet
-    this.nextPieceKey = this.randomPieceKey();
+    // Prepare first piece from bag (for preview) but don't start falling yet
+    this.nextPieceKey = this.nextPieceFromBag();
     this.activePiece = null;
     this.drawAll();
 
@@ -180,21 +277,25 @@ export default class TetrisGameScene extends Phaser.Scene {
     return `${t('tetris.linesCleared')}: ${this.linesCleared} | Ур. ${this.level}`;
   }
 
-  randomPieceKey() {
-    return PIECE_KEYS[Math.floor(Math.random() * PIECE_KEYS.length)];
+  nextPieceFromBag() {
+    if (!this.bag || this.bag.length === 0) {
+      this.bag = shuffleArray(PIECE_KEYS);
+    }
+    return this.bag.pop();
   }
 
-  // Current active piece: { key, cells: [[col,row],...] }
+  // Active piece: { key, cells, col, row, rotation }
   spawnPiece() {
     const key = this.nextPieceKey;
-    this.nextPieceKey = this.randomPieceKey();
+    this.nextPieceKey = this.nextPieceFromBag();
 
-    const template = TETROMINOES[key].cells;
-    // Offset piece to spawn at top-center of grid
     const spawnCol = Math.floor((COLS - 4) / 2);
-    const cells = template.map(([c, r]) => [c + spawnCol, r]);
+    const spawnRow = 0;
+    const rotation = 0;
+    const template = SRS_SHAPES[key][rotation];
+    const cells = template.map(([c, r]) => [c + spawnCol, r + spawnRow]);
 
-    this.activePiece = { key, cells };
+    this.activePiece = { key, cells, col: spawnCol, row: spawnRow, rotation };
 
     // Check game over: if spawn position overlaps existing board cells
     if (!this.isValidPosition(cells)) {
@@ -213,34 +314,52 @@ export default class TetrisGameScene extends Phaser.Scene {
     return true;
   }
 
-  rotateCells(cells) {
-    // Rotate cells 90° clockwise using proper pivot (center of bounding box)
-    // Collect min/max to find bounding box
-    const minC = Math.min(...cells.map(([c]) => c));
-    const maxC = Math.max(...cells.map(([c]) => c));
-    const minR = Math.min(...cells.map(([, r]) => r));
-    const maxR = Math.max(...cells.map(([, r]) => r));
-    // Use integer size to avoid drift: take max span so the bounding box is square
-    const size = Math.max(maxC - minC, maxR - minR);
-    // CW rotation formula: (c, r) → (r, size - c) relative to top-left of bounding box
-    const rotated = cells.map(([c, r]) => [minC + (r - minR), minR + (size - (c - minC))]);
-    // Re-center: compute new bounding box and shift to match old top-left origin
-    const newMinC = Math.min(...rotated.map(([c]) => c));
-    const newMinR = Math.min(...rotated.map(([, r]) => r));
-    const shiftC = minC - newMinC;
-    const shiftR = minR - newMinR;
-    return rotated.map(([c, r]) => [c + shiftC, r + shiftR]);
+  // SRS rotation: direction = 1 (CW) or -1 (CCW)
+  tryRotate(direction) {
+    if (!this.activePiece) return false;
+    const { key, col, row, rotation } = this.activePiece;
+
+    const from = rotation;
+    const to = (from + direction + 4) % 4;
+    const newTemplate = SRS_SHAPES[key][to];
+
+    // Select kick table
+    const kickKey = `${from}>${to}`;
+    const kicks = key === 'I' ? I_KICKS[kickKey]
+      : key === 'O' ? [[0, 0]]
+      : JLSTZ_KICKS[kickKey];
+
+    for (const [dx, dy] of kicks) {
+      const testCol = col + dx;
+      const testRow = row + dy;
+      const testCells = newTemplate.map(([c, r]) => [c + testCol, r + testRow]);
+      if (this.isValidPosition(testCells)) {
+        this.activePiece = {
+          key,
+          cells: testCells,
+          col: testCol,
+          row: testRow,
+          rotation: to,
+        };
+        this.drawAll();
+        return true;
+      }
+    }
+    return false;
   }
 
   getGhostCells() {
     if (!this.activePiece) return [];
-    let cells = this.activePiece.cells.map(c => [...c]);
+    const { key, col, row, rotation } = this.activePiece;
+    const template = SRS_SHAPES[key][rotation];
+    let testRow = row;
     while (true) {
-      const dropped = cells.map(([c, r]) => [c, r + 1]);
-      if (!this.isValidPosition(dropped)) break;
-      cells = dropped;
+      const nextRow = testRow + 1;
+      const testCells = template.map(([c, r]) => [c + col, r + nextRow]);
+      if (!this.isValidPosition(testCells)) break;
+      testRow = nextRow;
     }
-    return cells;
+    return template.map(([c, r]) => [c + col, r + testRow]);
   }
 
   lockPiece() {
@@ -251,6 +370,7 @@ export default class TetrisGameScene extends Phaser.Scene {
       }
     }
     this.piecesPlaced++;
+    this.holdUsed = false; // allow hold again after lock
     SynthSounds.tick();
     this.activePiece = null;
     this.checkLines();
@@ -334,6 +454,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     this.drawGhost();
     this.drawActive();
     this.drawPreview();
+    this.drawHoldPreview();
   }
 
   drawGrid() {
@@ -436,7 +557,7 @@ export default class TetrisGameScene extends Phaser.Scene {
     g.clear();
     if (!this.nextPieceKey) return;
 
-    const template = TETROMINOES[this.nextPieceKey].cells;
+    const template = SRS_SHAPES[this.nextPieceKey][0]; // state 0
     const smallCell = Math.max(10, this.cellSize - 4);
     const px = this.previewX;
     const py = this.previewY;
@@ -448,39 +569,90 @@ export default class TetrisGameScene extends Phaser.Scene {
     }
   }
 
+  drawHoldPreview() {
+    const g = this.holdGraphics;
+    g.clear();
+    if (!this.holdType) return;
+
+    const template = SRS_SHAPES[this.holdType][0]; // always state 0
+    const smallCell = Math.max(10, this.cellSize - 4);
+    const px = this.holdPreviewX;
+    const py = this.holdPreviewY;
+
+    // Draw dimmed if hold was already used this turn
+    const alpha = this.holdUsed ? 0.3 : 1;
+    g.fillStyle(COLORS.GRAY, alpha);
+    for (const [c, r] of template) {
+      g.fillRect(px + c * smallCell + 1, py + r * smallCell + 1, smallCell - 2, smallCell - 2);
+    }
+  }
+
   // Input handling
   tryMove(dc, dr) {
     if (!this.activePiece) return false;
-    const newCells = this.activePiece.cells.map(([c, r]) => [c + dc, r + dr]);
+    const { key, col, row, rotation } = this.activePiece;
+    const newCol = col + dc;
+    const newRow = row + dr;
+    const template = SRS_SHAPES[key][rotation];
+    const newCells = template.map(([c, r]) => [c + newCol, r + newRow]);
     if (this.isValidPosition(newCells)) {
-      this.activePiece = { ...this.activePiece, cells: newCells };
+      this.activePiece = { key, cells: newCells, col: newCol, row: newRow, rotation };
       this.drawAll();
       return true;
     }
     return false;
   }
 
-  tryRotate() {
+  hardDrop() {
     if (!this.activePiece) return;
-    const rotated = this.rotateCells(this.activePiece.cells);
-    // Wall kick: try original, then shift right, then left
-    const kicks = [[0,0],[1,0],[-1,0],[2,0],[-2,0]];
-    for (const [dc, dr] of kicks) {
-      const kicked = rotated.map(([c, r]) => [c + dc, r + dr]);
-      if (this.isValidPosition(kicked)) {
-        this.activePiece = { ...this.activePiece, cells: kicked };
-        this.drawAll();
+    const { key, col, row, rotation } = this.activePiece;
+    const template = SRS_SHAPES[key][rotation];
+    // Drop row until invalid
+    let testRow = row;
+    while (true) {
+      const nextRow = testRow + 1;
+      const testCells = template.map(([c, r]) => [c + col, r + nextRow]);
+      if (!this.isValidPosition(testCells)) break;
+      testRow = nextRow;
+    }
+    const finalCells = template.map(([c, r]) => [c + col, r + testRow]);
+    this.activePiece = { key, cells: finalCells, col, row: testRow, rotation };
+    this.lockPiece();
+    this.fallAccum = 0;
+  }
+
+  holdPiece() {
+    if (!this.activePiece || this.holdUsed) return;
+
+    const currentType = this.activePiece.key;
+
+    if (this.holdType === null) {
+      // First hold: stash current, spawn next from bag
+      this.holdType = currentType;
+      this.activePiece = null;
+      this.spawnPiece();
+    } else {
+      // Swap: stash current, spawn held piece
+      const heldType = this.holdType;
+      this.holdType = currentType;
+
+      const spawnCol = Math.floor((COLS - 4) / 2);
+      const spawnRow = 0;
+      const rotation = 0;
+      const template = SRS_SHAPES[heldType][rotation];
+      const cells = template.map(([c, r]) => [c + spawnCol, r + spawnRow]);
+
+      this.activePiece = { key: heldType, cells, col: spawnCol, row: spawnRow, rotation };
+
+      if (!this.isValidPosition(cells)) {
+        this.endGame();
         return;
       }
     }
-  }
 
-  hardDrop() {
-    if (!this.activePiece) return;
-    const ghost = this.getGhostCells();
-    this.activePiece = { ...this.activePiece, cells: ghost };
-    this.lockPiece();
+    this.holdUsed = true;
     this.fallAccum = 0;
+    this.drawAll();
   }
 
   update(time, delta) {
@@ -494,13 +666,23 @@ export default class TetrisGameScene extends Phaser.Scene {
     if (!this.activePiece) return;
     if (this.flashingRows) return; // wait for flash animation
 
-    // Rotate: Up arrow or W — use JustDown to avoid repeat
+    // CW Rotate: Up arrow, W, or X — use JustDown to avoid repeat
     // Touch rotate: action button with one-shot cooldown
     const touchRotate = this.touchAction?.isDown && !this._touchActionFired;
     if (touchRotate) this._touchActionFired = true;
     if (!this.touchAction?.isDown) this._touchActionFired = false;
-    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.wKey) || touchRotate) {
-      this.tryRotate();
+    if (Phaser.Input.Keyboard.JustDown(this.cursors.up) || Phaser.Input.Keyboard.JustDown(this.wKey) || Phaser.Input.Keyboard.JustDown(this.xKey) || touchRotate) {
+      this.tryRotate(1); // CW
+    }
+
+    // CCW Rotate: Z key
+    if (Phaser.Input.Keyboard.JustDown(this.zKey)) {
+      this.tryRotate(-1); // CCW
+    }
+
+    // Hold piece: C or Shift
+    if (Phaser.Input.Keyboard.JustDown(this.cKey) || Phaser.Input.Keyboard.JustDown(this.shiftKey)) {
+      this.holdPiece();
     }
 
     // Hard drop: Space or touch D-pad up tap (one-shot)
