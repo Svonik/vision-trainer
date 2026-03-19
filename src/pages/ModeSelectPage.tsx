@@ -1,5 +1,7 @@
 import { Clock, Gamepad2, Target } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { MathGate } from '@/components/MathGate';
 import { SessionStepper } from '@/components/SessionStepper';
 import { Card, CardContent } from '@/components/ui/card';
 import { WeeklyProgress } from '@/components/WeeklyProgress';
@@ -18,6 +20,15 @@ export function ModeSelectPage() {
     const calibration = getCalibration();
     const protocol = getProtocol(calibration.age_group);
     const sessionMinutes = Math.round(protocol.sessionDurationMs / 60_000);
+    const [showGate, setShowGate] = useState(false);
+
+    const handleTrainingClick = () => {
+        if (doctorAlert) {
+            setShowGate(true);
+        } else {
+            navigate('/training/settings');
+        }
+    };
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 pb-24 relative z-10">
@@ -44,7 +55,7 @@ export function ModeSelectPage() {
                     type="button"
                     className="group hover:scale-[1.01] hover:shadow-xl hover:shadow-purple-900/20 transition-[transform,box-shadow] duration-300 ease-out cursor-pointer spring-enter text-left w-full rounded-3xl"
                     style={{ animationDelay: '0ms' }}
-                    onClick={() => navigate('/training/settings')}
+                    onClick={handleTrainingClick}
                     aria-label={t('mode.training')}
                 >
                     <Card glow className="rounded-3xl gap-0">
@@ -121,6 +132,16 @@ export function ModeSelectPage() {
                     </Card>
                 </button>
             </div>
+
+            {showGate && (
+                <MathGate
+                    onPass={() => {
+                        setShowGate(false);
+                        navigate('/training/settings');
+                    }}
+                    onCancel={() => setShowGate(false)}
+                />
+            )}
         </div>
     );
 }

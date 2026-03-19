@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppButton } from '@/components/AppButton';
 import { ContrastIndicator } from '@/components/ContrastIndicator';
+import { MathGate } from '@/components/MathGate';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
@@ -32,6 +33,7 @@ export function SettingsHub() {
     const { glassesType, setGlassesType, passed, save } = useCalibration();
     const calibrationData = getCalibration();
     const [calibMode, setCalibMode] = useState<CalibrationMode>('view');
+    const [showGate, setShowGate] = useState(false);
     const [adjustAttempts, setAdjustAttempts] = useState(0);
     const [recalibGlassesType, setRecalibGlassesType] = useState<
         'red-cyan' | 'cyan-red'
@@ -182,7 +184,7 @@ export function SettingsHub() {
                         <AppButton
                             variant="cta"
                             size="sm"
-                            onClick={() => setCalibMode('glasses')}
+                            onClick={() => setShowGate(true)}
                         >
                             {t('settings.recalibrate')}
                         </AppButton>
@@ -280,6 +282,16 @@ export function SettingsHub() {
                     </div>
                 </CardContent>
             </Card>
+
+            {showGate && (
+                <MathGate
+                    onPass={() => {
+                        setShowGate(false);
+                        setCalibMode('glasses');
+                    }}
+                    onCancel={() => setShowGate(false)}
+                />
+            )}
         </div>
     );
 }

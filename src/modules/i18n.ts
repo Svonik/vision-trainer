@@ -284,6 +284,11 @@ const strings = {
     'training_summary.wellness_ok': 'Жалоб нет',
     'training_summary.wellness_count': 'жалоб за курс',
     'training_summary.total_minutes': 'Всего минут',
+    'gate.title': 'Подтверждение взрослого',
+    'gate.wrong': 'Неверно. Попроси взрослого помочь',
+    'gate.cancel': 'Отмена',
+    'gate.confirm': 'Ответить',
+    'gate.required_adverse': 'Продолжение требует подтверждения взрослого',
 } as const;
 
 export type TranslationKey = keyof typeof strings;

@@ -3,9 +3,11 @@ import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { AppButton } from '@/components/AppButton';
+import { MathGate } from '@/components/MathGate';
 import { GAME_SCENE_MAP, START_EVENT_MAP } from '@/config/gameScenes';
 import { formatTime } from '@/lib/formatTime';
 import type { WellnessLevel } from '@/modules/wellnessCheck';
+import { shouldAlertDoctor } from '@/modules/wellnessCheck';
 import { PhaserErrorBoundary } from '../components/PhaserErrorBoundary';
 import { PhaserLoadingScreen } from '../components/PhaserLoadingScreen';
 import { SafetyTimerBanner } from '../components/SafetyTimerBanner';
@@ -168,6 +170,8 @@ export function TrainingPlayPage() {
     const [wellnessLevel, setWellnessLevel] = useState<WellnessLevel | null>(
         null,
     );
+    const needsGate = shouldAlertDoctor(getCachedSessions());
+    const [gatePassed, setGatePassed] = useState(!needsGate);
 
     // Ref tracks wellness level for use inside effect closures without
     // adding it to the dependency array (avoids listener teardown/re-add
@@ -520,7 +524,18 @@ export function TrainingPlayPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            {wellnessLevel === null && (
+            {!gatePassed && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[var(--bg)]/95 backdrop-blur-md">
+                    <p className="text-sm font-bold text-[var(--warning)] mb-4">
+                        {t('gate.required_adverse')}
+                    </p>
+                    <MathGate
+                        onPass={() => setGatePassed(true)}
+                        onCancel={() => navigate('/mode-select')}
+                    />
+                </div>
+            )}
+            {gatePassed && wellnessLevel === null && (
                 <WellnessPreCheck
                     onSelect={handleWellnessSelect}
                     onSkipSession={() => navigate('/mode-select')}
