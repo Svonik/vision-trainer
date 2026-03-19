@@ -120,22 +120,28 @@ export function ProgressPage() {
         0,
     );
 
-    // Clinical metrics
+    // Filter to training sessions for clinical metrics
+    const trainingSessions = useMemo(
+        () => sessions.filter((s: SessionResult) => s.mode !== 'freeplay'),
+        [sessions],
+    );
+
+    // Clinical metrics — use training sessions only
     const contrastEntries = useMemo(
         () =>
-            sessions
+            trainingSessions
                 .filter((s: SessionResult) => s.fellow_contrast_end != null)
                 .slice(-10)
                 .map((s: SessionResult) => ({
                     date: s.timestamp ? formatDate(s.timestamp) : '—',
                     value: s.fellow_contrast_end as number,
                 })),
-        [sessions],
+        [trainingSessions],
     );
 
     const schedule = useMemo(
-        () => computeWeeklySchedule(sessions as SessionResult[]),
-        [sessions],
+        () => computeWeeklySchedule(trainingSessions as SessionResult[]),
+        [trainingSessions],
     );
 
     const adverseCount = useMemo(

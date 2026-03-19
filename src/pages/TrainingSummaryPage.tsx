@@ -6,6 +6,7 @@ import type { SessionResult } from '@/modules/gameState';
 import { t } from '@/modules/i18n';
 import { computeWeeklySchedule } from '@/modules/scheduleTracker';
 import { getCachedSessions } from '@/modules/sessionCache';
+import { getActiveCourse } from '@/modules/therapyCourse';
 import { hasAdverseSymptoms } from '@/modules/wellnessCheck';
 
 function computeCourseStars(sessions: readonly SessionResult[]): 1 | 2 | 3 {
@@ -97,12 +98,20 @@ export function TrainingSummaryPage() {
 
     const narrative = useMemo(() => {
         const allSessions = getCachedSessions();
+        const course = getActiveCourse();
 
-        const stars = computeCourseStars(allSessions);
+        // Filter to course training sessions only
+        const courseSessions = allSessions.filter((s) => {
+            if (s.mode && s.mode !== 'training') return false;
+            if (course && s.timestamp < course.startDate) return false;
+            return true;
+        });
+
+        const stars = computeCourseStars(courseSessions);
 
         // Contrast progress: first session start -> last session end
-        const firstSession = allSessions[0] as SessionResult | undefined;
-        const lastSession = allSessions[allSessions.length - 1] as
+        const firstSession = courseSessions[0] as SessionResult | undefined;
+        const lastSession = courseSessions[courseSessions.length - 1] as
             | SessionResult
             | undefined;
         const contrastStart =
@@ -113,7 +122,7 @@ export function TrainingSummaryPage() {
             CLINICAL_CONTRAST.FELLOW_INITIAL;
 
         // Adherence
-        const schedule = computeWeeklySchedule(allSessions);
+        const schedule = computeWeeklySchedule(courseSessions);
         const expectedDays = schedule.totalWeeks * schedule.targetDaysPerWeek;
         const adherencePercent =
             expectedDays > 0
@@ -123,10 +132,10 @@ export function TrainingSummaryPage() {
                 : 0;
 
         // Wellness
-        const adverseCount = countAdverseSessions(allSessions);
+        const adverseCount = countAdverseSessions(courseSessions);
 
         // Total therapy minutes
-        const totalSeconds = allSessions.reduce(
+        const totalSeconds = courseSessions.reduce(
             (sum, s) => sum + s.duration_s,
             0,
         );
