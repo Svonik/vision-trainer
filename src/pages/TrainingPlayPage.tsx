@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, Pause } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { AppButton } from '@/components/AppButton';
 import { MathGate } from '@/components/MathGate';
@@ -199,6 +199,15 @@ export function TrainingPlayPage() {
         }
     }, [sessionGames, settings, navigate]);
 
+    const handleAdvance = useCallback(() => {
+        if (countdownRef.current !== null) {
+            clearInterval(countdownRef.current);
+        }
+        setShowTransition(false);
+        setLoading(true);
+        setCurrentGameIndex((prev) => prev + 1);
+    }, []);
+
     // Start countdown timer when transition screen shows
     useEffect(() => {
         if (!showTransition) {
@@ -331,14 +340,7 @@ export function TrainingPlayPage() {
         settings,
     ]);
 
-    const handleAdvance = () => {
-        if (countdownRef.current !== null) {
-            clearInterval(countdownRef.current);
-        }
-        setShowTransition(false);
-        setLoading(true);
-        setCurrentGameIndex((prev) => prev + 1);
-    };
+    // handleAdvance is now defined via useCallback above the useEffect that depends on it
 
     const handleWellnessSelect = (level: WellnessLevel) => {
         wellnessRef.current = level;
@@ -383,7 +385,7 @@ export function TrainingPlayPage() {
 
     return (
         <div
-            className="min-h-screen flex flex-col bg-[var(--bg)]"
+            className="h-screen flex flex-col bg-[var(--bg)]"
             style={{ background: 'var(--bg-gradient)' }}
         >
             {/* Minimal overlay header */}
@@ -440,7 +442,7 @@ export function TrainingPlayPage() {
                 </div>
             </header>
 
-            <div className="flex-1 flex items-center justify-center pt-10 relative z-10">
+            <div className="flex-1 flex items-center justify-center pt-11 relative z-10 overflow-hidden">
                 <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
                     <PhaserGame key={instanceKey} ref={phaserRef} />
                 </PhaserErrorBoundary>
