@@ -4,7 +4,10 @@ import { AppButton } from '@/components/AppButton';
 import { CLINICAL_CONTRAST } from '@/modules/constants';
 import type { SessionResult } from '@/modules/gameState';
 import { t } from '@/modules/i18n';
-import { computeWeeklySchedule } from '@/modules/scheduleTracker';
+import {
+    computeWeeklySchedule,
+    getAllCompletedDays,
+} from '@/modules/scheduleTracker';
 import { getCachedSessions } from '@/modules/sessionCache';
 import { getActiveCourse } from '@/modules/therapyCourse';
 import { hasAdverseSymptoms } from '@/modules/wellnessCheck';
@@ -121,14 +124,13 @@ export function TrainingSummaryPage() {
             lastSession?.fellow_contrast_end ??
             CLINICAL_CONTRAST.FELLOW_INITIAL;
 
-        // Adherence
+        // Adherence — use ALL completed days across the course, not just current week
         const schedule = computeWeeklySchedule(courseSessions);
+        const allCompleted = getAllCompletedDays(courseSessions);
         const expectedDays = schedule.totalWeeks * schedule.targetDaysPerWeek;
         const adherencePercent =
             expectedDays > 0
-                ? Math.round(
-                      (schedule.completedDays.length / expectedDays) * 100,
-                  )
+                ? Math.round((allCompleted.length / expectedDays) * 100)
                 : 0;
 
         // Wellness
@@ -149,7 +151,7 @@ export function TrainingSummaryPage() {
             contrastStart,
             contrastEnd,
             adherencePercent,
-            completedDays: schedule.completedDays.length,
+            completedDays: allCompleted.length,
             expectedDays,
             adverseCount,
             totalMinutes,

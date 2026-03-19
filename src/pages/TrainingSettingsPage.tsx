@@ -16,6 +16,7 @@ import {
     getDefaultSettings,
     getSessions,
 } from '../modules/storage';
+import { getActiveCourse, startCourse } from '../modules/therapyCourse';
 
 function GamePill({ gameId, index }: { gameId: string; index: number }) {
     return (
@@ -64,6 +65,15 @@ export function TrainingSettingsPage() {
             (calibration.glasses_type ?? 'red-cyan') as GlassesType,
             calibration.weak_eye ?? 'left',
         );
+
+        if (!getActiveCourse()) {
+            const currentDefaults = getDefaultSettings();
+            startCourse(
+                calibration.age_group || '8-12',
+                currentDefaults.fellowEyeContrast,
+            );
+        }
+
         navigate('/training/play', {
             state: { sessionGames, settings: { ...settings, eyeConfig } },
         });

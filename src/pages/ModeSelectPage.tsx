@@ -5,6 +5,7 @@ import { MathGate } from '@/components/MathGate';
 import { SessionStepper } from '@/components/SessionStepper';
 import { Card, CardContent } from '@/components/ui/card';
 import { WeeklyProgress } from '@/components/WeeklyProgress';
+import type { SessionResult } from '../modules/gameState';
 import { t } from '../modules/i18n';
 import { getCachedSessions } from '../modules/sessionCache';
 import { generateSession } from '../modules/sessionEngine';
@@ -13,9 +14,11 @@ import { getActiveCourse, getCourseProgress } from '../modules/therapyCourse';
 import { getProtocol } from '../modules/therapyProtocol';
 import { shouldAlertDoctor } from '../modules/wellnessCheck';
 
-function hasTodaySession(sessions: readonly { timestamp: string }[]): boolean {
+function hasTodaySession(sessions: readonly SessionResult[]): boolean {
     const today = new Date().toISOString().slice(0, 10);
-    return sessions.some((s) => s.timestamp.slice(0, 10) === today);
+    return sessions.some(
+        (s) => s.timestamp.slice(0, 10) === today && s.mode === 'training',
+    );
 }
 
 export function ModeSelectPage() {

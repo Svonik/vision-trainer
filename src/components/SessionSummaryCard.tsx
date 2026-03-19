@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { t } from '@/modules/i18n';
 import { getCachedSessions } from '@/modules/sessionCache';
 import type { SessionSummary } from '@/modules/sessionSummary';
+import { getActiveCourse, getCourseProgress } from '@/modules/therapyCourse';
 import {
-    getActiveCourse,
-    getCourseProgress,
-} from '@/modules/therapyCourse';
-import { shouldAlertDoctor } from '@/modules/wellnessCheck';
+    getConsecutiveAdverseCount,
+    shouldAlertDoctor,
+} from '@/modules/wellnessCheck';
 
 interface SessionSummaryCardProps {
     readonly summary: SessionSummary;
@@ -65,7 +65,15 @@ export function SessionSummaryCard({
     const [eyeStrain, setEyeStrain] = useState(false);
     const [headache, setHeadache] = useState(false);
     const sessions = getCachedSessions();
-    const doctorAlert = shouldAlertDoctor(sessions);
+
+    // Compute doctor alert including the CURRENT session's wellness toggles.
+    // The cached sessions don't yet reflect the user's toggle choices, so we
+    // account for them here: if the user reports adverse symptoms, bump the
+    // consecutive adverse count by 1; if not, the streak resets to 0.
+    const hasCurrentAdverse = eyeStrain || headache;
+    const baseAdverseCount = getConsecutiveAdverseCount(sessions);
+    const effectiveAdverseCount = hasCurrentAdverse ? baseAdverseCount + 1 : 0;
+    const doctorAlert = effectiveAdverseCount >= 3;
     const nextAction = getNextActionMessage(sessions);
     const buttonText = getContinueButtonText();
 

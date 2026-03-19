@@ -84,6 +84,18 @@ export function computeWeeklySchedule(
     };
 }
 
+export function getAllCompletedDays(
+    sessions: readonly SessionResult[],
+): readonly string[] {
+    return [
+        ...new Set(
+            sessions.map((s) =>
+                new Date(s.timestamp).toISOString().slice(0, 10),
+            ),
+        ),
+    ].sort();
+}
+
 export function getDayStatus(
     schedule: WeeklySchedule,
     date: string,

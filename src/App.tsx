@@ -8,6 +8,7 @@ import { SuspenseFallback } from './components/SuspenseFallback';
 import { CalibrationGuard } from './guards/CalibrationGuard';
 import { DisclaimerGuard } from './guards/DisclaimerGuard';
 import { GameSettingsGuard } from './guards/GameSettingsGuard';
+import { TrainingSettingsGuard } from './guards/TrainingSettingsGuard';
 import { t } from './modules/i18n';
 import {
     getCalibration,
@@ -196,7 +197,9 @@ function App() {
                         element={
                             <DisclaimerGuard>
                                 <CalibrationGuard>
-                                    <TrainingPlayPage />
+                                    <TrainingSettingsGuard>
+                                        <TrainingPlayPage />
+                                    </TrainingSettingsGuard>
                                 </CalibrationGuard>
                             </DisclaimerGuard>
                         }
