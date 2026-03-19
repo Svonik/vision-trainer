@@ -156,22 +156,18 @@ describe('OnboardingWizard', () => {
             </MemoryRouter>,
         );
         advanceToContrastStep();
-        expect(screen.getByText(/настройка контраста/i)).toBeInTheDocument();
+        expect(screen.getByText(/тест на подавление/i)).toBeInTheDocument();
     });
 
-    it('contrast slider step shows slider and done button', () => {
+    it('suppression test step shows slider and trial indicator', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
             </MemoryRouter>,
         );
         advanceToContrastStep();
-        // Verify slider and "Готово" button are present
         expect(screen.getByRole('slider')).toBeInTheDocument();
-        expect(screen.getByText(/готово/i)).toBeInTheDocument();
-        // Button should be enabled (slider starts at min=5)
-        expect(
-            screen.getByText(/готово/i).closest('button'),
-        ).not.toBeDisabled();
+        // Trial indicator: "1 / 2"
+        expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument();
     });
 });

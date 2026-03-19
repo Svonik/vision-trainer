@@ -219,6 +219,11 @@ const strings = {
     'summary.new_record': 'Новый рекорд!',
     'suppression.title': 'Тест на подавление',
     'suppression.instruction': 'Нажми когда увидишь обе фигуры',
+    'suppression.slider_instruction':
+        'Наденьте очки. Медленно двигайте вправо и остановитесь, когда ребёнок увидит обе фигуры',
+    'suppression.trial': 'Попытка',
+    'suppression.confirm_next': 'Проверим ещё раз',
+    'suppression.confirm_final': 'Готово',
     'suppression.result': 'Глубина подавления',
     'suppression.next': 'Не вижу',
     'suppression.seen': 'Вижу обе!',

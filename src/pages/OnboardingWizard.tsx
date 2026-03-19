@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
-import { ContrastSliderStep } from '../components/calibration/ContrastSliderStep';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
+import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
@@ -141,7 +141,7 @@ export function OnboardingWizard() {
                         <WeakEyeStep onSelect={handleWeakEyeSelect} />
                     )}
                     {step === 'contrast' && (
-                        <ContrastSliderStep
+                        <SuppressionTestStep
                             glassesType={glassesType}
                             onComplete={handleContrastComplete}
                         />

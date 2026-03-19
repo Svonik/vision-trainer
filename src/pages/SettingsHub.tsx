@@ -8,7 +8,7 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
-import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
+import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION, SPEED_KEYS, SPEEDS } from '../modules/constants';
@@ -20,7 +20,6 @@ import {
     getDefaultSettings,
     saveDefaultSettings,
 } from '../modules/storage';
-import type { SuppressionResult } from '../modules/suppressionTest';
 
 type CalibrationMode =
     | 'view'
@@ -55,14 +54,21 @@ export function SettingsHub() {
         setCalibMode('suppression');
     };
 
-    const handleSuppressionComplete = (result: SuppressionResult) => {
-        save({ suppression_passed: result.balancePoint <= 80 });
+    const handleSuppressionComplete = (balancePoint: number) => {
+        const passed = balancePoint <= 80;
+        save({ suppression_passed: passed });
         const settings = getDefaultSettings();
         saveDefaultSettings({
             ...settings,
-            fellowEyeContrast: result.balancePoint,
+            fellowEyeContrast: balancePoint,
         });
-        setCalibMode('view');
+        if (passed) {
+            setCalibMode('view');
+            toast.success(t('settings.calibrationStatus'));
+        } else {
+            setAdjustAttempts((prev) => prev + 1);
+            setCalibMode('adjust');
+        }
     };
 
     const handleAdjustRetry = () => {
@@ -122,7 +128,7 @@ export function SettingsHub() {
                 >
                     <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                 </AppButton>
-                <QuantitativeSuppressionStep
+                <SuppressionTestStep
                     glassesType={recalibGlassesType}
                     onComplete={handleSuppressionComplete}
                 />
