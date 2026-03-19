@@ -530,7 +530,8 @@ export default class RunnerGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        this.obstacleAlpha = alpha;
+        // Update the runner (fellow eye element), not obstacles
+        if (this.runnerVisual) this.runnerVisual.setAlpha(alpha);
     }
 
     togglePause() {

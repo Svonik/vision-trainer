@@ -4,15 +4,16 @@ export type GlassesType = 'red-cyan' | 'cyan-red';
 
 /**
  * Derive eyeConfig from glasses_type + weak_eye.
- * The weak (amblyopic) eye sees the platform — the element it must track.
- * The strong (fellow) eye sees the falling objects.
+ * The platform is visible to the FELLOW (strong) eye — clinical protocol.
+ * The weak (amblyopic) eye sees the targets it must track.
  */
 export function deriveEyeConfig(
     glassesType: GlassesType,
     weakEye: 'left' | 'right',
 ): 'platform_left' | 'platform_right' {
-    // If weak eye is left, platform should be visible to the left eye
-    return weakEye === 'left' ? 'platform_left' : 'platform_right';
+    // Platform is visible to the FELLOW (strong) eye, not the weak eye
+    // If weak eye is left, strong eye is right → platform_right
+    return weakEye === 'left' ? 'platform_right' : 'platform_left';
 }
 
 export function getEyeColors(glassesType: GlassesType) {
