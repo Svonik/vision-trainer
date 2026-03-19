@@ -41,6 +41,7 @@ export interface SessionResult {
     fellow_contrast_end?: number;
     window_accuracy?: number;
     total_trials?: number;
+    mode?: 'training' | 'freeplay';
     wellness?: {
         preSession: string;
         postEyeStrain: boolean;

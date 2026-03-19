@@ -25,7 +25,6 @@ import {
     computeSessionSummary,
     type SessionSummary,
 } from '../modules/sessionSummary';
-import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 
 export function GamePage() {
     const location = useLocation();
@@ -73,19 +72,13 @@ export function GamePage() {
                       },
                   }
                 : result;
-            if (result.fellow_contrast_end !== undefined) {
-                const currentSettings = getDefaultSettings();
-                saveDefaultSettings({
-                    ...currentSettings,
-                    fellowEyeContrast: result.fellow_contrast_end,
-                });
-            }
+            const resultWithMode = {
+                ...resultWithWellness,
+                mode: 'freeplay' as const,
+            };
             const sessions = getCachedSessions();
-            const summaryData = computeSessionSummary(
-                resultWithWellness,
-                sessions,
-            );
-            addCachedSession(resultWithWellness);
+            const summaryData = computeSessionSummary(resultWithMode, sessions);
+            addCachedSession(resultWithMode);
             setSummary(summaryData);
             setShowSummary(true);
         };

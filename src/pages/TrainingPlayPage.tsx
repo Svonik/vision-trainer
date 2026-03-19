@@ -250,16 +250,17 @@ export function TrainingPlayPage() {
                     fellowEyeContrast: result.fellow_contrast_end,
                 });
             }
-            const updatedResults = [...completedResults, resultWithWellness];
+            const resultWithMode = {
+                ...resultWithWellness,
+                mode: 'training' as const,
+            };
+            const updatedResults = [...completedResults, resultWithMode];
             setCompletedResults(updatedResults);
             setElapsedMs(null);
 
             const sessions = getCachedSessions();
-            const summaryData = computeSessionSummary(
-                resultWithWellness,
-                sessions,
-            );
-            addCachedSession(resultWithWellness);
+            const summaryData = computeSessionSummary(resultWithMode, sessions);
+            addCachedSession(resultWithMode);
             setSummary(summaryData);
             setShowSummary(true);
 
