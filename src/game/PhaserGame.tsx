@@ -90,7 +90,11 @@ export function PhaserGame({ currentActiveScene, ref }: IProps) {
             )}
             <div
                 id="game-container"
-                style={{ display: loading ? 'none' : 'block' }}
+                style={{
+                    display: loading ? 'none' : 'block',
+                    width: '100%',
+                    height: '100%',
+                }}
             />
         </>
     );

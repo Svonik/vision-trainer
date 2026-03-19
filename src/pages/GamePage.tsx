@@ -158,7 +158,7 @@ export function GamePage() {
 
     return (
         <div
-            className="min-h-screen flex flex-col bg-[var(--bg)]"
+            className="h-screen flex flex-col bg-[var(--bg)]"
             style={{ background: 'var(--bg-gradient)' }}
         >
             <header className="flex fixed top-0 left-0 right-0 z-50 items-center justify-between px-4 py-2 bg-[var(--bg)]/80 backdrop-blur">
@@ -192,7 +192,7 @@ export function GamePage() {
                 </div>
             </header>
 
-            <div className="flex-1 flex items-center justify-center md:pt-10 relative z-10">
+            <div className="flex-1 flex items-center justify-center relative z-10 overflow-hidden pt-11">
                 <PhaserErrorBoundary onReset={() => setInstanceKey(Date.now())}>
                     <PhaserGame key={instanceKey} ref={phaserRef} />
                 </PhaserErrorBoundary>
