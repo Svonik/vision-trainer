@@ -141,110 +141,109 @@ function renderIllustration(gameId: string): JSX.Element | null {
         case 'tetris':
             return (
                 <>
-                    {/* Field outline */}
+                    {/* Well */}
                     <rect
-                        x="24"
+                        x="30"
                         y="4"
-                        width="72"
+                        width="60"
                         height="52"
                         rx="2"
                         fill="none"
                         stroke="var(--border)"
                         strokeWidth="1"
-                        opacity="0.2"
-                    />
-                    {/* Falling L-piece */}
-                    <rect
-                        x="36"
-                        y="8"
-                        width="10"
-                        height="10"
-                        rx="1.5"
-                        fill="var(--cyan-soft)"
-                        opacity="0.7"
-                    />
-                    <rect
-                        x="36"
-                        y="18"
-                        width="10"
-                        height="10"
-                        rx="1.5"
-                        fill="var(--cyan-soft)"
-                        opacity="0.7"
-                    />
-                    <rect
-                        x="46"
-                        y="18"
-                        width="10"
-                        height="10"
-                        rx="1.5"
-                        fill="var(--cyan-soft)"
-                        opacity="0.7"
+                        opacity="0.25"
                     />
                     {/* Falling T-piece */}
                     <rect
-                        x="64"
-                        y="14"
-                        width="10"
-                        height="10"
+                        x="44"
+                        y="10"
+                        width="9"
+                        height="9"
                         rx="1.5"
-                        fill="var(--accent)"
-                        opacity="0.6"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
                     />
                     <rect
-                        x="74"
-                        y="14"
-                        width="10"
-                        height="10"
+                        x="53"
+                        y="10"
+                        width="9"
+                        height="9"
                         rx="1.5"
-                        fill="var(--accent)"
-                        opacity="0.6"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
                     />
                     <rect
-                        x="84"
-                        y="14"
-                        width="10"
-                        height="10"
+                        x="62"
+                        y="10"
+                        width="9"
+                        height="9"
                         rx="1.5"
-                        fill="var(--accent)"
-                        opacity="0.6"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
                     />
                     <rect
-                        x="74"
-                        y="24"
-                        width="10"
-                        height="10"
+                        x="53"
+                        y="19"
+                        width="9"
+                        height="9"
                         rx="1.5"
-                        fill="var(--accent)"
-                        opacity="0.6"
+                        fill="var(--cyan-soft)"
+                        opacity="0.7"
                     />
-                    {/* Landed blocks at bottom */}
+                    {/* Landed row at bottom */}
                     <rect
-                        x="26"
+                        x="32"
                         y="44"
-                        width="10"
-                        height="10"
+                        width="9"
+                        height="9"
                         rx="1.5"
                         fill="var(--red-soft)"
                         opacity="0.4"
                     />
                     <rect
-                        x="36"
+                        x="41"
                         y="44"
-                        width="10"
-                        height="10"
+                        width="9"
+                        height="9"
+                        rx="1.5"
+                        fill="var(--accent)"
+                        opacity="0.35"
+                    />
+                    <rect
+                        x="50"
+                        y="44"
+                        width="9"
+                        height="9"
+                        rx="1.5"
+                        fill="var(--red-soft)"
+                        opacity="0.3"
+                    />
+                    <rect
+                        x="59"
+                        y="44"
+                        width="9"
+                        height="9"
                         rx="1.5"
                         fill="var(--warning)"
                         opacity="0.35"
                     />
                     <rect
-                        x="56"
+                        x="68"
                         y="44"
-                        width="10"
-                        height="10"
+                        width="9"
+                        height="9"
+                        rx="1.5"
+                        fill="var(--accent)"
+                        opacity="0.3"
+                    />
+                    <rect
+                        x="77"
+                        y="44"
+                        width="9"
+                        height="9"
                         rx="1.5"
                         fill="var(--red-soft)"
-                        opacity="0.3"
+                        opacity="0.35"
                     />
                 </>
             );

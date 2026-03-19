@@ -3,30 +3,34 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppButton } from '@/components/AppButton';
 import { ContrastIndicator } from '@/components/ContrastIndicator';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { Card, CardContent } from '@/components/ui/card';
 import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { QuantitativeSuppressionStep } from '../components/calibration/QuantitativeSuppressionStep';
+import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
-import { CALIBRATION, SPEEDS } from '../modules/constants';
+import { CALIBRATION, SPEED_KEYS, SPEEDS } from '../modules/constants';
 import type { GlassesType } from '../modules/glassesColors';
+import { deriveEyeConfig } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
-import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
+import {
+    getCalibration,
+    getDefaultSettings,
+    saveDefaultSettings,
+} from '../modules/storage';
 import type { SuppressionResult } from '../modules/suppressionTest';
 
-type CalibrationMode = 'view' | 'glasses' | 'suppression' | 'adjust';
-
-const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
+type CalibrationMode =
+    | 'view'
+    | 'glasses'
+    | 'weak_eye'
+    | 'suppression'
+    | 'adjust';
 
 export function SettingsHub() {
-    const {
-        glassesType,
-        setGlassesType,
-        passed,
-        save,
-        setRedBrightness,
-        setCyanBrightness,
-    } = useCalibration();
+    const { glassesType, setGlassesType, passed, save } = useCalibration();
+    const calibrationData = getCalibration();
     const [calibMode, setCalibMode] = useState<CalibrationMode>('view');
     const [adjustAttempts, setAdjustAttempts] = useState(0);
     const [recalibGlassesType, setRecalibGlassesType] = useState<
@@ -37,23 +41,15 @@ export function SettingsHub() {
     const [defaultSpeed, setDefaultSpeed] = useState<string>(
         defaults.speed ?? 'slow',
     );
-    const [defaultEyeConfig, setDefaultEyeConfig] = useState<string>(
-        defaults.eyeConfig ?? 'platform_left',
-    );
-
-    const handleSaveDefaults = () => {
-        saveDefaultSettings({
-            ...defaults,
-            speed: defaultSpeed,
-            eyeConfig: defaultEyeConfig,
-        });
-        toast.success(t('settings.saved'));
-    };
-
     const handleGlassesSelect = (type: 'red-cyan' | 'cyan-red') => {
         setRecalibGlassesType(type);
         setGlassesType(type);
-        save({ suppression_passed: passed, glasses_type: type });
+        save({ suppression_passed: false, glasses_type: type });
+        setCalibMode('weak_eye');
+    };
+
+    const handleWeakEyeSelect = (weakEye: 'left' | 'right') => {
+        save({ weak_eye: weakEye });
         setCalibMode('suppression');
     };
 
@@ -93,6 +89,22 @@ export function SettingsHub() {
                     glassesType={recalibGlassesType}
                     onSelect={handleGlassesSelect}
                 />
+            </div>
+        );
+    }
+
+    if (calibMode === 'weak_eye') {
+        return (
+            <div className="p-4 max-w-lg mx-auto">
+                <AppButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCalibMode('glasses')}
+                    className="mb-4"
+                >
+                    <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
+                </AppButton>
+                <WeakEyeStep onSelect={handleWeakEyeSelect} />
             </div>
         );
     }
@@ -178,7 +190,7 @@ export function SettingsHub() {
                 </CardContent>
             </Card>
 
-            {/* Section 2: Glasses type */}
+            {/* Section 2: Glasses & Weak Eye (read-only with recalibrate) */}
             <Card
                 className="rounded-3xl"
                 role="region"
@@ -188,49 +200,39 @@ export function SettingsHub() {
                     <h2 className="text-base font-semibold text-[var(--text)] uppercase tracking-wider text-balance">
                         {t('settings.glassesSection')}
                     </h2>
-                    <div className="flex gap-2">
-                        <AppButton
-                            variant="toggle"
-                            size="md"
-                            selected={glassesType === 'red-cyan'}
-                            onClick={() => {
-                                setGlassesType('red-cyan');
-                                save({
-                                    suppression_passed: passed,
-                                    glasses_type: 'red-cyan',
-                                });
-                                toast.info(t('settings.glassesChanged'));
-                            }}
-                            aria-pressed={glassesType === 'red-cyan'}
-                            className={`flex-1 ${
-                                glassesType === 'red-cyan'
-                                    ? 'bg-[var(--red-soft)]/20 !text-[var(--red-soft)] !border-[var(--red-soft)]'
-                                    : ''
-                            }`}
-                        >
-                            {t('calibration.glassesRed')}
-                        </AppButton>
-                        <AppButton
-                            variant="toggle"
-                            size="md"
-                            selected={glassesType === 'cyan-red'}
-                            onClick={() => {
-                                setGlassesType('cyan-red');
-                                save({
-                                    suppression_passed: passed,
-                                    glasses_type: 'cyan-red',
-                                });
-                                toast.info(t('settings.glassesChanged'));
-                            }}
-                            aria-pressed={glassesType === 'cyan-red'}
-                            className={`flex-1 ${
-                                glassesType === 'cyan-red'
-                                    ? 'bg-[var(--cyan-soft)]/20 !text-[var(--cyan-soft)] !border-[var(--cyan-soft)]'
-                                    : ''
-                            }`}
-                        >
-                            {t('calibration.glassesCyan')}
-                        </AppButton>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[var(--text-secondary)] text-sm">
+                                {t('calibration.glassesTitle')}
+                            </span>
+                            <span className="text-[var(--text)] text-sm font-medium">
+                                {glassesType === 'red-cyan'
+                                    ? t('calibration.redLeft')
+                                    : t('calibration.redRight')}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[var(--text-secondary)] text-sm">
+                                {t('weak_eye.title')}
+                            </span>
+                            <span className="text-[var(--text)] text-sm font-medium">
+                                {calibrationData.weak_eye === 'left'
+                                    ? t('weak_eye.left')
+                                    : t('weak_eye.right')}
+                            </span>
+                        </div>
+                        {calibrationData.last_calibrated && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-[var(--text-secondary)] text-sm">
+                                    {t('settings.lastCalibrated')}
+                                </span>
+                                <span className="text-[var(--text-secondary)] text-sm">
+                                    {new Date(
+                                        calibrationData.last_calibrated,
+                                    ).toLocaleDateString('ru-RU')}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -249,74 +251,33 @@ export function SettingsHub() {
                     {/* Contrast indicator (read-only) */}
                     <ContrastIndicator
                         fellowEyeContrast={defaults.fellowEyeContrast ?? 30}
-                        eyeConfig={defaultEyeConfig}
+                        eyeConfig={deriveEyeConfig(
+                            (glassesType ?? 'red-cyan') as GlassesType,
+                            calibrationData.weak_eye ?? 'left',
+                        )}
                         glassesType={(glassesType ?? 'red-cyan') as GlassesType}
                     />
 
-                    {/* Speed buttons */}
-                    <div className="space-y-2">
-                        <p className="text-base text-[var(--text-secondary)]">
+                    {/* Speed — SegmentedControl */}
+                    <div className="space-y-3">
+                        <p className="text-base font-semibold text-[var(--text)]">
                             {t('settings.speed')}
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {SPEED_KEYS.map((key) => (
-                                <AppButton
-                                    key={key}
-                                    variant="toggle"
-                                    size="md"
-                                    selected={defaultSpeed === key}
-                                    onClick={() => setDefaultSpeed(key)}
-                                    aria-pressed={defaultSpeed === key}
-                                >
-                                    {SPEEDS[key].label}
-                                </AppButton>
-                            ))}
-                        </div>
+                        <SegmentedControl
+                            options={SPEED_KEYS.map((key) => ({
+                                id: key,
+                                label: SPEEDS[key].label,
+                            }))}
+                            selected={defaultSpeed}
+                            onChange={(key) => {
+                                setDefaultSpeed(key);
+                                saveDefaultSettings({
+                                    ...defaults,
+                                    speed: key,
+                                });
+                            }}
+                        />
                     </div>
-
-                    {/* Eye config toggle */}
-                    <div className="space-y-2">
-                        <p className="text-base text-[var(--text-secondary)]">
-                            {t('settings.eyeSelect')}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                            <AppButton
-                                variant="toggle"
-                                size="md"
-                                selected={defaultEyeConfig === 'platform_left'}
-                                onClick={() =>
-                                    setDefaultEyeConfig('platform_left')
-                                }
-                                aria-pressed={
-                                    defaultEyeConfig === 'platform_left'
-                                }
-                            >
-                                {t('settings.eyeLeft')}
-                            </AppButton>
-                            <AppButton
-                                variant="toggle"
-                                size="md"
-                                selected={defaultEyeConfig === 'platform_right'}
-                                onClick={() =>
-                                    setDefaultEyeConfig('platform_right')
-                                }
-                                aria-pressed={
-                                    defaultEyeConfig === 'platform_right'
-                                }
-                            >
-                                {t('settings.eyeRight')}
-                            </AppButton>
-                        </div>
-                    </div>
-
-                    <AppButton
-                        variant="cta"
-                        size="md"
-                        onClick={handleSaveDefaults}
-                        className="w-full"
-                    >
-                        {t('settings.saveDefaults')}
-                    </AppButton>
                 </CardContent>
             </Card>
         </div>

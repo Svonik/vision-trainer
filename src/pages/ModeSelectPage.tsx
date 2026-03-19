@@ -20,10 +20,7 @@ export function ModeSelectPage() {
     const sessionMinutes = Math.round(protocol.sessionDurationMs / 60_000);
 
     return (
-        <div
-            className="min-h-screen flex flex-col items-center justify-center p-4 pb-24 relative z-10"
-            style={{ background: 'var(--bg-gradient)' }}
-        >
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 pb-24 relative z-10">
             <h1 className="font-[var(--font-display)] text-4xl text-[var(--text)] mb-2 text-center text-balance">
                 {t('mode.title')}
             </h1>

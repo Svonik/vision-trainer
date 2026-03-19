@@ -14,7 +14,7 @@ export function TopBar({ variant }: TopBarProps) {
 
     return (
         <header
-            className="top-bar fixed top-0 left-0 right-0 z-50 flex items-center px-4 py-3 bg-[var(--bg)]/80 backdrop-blur-md border-b border-[var(--border)]/30"
+            className={`top-bar fixed top-0 left-0 right-0 z-50 flex items-center px-4 py-3 bg-[var(--bg)]/80 backdrop-blur-md border-b border-[var(--border)]/30 ${variant === 'tab' ? 'md:hidden' : ''}`}
             style={{ minHeight: '48px' }}
         >
             {variant === 'tab' ? (

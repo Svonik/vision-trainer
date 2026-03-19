@@ -1,8 +1,6 @@
 import { CURRENT_VERSION, STORAGE_KEYS } from './constants';
 
 export interface CalibrationData {
-    red_brightness: number;
-    cyan_brightness: number;
     suppression_passed: boolean;
     last_calibrated: string | null;
     glasses_type: string;
@@ -11,16 +9,12 @@ export interface CalibrationData {
 }
 
 export interface DefaultSettings {
-    contrastLeft: number;
-    contrastRight: number;
     speed: string;
     eyeConfig: string;
     fellowEyeContrast: number;
 }
 
 const DEFAULT_CALIBRATION: CalibrationData = {
-    red_brightness: 100,
-    cyan_brightness: 100,
     suppression_passed: false,
     last_calibrated: null,
     glasses_type: 'red-cyan',
@@ -29,8 +23,6 @@ const DEFAULT_CALIBRATION: CalibrationData = {
 };
 
 const DEFAULT_SETTINGS: DefaultSettings = {
-    contrastLeft: 100,
-    contrastRight: 100,
     speed: 'slow',
     eyeConfig: 'platform_left',
     fellowEyeContrast: 30,

@@ -152,10 +152,7 @@ export function TrainingSummaryPage() {
         '\u2605'.repeat(narrative.stars) + '\u2606'.repeat(3 - narrative.stars);
 
     return (
-        <div
-            className="min-h-screen flex items-center justify-center p-4"
-            style={{ background: 'var(--bg-gradient)' }}
-        >
+        <div className="min-h-screen flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-[var(--surface)] ring-1 ring-white/[0.05] rounded-3xl shadow-2xl shadow-black/40 overflow-hidden spring-enter">
                 <div className="p-6 space-y-5">
                     {/* Header */}

@@ -1,9 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-    initStorage, getCalibration, saveCalibration,
-    getSessions, addSession, isDisclaimerAccepted,
-    acceptDisclaimer, isStorageAvailable,
-    getDefaultSettings, saveDefaultSettings,
+    acceptDisclaimer,
+    addSession,
+    getCalibration,
+    getDefaultSettings,
+    getSessions,
+    initStorage,
+    isDisclaimerAccepted,
+    isStorageAvailable,
+    saveCalibration,
+    saveDefaultSettings,
 } from '../../src/modules/storage';
 
 describe('Storage Module', () => {
@@ -24,12 +30,10 @@ describe('Storage Module', () => {
     it('manages calibration', () => {
         initStorage();
         const cal = getCalibration();
-        expect(cal.red_brightness).toBe(100);
         expect(cal.suppression_passed).toBe(false);
 
-        saveCalibration({ ...cal, red_brightness: 80, suppression_passed: true });
+        saveCalibration({ ...cal, suppression_passed: true });
         const loaded = getCalibration();
-        expect(loaded.red_brightness).toBe(80);
         expect(loaded.suppression_passed).toBe(true);
     });
 
@@ -70,9 +74,15 @@ describe('Storage Module', () => {
     });
 
     it('defaults fellowEyeContrast to 30 for legacy settings', () => {
-        localStorage.setItem('vt_default_settings', JSON.stringify({
-            contrastLeft: 100, contrastRight: 100, speed: 'slow', eyeConfig: 'platform_left'
-        }));
+        localStorage.setItem(
+            'vt_default_settings',
+            JSON.stringify({
+                contrastLeft: 100,
+                contrastRight: 100,
+                speed: 'slow',
+                eyeConfig: 'platform_left',
+            }),
+        );
         const settings = getDefaultSettings();
         expect(settings.fellowEyeContrast).toBe(30);
     });

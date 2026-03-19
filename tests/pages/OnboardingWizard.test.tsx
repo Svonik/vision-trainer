@@ -17,8 +17,6 @@ vi.mock('../../src/modules/storage', async () => {
         acceptDisclaimer: vi.fn(),
         saveCalibration: vi.fn(),
         getCalibration: vi.fn(() => ({
-            red_brightness: 100,
-            cyan_brightness: 100,
             suppression_passed: false,
             last_calibrated: null,
             glasses_type: 'red-cyan',

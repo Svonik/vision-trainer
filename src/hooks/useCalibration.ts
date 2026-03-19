@@ -6,8 +6,6 @@ import {
 } from '../modules/storage';
 
 interface CalibrationOverrides {
-    red_brightness?: number;
-    cyan_brightness?: number;
     suppression_passed?: boolean;
     glasses_type?: string;
     weak_eye?: 'left' | 'right';
@@ -15,10 +13,6 @@ interface CalibrationOverrides {
 
 export function useCalibration() {
     const [stored] = useState(() => getCalibration());
-    const [redBrightness, setRedBrightness] = useState(stored.red_brightness);
-    const [cyanBrightness, setCyanBrightness] = useState(
-        stored.cyan_brightness,
-    );
     const [attempts, setAttempts] = useState(0);
     const [passed, setPassed] = useState(stored.suppression_passed);
     const [glassesType, setGlassesType] = useState(
@@ -27,10 +21,6 @@ export function useCalibration() {
     const [ageGroup, setAgeGroup] = useState(stored.age_group || '8-12');
 
     // Use refs to avoid stale closure in save()
-    const redRef = useRef(redBrightness);
-    redRef.current = redBrightness;
-    const cyanRef = useRef(cyanBrightness);
-    cyanRef.current = cyanBrightness;
     const passedRef = useRef(passed);
     passedRef.current = passed;
     const glassesRef = useRef(glassesType);
@@ -50,8 +40,6 @@ export function useCalibration() {
         const current = getCalibration();
         const data: CalibrationData = {
             ...current,
-            red_brightness: redRef.current,
-            cyan_brightness: cyanRef.current,
             suppression_passed: passedRef.current,
             last_calibrated: new Date().toISOString(),
             glasses_type: glassesRef.current,
@@ -62,10 +50,6 @@ export function useCalibration() {
     }, []);
 
     return {
-        redBrightness,
-        setRedBrightness,
-        cyanBrightness,
-        setCyanBrightness,
         attempts,
         addAttempt,
         passed,

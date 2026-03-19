@@ -3,10 +3,12 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { AppButton } from '@/components/AppButton';
 import { ContrastIndicator } from '@/components/ContrastIndicator';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { Card, CardContent } from '@/components/ui/card';
 import { useGameSettings } from '../hooks/useGameSettings';
-import { CONTRAST, SPEEDS } from '../modules/constants';
+import { SPEED_KEYS, SPEEDS } from '../modules/constants';
 import type { GlassesType } from '../modules/glassesColors';
+import { deriveEyeConfig } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
 import { GAME_TITLE_KEYS, generateSession } from '../modules/sessionEngine';
 import {
@@ -14,8 +16,6 @@ import {
     getDefaultSettings,
     getSessions,
 } from '../modules/storage';
-
-const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
 
 function GamePill({ gameId, index }: { gameId: string; index: number }) {
     return (
@@ -29,6 +29,11 @@ function GamePill({ gameId, index }: { gameId: string; index: number }) {
         </div>
     );
 }
+
+const SPEED_OPTIONS = SPEED_KEYS.map((key) => ({
+    id: key,
+    label: SPEEDS[key].label,
+}));
 
 export function TrainingSettingsPage() {
     const navigate = useNavigate();
@@ -45,10 +50,7 @@ export function TrainingSettingsPage() {
         const defaults = getDefaultSettings();
         updateSettings({
             glassesType: calibration.glasses_type ?? 'red-cyan',
-            contrastLeft: defaults.contrastLeft ?? CONTRAST.DEFAULT,
-            contrastRight: defaults.contrastRight ?? CONTRAST.DEFAULT,
             speed: defaults.speed ?? 'slow',
-            eyeConfig: defaults.eyeConfig ?? 'platform_left',
             fellowEyeContrast: defaults.fellowEyeContrast ?? 30,
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -57,16 +59,18 @@ export function TrainingSettingsPage() {
     const defaults = getDefaultSettings();
 
     const handleStart = () => {
+        const calibration = getCalibration();
+        const eyeConfig = deriveEyeConfig(
+            (calibration.glasses_type ?? 'red-cyan') as GlassesType,
+            calibration.weak_eye ?? 'left',
+        );
         navigate('/training/play', {
-            state: { sessionGames, settings },
+            state: { sessionGames, settings: { ...settings, eyeConfig } },
         });
     };
 
     return (
-        <div
-            className="min-h-screen flex items-center justify-center p-4"
-            style={{ background: 'var(--bg-gradient)' }}
-        >
+        <div className="min-h-screen flex items-center justify-center p-4">
             <Card className="w-full max-w-lg rounded-3xl overflow-hidden spring-enter gap-0">
                 <CardContent className="p-6 space-y-6">
                     <h2 className="text-xl text-center font-[var(--font-display)] text-[var(--text)] text-balance">
@@ -103,65 +107,11 @@ export function TrainingSettingsPage() {
                         <p className="text-base font-semibold text-[var(--text)]">
                             {t('settings.speed')}
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {SPEED_KEYS.map((key) => (
-                                <AppButton
-                                    key={key}
-                                    variant="toggle"
-                                    size="md"
-                                    selected={settings.speed === key}
-                                    onClick={() =>
-                                        updateSettings({ speed: key })
-                                    }
-                                    aria-pressed={settings.speed === key}
-                                >
-                                    {SPEEDS[key].label}
-                                </AppButton>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Eye config section */}
-                    <div className="space-y-3">
-                        <p className="text-base font-semibold text-[var(--text)]">
-                            {t('settings.eyeSelect')}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                            <AppButton
-                                variant="toggle"
-                                size="md"
-                                selected={
-                                    settings.eyeConfig === 'platform_left'
-                                }
-                                onClick={() =>
-                                    updateSettings({
-                                        eyeConfig: 'platform_left',
-                                    })
-                                }
-                                aria-pressed={
-                                    settings.eyeConfig === 'platform_left'
-                                }
-                            >
-                                {t('settings.eyeLeft')}
-                            </AppButton>
-                            <AppButton
-                                variant="toggle"
-                                size="md"
-                                selected={
-                                    settings.eyeConfig === 'platform_right'
-                                }
-                                onClick={() =>
-                                    updateSettings({
-                                        eyeConfig: 'platform_right',
-                                    })
-                                }
-                                aria-pressed={
-                                    settings.eyeConfig === 'platform_right'
-                                }
-                            >
-                                {t('settings.eyeRight')}
-                            </AppButton>
-                        </div>
+                        <SegmentedControl
+                            options={SPEED_OPTIONS}
+                            selected={settings.speed ?? 'slow'}
+                            onChange={(key) => updateSettings({ speed: key })}
+                        />
                     </div>
 
                     {/* Start button */}

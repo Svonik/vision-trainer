@@ -1,6 +1,6 @@
+import { useState } from 'react';
 import { AppButton } from '@/components/AppButton';
 import { ColoredSlider } from '@/components/ColoredSlider';
-import { useCalibration } from '../../hooks/useCalibration';
 import { CALIBRATION } from '../../modules/constants';
 import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
@@ -20,12 +20,8 @@ export function BrightnessAdjustStep({
     attempts,
     maxAttempts,
 }: Props) {
-    const {
-        redBrightness,
-        setRedBrightness,
-        cyanBrightness,
-        setCyanBrightness,
-    } = useCalibration();
+    const [redBrightness, setRedBrightness] = useState(100);
+    const [cyanBrightness, setCyanBrightness] = useState(100);
     const eyeColors = getEyeColors(glassesType as 'red-cyan' | 'cyan-red');
     const maxAttemptsReached = attempts >= maxAttempts;
 

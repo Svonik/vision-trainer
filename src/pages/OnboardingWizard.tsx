@@ -8,6 +8,7 @@ import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
+import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
 import { DisclaimerPage } from './DisclaimerPage';
 
 type WizardStep =
@@ -74,6 +75,9 @@ export function OnboardingWizard() {
     const handleContrastComplete = (balancePoint: number) => {
         const passed = balancePoint <= 80;
         save({ suppression_passed: passed });
+        // Save contrast value as initial fellowEyeContrast for gameplay
+        const defaults = getDefaultSettings();
+        saveDefaultSettings({ ...defaults, fellowEyeContrast: balancePoint });
         if (passed) {
             navigate('/mode-select');
         } else {

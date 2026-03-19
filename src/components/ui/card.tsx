@@ -1,16 +1,29 @@
 import type * as React from 'react';
 import { cn } from '@/lib/utils';
 
-function Card({ className, ...props }: React.ComponentProps<'div'>) {
+function Card({
+    className,
+    children,
+    glow = false,
+    ...props
+}: React.ComponentProps<'div'> & { glow?: boolean }) {
     return (
         <div
             data-slot="card"
             className={cn(
-                'bg-card text-card-foreground flex flex-col gap-6 rounded-xl ring-1 ring-white/[0.05] py-6 shadow-2xl shadow-black/40',
+                'bg-card text-card-foreground flex flex-col gap-6 rounded-xl ring-1 ring-white/[0.05] py-6 shadow-2xl shadow-black/40 relative overflow-hidden',
                 className,
             )}
             {...props}
-        />
+        >
+            {glow && (
+                <div
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-24 bg-gradient-to-r from-[var(--accent)] via-[var(--cta)] to-[var(--cyan-soft)] opacity-[0.08] blur-[40px] pointer-events-none"
+                    aria-hidden="true"
+                />
+            )}
+            {children}
+        </div>
     );
 }
 

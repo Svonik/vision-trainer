@@ -118,18 +118,12 @@ test.describe('Game Select Page', () => {
         await page.goto('/');
         await page.evaluate(() => {
             localStorage.setItem('vt_disclaimer_accepted', 'true');
-            localStorage.setItem('vt_calibration', JSON.stringify({
-                red_brightness: 100,
-                cyan_brightness: 100,
-                suppression_passed: true,
+            localStorage.setItem('vt_calibration', JSON.stringify({                suppression_passed: true,
                 last_calibrated: new Date().toISOString(),
                 glasses_type: 'red-cyan',
                 age_group: '8-12',
             }));
-            localStorage.setItem('vt_default_settings', JSON.stringify({
-                contrastLeft: 100,
-                contrastRight: 30,
-                speed: 'normal',
+            localStorage.setItem('vt_default_settings', JSON.stringify({                speed: 'normal',
                 eyeConfig: 'platform_left',
                 fellowEyeContrast: 30,
             }));
@@ -176,18 +170,12 @@ test.describe('Game Settings & Wellness Flow', () => {
         await page.goto('/');
         await page.evaluate(() => {
             localStorage.setItem('vt_disclaimer_accepted', 'true');
-            localStorage.setItem('vt_calibration', JSON.stringify({
-                red_brightness: 100,
-                cyan_brightness: 100,
-                suppression_passed: true,
+            localStorage.setItem('vt_calibration', JSON.stringify({                suppression_passed: true,
                 last_calibrated: new Date().toISOString(),
                 glasses_type: 'red-cyan',
                 age_group: '8-12',
             }));
-            localStorage.setItem('vt_default_settings', JSON.stringify({
-                contrastLeft: 100,
-                contrastRight: 30,
-                speed: 'normal',
+            localStorage.setItem('vt_default_settings', JSON.stringify({                speed: 'normal',
                 eyeConfig: 'platform_left',
                 fellowEyeContrast: 30,
             }));
@@ -275,18 +263,12 @@ test.describe('All Games Load', () => {
         await page.goto('/');
         await page.evaluate(() => {
             localStorage.setItem('vt_disclaimer_accepted', 'true');
-            localStorage.setItem('vt_calibration', JSON.stringify({
-                red_brightness: 100,
-                cyan_brightness: 100,
-                suppression_passed: true,
+            localStorage.setItem('vt_calibration', JSON.stringify({                suppression_passed: true,
                 last_calibrated: new Date().toISOString(),
                 glasses_type: 'red-cyan',
                 age_group: '8-12',
             }));
-            localStorage.setItem('vt_default_settings', JSON.stringify({
-                contrastLeft: 100,
-                contrastRight: 30,
-                speed: 'normal',
+            localStorage.setItem('vt_default_settings', JSON.stringify({                speed: 'normal',
                 eyeConfig: 'platform_left',
                 fellowEyeContrast: 30,
             }));
@@ -336,18 +318,12 @@ test.describe('Design System Visual Check', () => {
         await page.goto('/');
         await page.evaluate(() => {
             localStorage.setItem('vt_disclaimer_accepted', 'true');
-            localStorage.setItem('vt_calibration', JSON.stringify({
-                red_brightness: 100,
-                cyan_brightness: 100,
-                suppression_passed: true,
+            localStorage.setItem('vt_calibration', JSON.stringify({                suppression_passed: true,
                 last_calibrated: new Date().toISOString(),
                 glasses_type: 'red-cyan',
                 age_group: '8-12',
             }));
-            localStorage.setItem('vt_default_settings', JSON.stringify({
-                contrastLeft: 100,
-                contrastRight: 30,
-                speed: 'normal',
+            localStorage.setItem('vt_default_settings', JSON.stringify({                speed: 'normal',
                 eyeConfig: 'platform_left',
                 fellowEyeContrast: 30,
             }));
@@ -382,18 +358,12 @@ test.describe('Contrast Persistence', () => {
         await page.goto('/');
         await page.evaluate(() => {
             localStorage.setItem('vt_disclaimer_accepted', 'true');
-            localStorage.setItem('vt_calibration', JSON.stringify({
-                red_brightness: 100,
-                cyan_brightness: 100,
-                suppression_passed: true,
+            localStorage.setItem('vt_calibration', JSON.stringify({                suppression_passed: true,
                 last_calibrated: new Date().toISOString(),
                 glasses_type: 'red-cyan',
                 age_group: '8-12',
             }));
-            localStorage.setItem('vt_default_settings', JSON.stringify({
-                contrastLeft: 100,
-                contrastRight: 30,
-                speed: 'normal',
+            localStorage.setItem('vt_default_settings', JSON.stringify({                speed: 'normal',
                 eyeConfig: 'platform_left',
                 fellowEyeContrast: 45,
             }));

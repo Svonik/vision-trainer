@@ -1,25 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import { createGameSettings, createSessionResult } from '../../src/modules/gameState';
+import { describe, expect, it } from 'vitest';
+import {
+    createGameSettings,
+    createSessionResult,
+} from '../../src/modules/gameState';
 
 describe('GameState Module', () => {
     it('creates default settings', () => {
         const defaults = createGameSettings();
-        expect(defaults.contrastLeft).toBe(100);
         expect(defaults.speed).toBe('slow');
         expect(defaults.eyeConfig).toBe('platform_left');
     });
 
     it('overrides settings', () => {
-        const custom = createGameSettings({ contrastLeft: 50, speed: 'fast' });
-        expect(custom.contrastLeft).toBe(50);
+        const custom = createGameSettings({ speed: 'fast' });
         expect(custom.speed).toBe('fast');
-        expect(custom.contrastRight).toBe(100);
     });
 
     it('creates session result', () => {
         const result = createSessionResult({
             settings: createGameSettings(),
-            caught: 15, totalSpawned: 20, durationMs: 300000,
+            caught: 15,
+            totalSpawned: 20,
+            durationMs: 300000,
         });
         expect(result.game).toBe('binocular-catcher');
         expect(result.duration_s).toBe(300);
@@ -29,7 +31,9 @@ describe('GameState Module', () => {
     it('handles zero spawns', () => {
         const result = createSessionResult({
             settings: createGameSettings(),
-            caught: 0, totalSpawned: 0, durationMs: 5000,
+            caught: 0,
+            totalSpawned: 0,
+            durationMs: 5000,
         });
         expect(result.hit_rate).toBe(0);
     });

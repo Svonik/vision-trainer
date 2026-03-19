@@ -27,7 +27,14 @@ export const GAME = {
     SPAWN_X_MAX_RATIO: 0.9,
 } as const;
 
-export const SPEEDS = {
+export const SPEED_KEYS = ['slow', 'normal', 'fast', 'pro'] as const;
+
+export type SpeedKey = (typeof SPEED_KEYS)[number];
+
+export const SPEEDS: Record<
+    SpeedKey,
+    { fallSpeed: number; spawnInterval: number; label: string }
+> = {
     slow: { fallSpeed: 120, spawnInterval: 3000, label: 'Медленно' },
     normal: { fallSpeed: 240, spawnInterval: 2000, label: 'Нормально' },
     fast: { fallSpeed: 360, spawnInterval: 1500, label: 'Быстро' },

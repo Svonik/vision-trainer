@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router';
-import { DisclaimerGuard } from '../../src/guards/DisclaimerGuard';
+import { MemoryRouter, Route, Routes } from 'react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalibrationGuard } from '../../src/guards/CalibrationGuard';
+import { DisclaimerGuard } from '../../src/guards/DisclaimerGuard';
 import { GameSettingsGuard } from '../../src/guards/GameSettingsGuard';
 import * as storage from '../../src/modules/storage';
 
@@ -15,9 +15,16 @@ describe('DisclaimerGuard', () => {
             <MemoryRouter initialEntries={['/games']}>
                 <Routes>
                     <Route path="/onboarding" element={<div>Onboarding</div>} />
-                    <Route path="/games" element={<DisclaimerGuard><div>Games</div></DisclaimerGuard>} />
+                    <Route
+                        path="/games"
+                        element={
+                            <DisclaimerGuard>
+                                <div>Games</div>
+                            </DisclaimerGuard>
+                        }
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText('Onboarding')).toBeInTheDocument();
     });
@@ -27,9 +34,16 @@ describe('DisclaimerGuard', () => {
         render(
             <MemoryRouter initialEntries={['/games']}>
                 <Routes>
-                    <Route path="/games" element={<DisclaimerGuard><div>Games</div></DisclaimerGuard>} />
+                    <Route
+                        path="/games"
+                        element={
+                            <DisclaimerGuard>
+                                <div>Games</div>
+                            </DisclaimerGuard>
+                        }
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText('Games')).toBeInTheDocument();
     });
@@ -38,16 +52,26 @@ describe('DisclaimerGuard', () => {
 describe('CalibrationGuard', () => {
     it('redirects to /onboarding when not passed', () => {
         vi.mocked(storage.getCalibration).mockReturnValue({
-            red_brightness: 100, cyan_brightness: 100,
-            suppression_passed: false, last_calibrated: null,
+            suppression_passed: false,
+            last_calibrated: null,
+            glasses_type: 'red-cyan',
+            age_group: '8-12',
+            weak_eye: 'left',
         });
         render(
             <MemoryRouter initialEntries={['/games']}>
                 <Routes>
                     <Route path="/onboarding" element={<div>Onboarding</div>} />
-                    <Route path="/games" element={<CalibrationGuard><div>Games</div></CalibrationGuard>} />
+                    <Route
+                        path="/games"
+                        element={
+                            <CalibrationGuard>
+                                <div>Games</div>
+                            </CalibrationGuard>
+                        }
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText('Onboarding')).toBeInTheDocument();
     });
@@ -58,25 +82,45 @@ describe('GameSettingsGuard', () => {
         render(
             <MemoryRouter initialEntries={['/games/catcher/play']}>
                 <Routes>
-                    <Route path="/games/:gameId/settings" element={<div>Settings</div>} />
-                    <Route path="/games/:gameId/play" element={
-                        <GameSettingsGuard><div>Game</div></GameSettingsGuard>
-                    } />
+                    <Route
+                        path="/games/:gameId/settings"
+                        element={<div>Settings</div>}
+                    />
+                    <Route
+                        path="/games/:gameId/play"
+                        element={
+                            <GameSettingsGuard>
+                                <div>Game</div>
+                            </GameSettingsGuard>
+                        }
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText('Settings')).toBeInTheDocument();
     });
 
     it('renders children when settings present', () => {
         render(
-            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/play', state: { settings: { speed: 'slow' } } }]}>
+            <MemoryRouter
+                initialEntries={[
+                    {
+                        pathname: '/games/catcher/play',
+                        state: { settings: { speed: 'slow' } },
+                    },
+                ]}
+            >
                 <Routes>
-                    <Route path="/games/:gameId/play" element={
-                        <GameSettingsGuard><div>Game</div></GameSettingsGuard>
-                    } />
+                    <Route
+                        path="/games/:gameId/play"
+                        element={
+                            <GameSettingsGuard>
+                                <div>Game</div>
+                            </GameSettingsGuard>
+                        }
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText('Game')).toBeInTheDocument();
     });

@@ -1,46 +1,20 @@
 import { motion } from 'framer-motion';
-import { Gamepad2, Settings, Target, TrendingUp } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { t } from '../modules/i18n';
-
-interface Tab {
-    route: string;
-    labelKey: string;
-    icon: React.ComponentType<{ size?: number; className?: string }>;
-}
-
-const TABS: Tab[] = [
-    { route: '/mode-select', labelKey: 'tabs.training', icon: Target },
-    { route: '/games', labelKey: 'tabs.games', icon: Gamepad2 },
-    { route: '/progress', labelKey: 'tabs.progress', icon: TrendingUp },
-    { route: '/settings', labelKey: 'tabs.settings', icon: Settings },
-];
+import { NAV_ITEMS, isRouteActive } from './navConfig';
 
 export function TabBar() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const isActive = (route: string): boolean => {
-        if (route === '/mode-select') {
-            return (
-                location.pathname === '/mode-select' ||
-                location.pathname.startsWith('/training')
-            );
-        }
-        if (route === '/games') {
-            return location.pathname.startsWith('/games');
-        }
-        return location.pathname.startsWith(route);
-    };
-
     return (
         <nav
-            className="fixed bottom-0 left-0 right-0 z-50 h-[60px] bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)]/30 flex"
+            className="fixed bottom-0 left-0 right-0 z-50 h-[60px] bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)]/30 flex md:hidden"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             aria-label="Main navigation"
         >
-            {TABS.map(({ route, labelKey, icon: Icon }) => {
-                const active = isActive(route);
+            {NAV_ITEMS.map(({ route, labelKey, icon: Icon }) => {
+                const active = isRouteActive(route, location.pathname);
                 const colorClass = active
                     ? 'text-[var(--cta)]'
                     : 'text-[var(--text-secondary)]';
