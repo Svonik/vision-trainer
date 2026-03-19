@@ -2,12 +2,59 @@ import { useState } from 'react';
 import { t } from '@/modules/i18n';
 import { getCachedSessions } from '@/modules/sessionCache';
 import type { SessionSummary } from '@/modules/sessionSummary';
+import {
+    getActiveCourse,
+    getCourseProgress,
+} from '@/modules/therapyCourse';
 import { shouldAlertDoctor } from '@/modules/wellnessCheck';
 
 interface SessionSummaryCardProps {
     readonly summary: SessionSummary;
     readonly onContinue: () => void;
     readonly onWellnessPost?: (eyeStrain: boolean, headache: boolean) => void;
+}
+
+function getNextActionMessage(
+    sessions: readonly { timestamp: string }[],
+): string {
+    const course = getActiveCourse();
+
+    // Course complete check
+    if (course) {
+        const progress = getCourseProgress(course);
+        if (progress.elapsedWeeks >= course.targetWeeks) {
+            return t('next.course_complete');
+        }
+    }
+
+    // Doctor alert takes priority over daily guidance
+    if (shouldAlertDoctor(sessions)) {
+        return t('next.see_doctor');
+    }
+
+    // Check if today already has a session (the current one counts)
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = sessions.filter(
+        (s) => s.timestamp.slice(0, 10) === today,
+    ).length;
+
+    // If this is the first session today, goal is done
+    if (todayCount <= 1) {
+        return t('next.goal_done');
+    }
+
+    return t('next.play_more');
+}
+
+function getContinueButtonText(): string {
+    const course = getActiveCourse();
+    if (course) {
+        const progress = getCourseProgress(course);
+        if (progress.elapsedWeeks >= course.targetWeeks) {
+            return t('summary.view_results');
+        }
+    }
+    return t('summary.continue');
 }
 
 export function SessionSummaryCard({
@@ -19,6 +66,8 @@ export function SessionSummaryCard({
     const [headache, setHeadache] = useState(false);
     const sessions = getCachedSessions();
     const doctorAlert = shouldAlertDoctor(sessions);
+    const nextAction = getNextActionMessage(sessions);
+    const buttonText = getContinueButtonText();
 
     const message =
         summary.stars === 3
@@ -93,12 +142,20 @@ export function SessionSummaryCard({
                 </div>
             )}
 
+            {/* Next action guidance */}
+            <div className="w-full pt-2 border-t border-[var(--border)]">
+                <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)] mb-2">
+                    {t('next.title')}
+                </p>
+                <p className="text-sm text-[var(--text)]">{nextAction}</p>
+            </div>
+
             <button
                 type="button"
                 onClick={handleContinue}
                 className="mt-4 px-8 py-3 bg-[var(--cta)] text-[var(--cta-text)] rounded-full text-lg font-bold btn-press transition-colors"
             >
-                {t('summary.continue')}
+                {buttonText}
             </button>
         </div>
     );
@@ -126,9 +183,7 @@ function WellnessToggle({ label, value, onChange }: WellnessToggleProps) {
                             : 'bg-transparent text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)]/50'
                     }`}
                 >
-                    {t('wellness.good').charAt(0).toUpperCase() === 'Х'
-                        ? 'Нет'
-                        : 'Нет'}
+                    Нет
                 </button>
                 <button
                     type="button"

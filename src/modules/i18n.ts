@@ -289,6 +289,21 @@ const strings = {
     'gate.cancel': 'Отмена',
     'gate.confirm': 'Ответить',
     'gate.required_adverse': 'Продолжение требует подтверждения взрослого',
+    'mode.training_title': 'Терапевтический курс',
+    'mode.training_continue': 'Продолжить тренировку',
+    'mode.training_start': 'Начать курс',
+    'mode.training_week': 'Неделя',
+    'mode.training_of': 'из',
+    'mode.freeplay_title': 'Свободная игра',
+    'mode.freeplay_subtitle': 'Играй без влияния на курс',
+    'next.goal_done': 'Цель на сегодня достигнута. Отдыхай до завтра!',
+    'next.play_more': 'Можно сыграть ещё одну игру',
+    'next.see_doctor': 'Обратись к врачу перед следующей тренировкой',
+    'next.course_complete': 'Курс завершён! Покажи результаты врачу',
+    'next.title': 'Что дальше?',
+    'mode.today_done': 'Сегодня: ✓ тренировка выполнена',
+    'mode.today_pending': 'Сегодня: ожидает тренировки',
+    'summary.view_results': 'Посмотреть итоги',
 } as const;
 
 export type TranslationKey = keyof typeof strings;
