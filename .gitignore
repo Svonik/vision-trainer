@@ -13,6 +13,13 @@ docs/
 # Superpowers brainstorm artifacts
 .superpowers/
 
+# Skills (local only)
+.agents/
+.agent/
+.claude/skills/
+.trae/
+skills-lock.json
+
 # Test results
 test-results/
 
