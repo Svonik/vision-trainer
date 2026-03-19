@@ -9,9 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { WeeklyProgress } from '@/components/WeeklyProgress';
 import { t } from '@/modules/i18n';
-import { shouldAlertDoctor } from '@/modules/wellnessCheck';
 import { GAMES as GAMES_DATA } from '../config/games';
 import { getCachedSessions } from '../modules/sessionCache';
 
@@ -92,28 +90,14 @@ const GameCard = React.memo(function GameCard({
 
 export function GameSelectPage() {
     const sessions = getCachedSessions();
-    const doctorAlert = shouldAlertDoctor(sessions);
     const getGameCount = (gameId: string) =>
         sessions.filter((s: any) => s.game === gameId).length;
 
     return (
-        <div
-            className="min-h-screen flex flex-col items-center p-4 py-8 relative z-10"
-            style={{ background: 'var(--bg-gradient)' }}
-        >
+        <div className="min-h-screen flex flex-col items-center p-4 py-8 relative z-10">
             <h1 className="font-[var(--font-display)] text-4xl text-[var(--text)] mb-6 text-balance">
                 {t('gameSelect.title')}
             </h1>
-
-            {doctorAlert && (
-                <div className="w-full max-w-3xl p-3 rounded-xl bg-red-500/20 border border-red-500/40 text-center mb-4">
-                    <p className="text-sm font-bold text-[var(--warning)]">
-                        {t('wellness.alert_doctor')}
-                    </p>
-                </div>
-            )}
-
-            <WeeklyProgress sessions={sessions} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl w-full">
                 {GAMES.map((game, index) => (

@@ -1,7 +1,9 @@
 import { CONTRAST } from './constants';
 
 export interface GameSettings {
+    /** @deprecated Kept for backward compat with stored sessions. Use fellowEyeContrast for clinical contrast. */
     contrastLeft: number;
+    /** @deprecated Kept for backward compat with stored sessions. Use fellowEyeContrast for clinical contrast. */
     contrastRight: number;
     fellowEyeContrast: number;
     speed: string;

@@ -131,10 +131,34 @@ function InnerRoutes() {
                     />
                     <Route
                         path="/training/summary"
-                        element={<TrainingSummaryPage />}
+                        element={
+                            <DisclaimerGuard>
+                                <CalibrationGuard>
+                                    <TrainingSummaryPage />
+                                </CalibrationGuard>
+                            </DisclaimerGuard>
+                        }
                     />
-                    <Route path="/progress" element={<ProgressPage />} />
-                    <Route path="/settings" element={<SettingsHub />} />
+                    <Route
+                        path="/progress"
+                        element={
+                            <DisclaimerGuard>
+                                <CalibrationGuard>
+                                    <ProgressPage />
+                                </CalibrationGuard>
+                            </DisclaimerGuard>
+                        }
+                    />
+                    <Route
+                        path="/settings"
+                        element={
+                            <DisclaimerGuard>
+                                <CalibrationGuard>
+                                    <SettingsHub />
+                                </CalibrationGuard>
+                            </DisclaimerGuard>
+                        }
+                    />
                 </Routes>
             </PageTransition>
         </AnimatePresence>
