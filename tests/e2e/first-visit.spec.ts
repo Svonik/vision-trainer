@@ -1,16 +1,16 @@
 import { test, expect } from '@playwright/test';
 
-test('first visit redirects to disclaimer', async ({ page }) => {
+test('first visit redirects to onboarding', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
     await page.goto('/');
-    await expect(page).toHaveURL(/\/disclaimer/);
+    await expect(page).toHaveURL(/\/onboarding/);
 });
 
-test('disclaimer flow: check → continue → calibration', async ({ page }) => {
+test('onboarding flow: accept disclaimer → proceed within wizard', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => localStorage.clear());
-    await page.goto('/disclaimer');
+    await page.goto('/#/onboarding');
 
     // Check the checkbox
     await page.getByRole('checkbox').click();
@@ -18,6 +18,6 @@ test('disclaimer flow: check → continue → calibration', async ({ page }) => 
     // Click continue
     await page.getByRole('button', { name: /продолжить/i }).click();
 
-    // Should navigate to calibration
-    await expect(page).toHaveURL(/\/calibration/);
+    // Should stay on /onboarding (wizard advances internally, not via route)
+    await expect(page).toHaveURL(/\/onboarding/);
 });
