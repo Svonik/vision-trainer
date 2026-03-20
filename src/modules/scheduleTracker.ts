@@ -1,5 +1,12 @@
 import type { SessionResult } from './gameState';
 
+export function toLocalDateString(date: Date = new Date()): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 export interface WeeklySchedule {
     readonly weekStart: string;
     readonly targetDaysPerWeek: number;
@@ -13,14 +20,12 @@ function getMonday(date: Date): string {
     const d = new Date(date);
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.getFullYear(), d.getMonth(), diff)
-        .toISOString()
-        .slice(0, 10);
+    return toLocalDateString(new Date(d.getFullYear(), d.getMonth(), diff));
 }
 
 function computeStreak(sortedDays: readonly string[]): number {
     if (sortedDays.length === 0) return 0;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDateString();
     if (sortedDays[sortedDays.length - 1] !== today) return 0;
     let streak = 1;
     for (let i = sortedDays.length - 2; i >= 0; i--) {
@@ -52,16 +57,14 @@ export function computeWeeklySchedule(
 
     const allDays = [
         ...new Set(
-            sessions.map((s) =>
-                new Date(s.timestamp).toISOString().slice(0, 10),
-            ),
+            sessions.map((s) => toLocalDateString(new Date(s.timestamp))),
         ),
     ].sort();
 
     const weekStart = getMonday(new Date());
     const weekEndDate = new Date(weekStart);
     weekEndDate.setDate(weekEndDate.getDate() + 7);
-    const weekEnd = weekEndDate.toISOString().slice(0, 10);
+    const weekEnd = toLocalDateString(weekEndDate);
 
     const completedDays = allDays.filter((d) => d >= weekStart && d < weekEnd);
     const courseStartDate = allDays[0];
@@ -89,9 +92,7 @@ export function getAllCompletedDays(
 ): readonly string[] {
     return [
         ...new Set(
-            sessions.map((s) =>
-                new Date(s.timestamp).toISOString().slice(0, 10),
-            ),
+            sessions.map((s) => toLocalDateString(new Date(s.timestamp))),
         ),
     ].sort();
 }
@@ -104,7 +105,7 @@ export function getDayStatus(
     if (schedule.completedDays.includes(dayStr)) return 'completed';
     const dayOfWeek = new Date(dayStr).getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) return 'rest';
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDateString();
     if (dayStr < today) return 'missed';
     return 'pending';
 }

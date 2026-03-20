@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { WeeklyProgress } from '@/components/WeeklyProgress';
 import type { SessionResult } from '../modules/gameState';
 import { t } from '../modules/i18n';
+import { toLocalDateString } from '../modules/scheduleTracker';
 import { getCachedSessions } from '../modules/sessionCache';
 import { generateSession } from '../modules/sessionEngine';
 import { getCalibration } from '../modules/storage';
@@ -15,9 +16,11 @@ import { getProtocol } from '../modules/therapyProtocol';
 import { shouldAlertDoctor } from '../modules/wellnessCheck';
 
 function hasTodaySession(sessions: readonly SessionResult[]): boolean {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDateString();
     return sessions.some(
-        (s) => s.timestamp.slice(0, 10) === today && s.mode === 'training',
+        (s) =>
+            toLocalDateString(new Date(s.timestamp)) === today &&
+            s.mode === 'training',
     );
 }
 
@@ -32,8 +35,9 @@ export function ModeSelectPage() {
     const [showGate, setShowGate] = useState(false);
 
     const activeCourse = getActiveCourse();
+    const trainingSessions = sessions.filter((s) => s.mode === 'training');
     const courseProgress = activeCourse
-        ? getCourseProgress(activeCourse)
+        ? getCourseProgress(activeCourse, trainingSessions.length)
         : null;
     const todayDone = hasTodaySession(sessions);
 
@@ -100,10 +104,10 @@ export function ModeSelectPage() {
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span className="text-[var(--text-secondary)]">
-                                            {t('mode.training_week')}{' '}
-                                            {courseProgress.elapsedWeeks + 1}{' '}
+                                            {courseProgress.completedSessions}{' '}
                                             {t('mode.training_of')}{' '}
-                                            {activeCourse.targetWeeks}
+                                            {courseProgress.targetSessions}{' '}
+                                            {t('mode.training_sessions')}
                                         </span>
                                         <span className="text-[var(--accent)] font-bold tabular-nums">
                                             {courseProgress.progressPercent}%

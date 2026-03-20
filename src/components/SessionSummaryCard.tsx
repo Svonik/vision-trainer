@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { t } from '@/modules/i18n';
+import { toLocalDateString } from '@/modules/scheduleTracker';
 import { getCachedSessions } from '@/modules/sessionCache';
 import type { SessionSummary } from '@/modules/sessionSummary';
-import { getActiveCourse, getCourseProgress } from '@/modules/therapyCourse';
+import {
+    completeCourse,
+    getActiveCourse,
+    getCourseProgress,
+} from '@/modules/therapyCourse';
 import {
     getConsecutiveAdverseCount,
     shouldAlertDoctor,
@@ -15,14 +20,16 @@ interface SessionSummaryCardProps {
 }
 
 function getNextActionMessage(
-    sessions: readonly { timestamp: string }[],
+    sessions: readonly { timestamp: string; mode?: string }[],
 ): string {
     const course = getActiveCourse();
 
-    // Course complete check
+    // Course complete check (dose-based)
     if (course) {
-        const progress = getCourseProgress(course);
-        if (progress.elapsedWeeks >= course.targetWeeks) {
+        const trainingSessions = sessions.filter((s) => s.mode === 'training');
+        const progress = getCourseProgress(course, trainingSessions.length);
+        if (progress.completedSessions >= progress.targetSessions) {
+            completeCourse();
             return t('next.course_complete');
         }
     }
@@ -33,9 +40,9 @@ function getNextActionMessage(
     }
 
     // Check if today already has a session (the current one counts)
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDateString();
     const todayCount = sessions.filter(
-        (s) => s.timestamp.slice(0, 10) === today,
+        (s) => toLocalDateString(new Date(s.timestamp)) === today,
     ).length;
 
     // If this is the first session today, goal is done
@@ -46,11 +53,12 @@ function getNextActionMessage(
     return t('next.play_more');
 }
 
-function getContinueButtonText(): string {
+function getContinueButtonText(sessions: readonly { mode?: string }[]): string {
     const course = getActiveCourse();
     if (course) {
-        const progress = getCourseProgress(course);
-        if (progress.elapsedWeeks >= course.targetWeeks) {
+        const trainingSessions = sessions.filter((s) => s.mode === 'training');
+        const progress = getCourseProgress(course, trainingSessions.length);
+        if (progress.completedSessions >= progress.targetSessions) {
             return t('summary.view_results');
         }
     }
@@ -75,7 +83,7 @@ export function SessionSummaryCard({
     const effectiveAdverseCount = hasCurrentAdverse ? baseAdverseCount + 1 : 0;
     const doctorAlert = effectiveAdverseCount >= 3;
     const nextAction = getNextActionMessage(sessions);
-    const buttonText = getContinueButtonText();
+    const buttonText = getContinueButtonText(sessions);
 
     const message =
         summary.stars === 3

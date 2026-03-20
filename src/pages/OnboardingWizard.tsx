@@ -8,7 +8,12 @@ import { SuppressionTestStep } from '../components/calibration/SuppressionTestSt
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import { CALIBRATION } from '../modules/constants';
-import { getDefaultSettings, saveDefaultSettings } from '../modules/storage';
+import {
+    getCalibration,
+    getDefaultSettings,
+    saveCalibration,
+    saveDefaultSettings,
+} from '../modules/storage';
 import { DisclaimerPage } from './DisclaimerPage';
 
 type WizardStep =
@@ -75,6 +80,16 @@ export function OnboardingWizard() {
     const handleContrastComplete = (balancePoint: number) => {
         const passed = balancePoint <= 80;
         save({ suppression_passed: passed });
+        // Store full suppression result
+        saveCalibration({
+            ...getCalibration(),
+            suppression_passed: passed,
+            suppression_result: {
+                suppressionDepth: 100 - balancePoint,
+                balancePoint,
+                timestamp: new Date().toISOString(),
+            },
+        });
         // Save contrast value as initial fellowEyeContrast for gameplay
         const defaults = getDefaultSettings();
         saveDefaultSettings({ ...defaults, fellowEyeContrast: balancePoint });

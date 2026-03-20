@@ -1,5 +1,6 @@
 import { CLINICAL_CONTRAST } from './constants';
 import type { SessionResult } from './gameState';
+import { toLocalDateString } from './scheduleTracker';
 
 export interface SessionSummary {
     readonly stars: 1 | 2 | 3;
@@ -20,14 +21,12 @@ function computeStreakDays(allTimestamps: readonly string[]): number {
     if (allTimestamps.length === 0) return 0;
 
     const uniqueDays = [
-        ...new Set(
-            allTimestamps.map((ts) => new Date(ts).toISOString().slice(0, 10)),
-        ),
+        ...new Set(allTimestamps.map((ts) => toLocalDateString(new Date(ts)))),
     ]
         .sort()
         .reverse();
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalDateString();
     if (uniqueDays[0] !== today) return 0;
 
     let streak = 1;

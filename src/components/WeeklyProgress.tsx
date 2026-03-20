@@ -1,6 +1,10 @@
 import type { SessionResult } from '@/modules/gameState';
 import { t } from '@/modules/i18n';
-import { computeWeeklySchedule, getDayStatus } from '@/modules/scheduleTracker';
+import {
+    computeWeeklySchedule,
+    getDayStatus,
+    toLocalDateString,
+} from '@/modules/scheduleTracker';
 
 interface WeeklyProgressProps {
     sessions: readonly SessionResult[];
@@ -22,7 +26,7 @@ function getWeekDates(weekStart: string): string[] {
     for (let i = 0; i < 7; i++) {
         const d = new Date(start);
         d.setDate(d.getDate() + i);
-        dates.push(d.toISOString().slice(0, 10));
+        dates.push(toLocalDateString(d));
     }
     return dates;
 }

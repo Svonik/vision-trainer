@@ -189,8 +189,13 @@ const ROUTE_ID_MAP: Record<string, string> = {
     mazerunner: 'mazerunner',
 };
 
+/** Resolve a URL route param (e.g. 'catcher') to the internal game id (e.g. 'binocular-catcher'). */
+export function routeIdToGameId(routeId: string): string {
+    return ROUTE_ID_MAP[routeId] ?? routeId;
+}
+
 /** Look up a game by its internal id (e.g. 'binocular-catcher') or URL route param (e.g. 'catcher'). */
 export function getGameById(id: string): GameConfig | undefined {
-    const resolved = ROUTE_ID_MAP[id] ?? id;
+    const resolved = routeIdToGameId(id);
     return GAMES.find((g) => g.id === resolved);
 }

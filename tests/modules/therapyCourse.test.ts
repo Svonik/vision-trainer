@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-    getActiveCourse,
-    startCourse,
     completeCourse,
-    pauseCourse,
+    getActiveCourse,
     getCourseProgress,
+    pauseCourse,
+    startCourse,
 } from '@/modules/therapyCourse';
 
 describe('therapyCourse', () => {
@@ -67,23 +67,26 @@ describe('therapyCourse', () => {
         expect(pauseCourse()).toBeNull();
     });
 
-    it('calculates course progress', () => {
+    it('calculates course progress based on completed sessions', () => {
         const course = startCourse('8-12', 30);
-        const progress = getCourseProgress(course);
+        const progress = getCourseProgress(course, 10);
         expect(progress.elapsedWeeks).toBeGreaterThanOrEqual(0);
-        expect(progress.progressPercent).toBeGreaterThanOrEqual(0);
+        expect(progress.targetSessions).toBe(60); // 12 weeks * 5
+        expect(progress.completedSessions).toBe(10);
+        expect(progress.progressPercent).toBe(17); // Math.round(10/60*100)
     });
 
-    it('clamps progress percent to 100', () => {
-        const pastCourse = startCourse('8-12', 30);
-        // Simulate a course started long ago
-        const oldCourse = {
-            ...pastCourse,
-            startDate: new Date(
-                Date.now() - 20 * 7 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-        };
-        const progress = getCourseProgress(oldCourse);
+    it('clamps progress percent to 100 when sessions exceed target', () => {
+        const course = startCourse('8-12', 30);
+        // 12 weeks * 5 = 60 target, pass 80 completed
+        const progress = getCourseProgress(course, 80);
         expect(progress.progressPercent).toBe(100);
+    });
+
+    it('returns 0 progress when no sessions completed', () => {
+        const course = startCourse('8-12', 30);
+        const progress = getCourseProgress(course, 0);
+        expect(progress.progressPercent).toBe(0);
+        expect(progress.completedSessions).toBe(0);
     });
 });

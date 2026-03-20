@@ -299,6 +299,7 @@ const strings = {
     'mode.training_start': 'Начать курс',
     'mode.training_week': 'Неделя',
     'mode.training_of': 'из',
+    'mode.training_sessions': 'сессий',
     'mode.freeplay_title': 'Свободная игра',
     'mode.freeplay_subtitle': 'Играй без влияния на курс',
     'next.goal_done': 'Цель на сегодня достигнута. Отдыхай до завтра!',

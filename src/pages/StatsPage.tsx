@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import { AppButton } from '@/components/AppButton';
 import { ProgressRing } from '@/components/ProgressRing';
 import { formatDuration } from '@/lib/formatTime';
-import { getGameById } from '../config/games';
+import { getGameById, routeIdToGameId } from '../config/games';
 import { GAME, SPEEDS } from '../modules/constants';
 import { t } from '../modules/i18n';
 import { getCachedSessions } from '../modules/sessionCache';
@@ -52,12 +52,17 @@ export function StatsPage() {
     const navigate = useNavigate();
     const { gameId } = useParams();
 
+    const sessions = getCachedSessions();
+    const resolvedGameId = gameId ? routeIdToGameId(gameId) : '';
+    const gameSessions = sessions.filter(
+        (s) => s.game === gameId || s.game === resolvedGameId,
+    );
+
     const result =
         location.state?.result ??
-        (() => {
-            const sessions = getCachedSessions();
-            return sessions.length > 0 ? sessions[sessions.length - 1] : null;
-        })();
+        (gameSessions.length > 0
+            ? gameSessions[gameSessions.length - 1]
+            : null);
 
     const game = getGameById(gameId ?? '');
 
@@ -69,9 +74,8 @@ export function StatsPage() {
     const hitRatePercent =
         result?.hit_rate != null ? Math.round(result.hit_rate * 100) : 0;
 
-    const sessions = getCachedSessions();
     const prevSession =
-        sessions.length > 1 ? sessions[sessions.length - 2] : null;
+        gameSessions.length > 1 ? gameSessions[gameSessions.length - 2] : null;
 
     // Settings to pass for "play again" — location.state.settings is passed from GamePage
     const playSettings = location.state?.settings ?? null;

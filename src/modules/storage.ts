@@ -6,6 +6,11 @@ export interface CalibrationData {
     glasses_type: string;
     age_group: '4-7' | '8-12';
     weak_eye: 'left' | 'right';
+    suppression_result?: {
+        suppressionDepth: number;
+        balancePoint: number;
+        timestamp: string;
+    };
 }
 
 export interface DefaultSettings {

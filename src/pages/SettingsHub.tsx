@@ -18,6 +18,7 @@ import { t } from '../modules/i18n';
 import {
     getCalibration,
     getDefaultSettings,
+    saveCalibration,
     saveDefaultSettings,
 } from '../modules/storage';
 
@@ -57,6 +58,16 @@ export function SettingsHub() {
     const handleSuppressionComplete = (balancePoint: number) => {
         const passed = balancePoint <= 80;
         save({ suppression_passed: passed });
+        // Store full suppression result
+        saveCalibration({
+            ...getCalibration(),
+            suppression_passed: passed,
+            suppression_result: {
+                suppressionDepth: 100 - balancePoint,
+                balancePoint,
+                timestamp: new Date().toISOString(),
+            },
+        });
         const settings = getDefaultSettings();
         saveDefaultSettings({
             ...settings,

@@ -1,4 +1,4 @@
-import { getProtocol, type AgeGroup } from './therapyProtocol';
+import { type AgeGroup, getProtocol } from './therapyProtocol';
 
 const STORAGE_KEY = 'vt_active_course';
 
@@ -29,7 +29,7 @@ export function getActiveCourse(): TherapyCourse | null {
 
 export function startCourse(
     ageGroup: AgeGroup,
-    initialFellowContrast: number
+    initialFellowContrast: number,
 ): TherapyCourse {
     const protocol = getProtocol(ageGroup);
     const course: TherapyCourse = {
@@ -63,18 +63,28 @@ export function pauseCourse(): TherapyCourse | null {
     return paused;
 }
 
-export function getCourseProgress(course: TherapyCourse): {
+export function getCourseProgress(
+    course: TherapyCourse,
+    completedTrainingSessions: number = 0,
+): {
     elapsedWeeks: number;
+    targetSessions: number;
+    completedSessions: number;
     progressPercent: number;
 } {
     const startMs = new Date(course.startDate).getTime();
     const elapsedMs = Date.now() - startMs;
     const msPerWeek = 7 * 24 * 60 * 60 * 1000;
     const elapsedWeeks = Math.max(0, Math.floor(elapsedMs / msPerWeek));
-    const progressPercent = Math.min(
-        100,
-        Math.round((elapsedWeeks / course.targetWeeks) * 100)
-    );
+    const targetSessions = course.targetWeeks * 5; // 5 sessions per week
+    const completedSessions = completedTrainingSessions;
+    const progressPercent =
+        targetSessions > 0
+            ? Math.min(
+                  100,
+                  Math.round((completedSessions / targetSessions) * 100),
+              )
+            : 0;
 
-    return { elapsedWeeks, progressPercent };
+    return { elapsedWeeks, targetSessions, completedSessions, progressPercent };
 }
