@@ -1,3 +1,6 @@
+// Dead code: not wired to any UI. Live suppression measurement is
+// src/components/calibration/SuppressionTestStep.tsx (slider, balancePoint
+// averaged over trials), seeded into calibration in OnboardingWizard.tsx.
 export interface SuppressionResult {
     readonly suppressionDepth: number;
     readonly balancePoint: number;

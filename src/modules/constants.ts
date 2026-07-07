@@ -50,13 +50,24 @@ export const CONTRAST = {
     DEFAULT: 100,
 } as const;
 
+/**
+ * Evidence-based dichoptic contrast-adaptation parameters — clinical protocol.
+ * Full source list: SCIENCE.md (repo root).
+ */
 export const CLINICAL_CONTRAST = {
+    /** Fellow (strong) eye starting contrast 20-30% — Knox et al. 2012; Hess et al. 2010 */
     FELLOW_INITIAL: 30,
+    /** Fellow eye contrast lower bound — Li et al. 2011 */
     FELLOW_FLOOR: 15,
+    /** Fellow eye contrast upper bound; amblyopic eye is always 100% — Hess et al. 2010 */
     FELLOW_CEILING: 100,
+    /** Rolling window of trials used to compute accuracy — Li et al. 2011 */
     ROLLING_WINDOW_SIZE: 20,
+    /** Step contrast up when accuracy > 75% — Knox et al. 2012 */
     STEP_UP_THRESHOLD: 0.75,
+    /** Step contrast down when accuracy < 50% — Knox et al. 2012 */
     STEP_DOWN_THRESHOLD: 0.5,
+    /** Contrast step size; literature reports +5-10%, adapted here to 5% — Knox et al. 2012 */
     STEP_SIZE: 5,
 } as const;
 

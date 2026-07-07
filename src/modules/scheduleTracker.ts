@@ -41,6 +41,10 @@ function computeStreak(sortedDays: readonly string[]): number {
     return streak;
 }
 
+/**
+ * Weekly adherence tracking — target 5 days/week (adapted from Luminopia's
+ * 6 days/week home-therapy protocol) — Luminopia/FDA 2021 (DEN200076).
+ */
 export function computeWeeklySchedule(
     sessions: readonly SessionResult[],
 ): WeeklySchedule {
