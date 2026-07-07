@@ -73,9 +73,9 @@ export default class PongGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Dichoptic color assignment:
-        // Left paddle (player) → platformColor (one eye)
-        // Right paddle (AI)    → ballColor (other eye)
-        // Ball                 → WHITE (both eyes)
+        // Left paddle (player) → platformColor (fellow eye)
+        // Right paddle (AI)    → ballColor (amblyopic eye)
+        // Ball                 → ballColor (amblyopic eye) — requires binocular integration
         const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
         const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
         this.platformColor = isLeftPlatform
@@ -235,14 +235,21 @@ export default class PongGameScene extends Phaser.Scene {
         const ccx = fx + fw / 2;
         const ccy = fy + fh / 2;
 
-        // Ball — WHITE (both eyes) — sprite IS the visual, with physics circle
+        // Ball — ballColor (amblyopic eye only) — sprite IS the visual, with physics circle
         if (this.textures.exists('ball')) {
             this.ball = this.add.image(ccx, ccy, 'ball');
-            this.ball.setTint(COLORS.WHITE);
+            this.ball.setTint(this.ballColor);
+            this.ball.setAlpha(this.ballAlpha);
             const ballScale = (ballR * 2) / this.ball.width;
             this.ball.setScale(ballScale);
         } else {
-            this.ball = this.add.circle(ccx, ccy, ballR, COLORS.WHITE, 1);
+            this.ball = this.add.circle(
+                ccx,
+                ccy,
+                ballR,
+                this.ballColor,
+                this.ballAlpha,
+            );
         }
         this.physics.add.existing(this.ball);
         this.ball.body.setCircle(ballR);
@@ -579,7 +586,7 @@ export default class PongGameScene extends Phaser.Scene {
                     this,
                     this.ball.x,
                     this.ball.y,
-                    COLORS.WHITE,
+                    this.ballColor,
                     2,
                 );
             }
