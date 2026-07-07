@@ -36,6 +36,10 @@ export function getConsecutiveAdverseCount(
     return count;
 }
 
+/**
+ * Adverse-symptom monitoring and doctor alerting — required for home-based
+ * digital dichoptic therapy per FDA review of Luminopia One (2021, DEN200076).
+ */
 export function shouldAlertDoctor(sessions: readonly SessionResult[]): boolean {
     return getConsecutiveAdverseCount(sessions) >= 3;
 }

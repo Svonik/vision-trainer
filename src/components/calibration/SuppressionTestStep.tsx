@@ -71,6 +71,12 @@ export function SuppressionTestStep({
         const newResults = [...results, contrast];
 
         if (isLastTrial) {
+            /**
+             * Quantitative suppression test: patient raises fellow-eye contrast
+             * until both stimuli are seen — that contrast is the balance point
+             * (clinically 20-40%), averaged across trials — Hess et al. 2010;
+             * Li et al. 2011.
+             */
             const balancePoint = Math.round(
                 newResults.reduce((sum, v) => sum + v, 0) / newResults.length,
             );

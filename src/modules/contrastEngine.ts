@@ -63,6 +63,13 @@ export function getContrastProgress(
     );
 }
 
+/**
+ * Rolling-window contrast adaptation — evidence-based dichoptic protocol.
+ * Fellow (strong) eye contrast steps up/down based on recent trial accuracy;
+ * amblyopic (weak) eye contrast stays fixed at 100% (never adapted) — Hess et al. 2010.
+ * Direction matters: adapt the FELLOW eye up toward parity, not the amblyopic eye down
+ * — Knox et al. 2012 ("contrast to the fellow fixing eye ... was increased by ... steps").
+ */
 export function recordTrial(
     state: ContrastState,
     config: ContrastConfig,
