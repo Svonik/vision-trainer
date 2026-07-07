@@ -7,6 +7,8 @@ export interface ContrastState {
     readonly totalTrials: number;
     readonly totalHits: number;
     readonly lastStepDirection: 'up' | 'down' | null;
+    /** New trials accumulated since the last contrast step — gates step pacing. */
+    readonly trialsSinceLastStep: number;
 }
 
 export interface ContrastConfig {
@@ -43,6 +45,7 @@ export function createContrastState(
         totalTrials: 0,
         totalHits: 0,
         lastStepDirection: null,
+        trialsSinceLastStep: 0,
     };
 }
 
@@ -69,6 +72,13 @@ export function getContrastProgress(
  * amblyopic (weak) eye contrast stays fixed at 100% (never adapted) — Hess et al. 2010.
  * Direction matters: adapt the FELLOW eye up toward parity, not the amblyopic eye down
  * — Knox et al. 2012 ("contrast to the fellow fixing eye ... was increased by ... steps").
+ *
+ * Pacing: accuracy is recomputed every trial once the window is full, but a
+ * contrast step is only APPLIED once per `config.windowSize` new trials since
+ * the last step. Without this gate, a short losing streak right after the
+ * window fills can trigger a step on almost every subsequent trial (the
+ * window keeps sliding), crashing contrast far faster than the documented
+ * "step once per window" clinical cadence intends.
  */
 export function recordTrial(
     state: ContrastState,
@@ -83,11 +93,16 @@ export function recordTrial(
 
     const newTotalTrials = state.totalTrials + 1;
     const newTotalHits = state.totalHits + (hit ? 1 : 0);
+    const newTrialsSinceLastStep = state.trialsSinceLastStep + 1;
 
     let newContrast = state.fellowEyeContrast;
     let stepDirection: 'up' | 'down' | null = state.lastStepDirection;
+    let trialsSinceLastStep = newTrialsSinceLastStep;
 
-    if (trimmed.length >= config.windowSize) {
+    if (
+        trimmed.length >= config.windowSize &&
+        newTrialsSinceLastStep >= config.windowSize
+    ) {
         const windowHits = trimmed.filter(Boolean).length;
         const accuracy = windowHits / trimmed.length;
 
@@ -97,12 +112,14 @@ export function recordTrial(
                 config.ceiling,
             );
             stepDirection = 'up';
+            trialsSinceLastStep = 0;
         } else if (
             accuracy < config.stepDownThreshold &&
             newContrast > config.floor
         ) {
             newContrast = Math.max(newContrast - config.stepSize, config.floor);
             stepDirection = 'down';
+            trialsSinceLastStep = 0;
         }
     }
 
@@ -113,5 +130,6 @@ export function recordTrial(
         totalTrials: newTotalTrials,
         totalHits: newTotalHits,
         lastStepDirection: stepDirection,
+        trialsSinceLastStep,
     };
 }

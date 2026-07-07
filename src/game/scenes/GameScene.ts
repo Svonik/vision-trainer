@@ -452,7 +452,16 @@ export default class GameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        if (this.platform) {
+        if (!this.platform) return;
+        if (this.tweens) {
+            this.tweens.killTweensOf(this.platform);
+            this.tweens.add({
+                targets: this.platform,
+                alpha,
+                duration: 250,
+                ease: 'Sine.easeInOut',
+            });
+        } else {
             this.platform.setAlpha(alpha);
         }
     }
