@@ -14,6 +14,11 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import {
+    CONTRAST_TWEEN_MS,
+    RUNNER_CHANNELS,
+    roleColor,
+} from '../dichoptic/winChannels';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -27,6 +32,15 @@ const OBSTACLE_SPAWN_MAX = 2400; // ms
 const RUNNER_X_RATIO = 0.18; // runner horizontal position within field
 const GROUND_THICKNESS = 4;
 const TRIAL_INTERVAL = 5; // record a "hit" trial every N obstacles passed
+
+// Coins live on the fellow (runner) eye at variable, jump-required heights and
+// are mandatory for level progress — so obstacle-avoidance alone (amblyopic eye
+// only) can no longer level up. See RUNNER_CHANNELS / winChannels.ts.
+const COIN_SPAWN_MIN = 900; // ms
+const COIN_SPAWN_MAX = 1800; // ms
+const COIN_SCORE = 5;
+const COINS_PER_LEVEL = 3; // coins that must be collected to advance a level
+const COIN_MIN_ALPHA = 0.4; // visibility floor even at low fellow-eye contrast
 
 export default class RunnerGameScene extends Phaser.Scene {
     constructor() {
@@ -84,6 +98,15 @@ export default class RunnerGameScene extends Phaser.Scene {
             (isLeftPlatform
                 ? this.settings.contrastRight
                 : this.settings.contrastLeft) / 100;
+
+        // Dichoptic channel paint — coins resolve to the fellow (runner) eye,
+        // obstacles to the amblyopic eye (see RUNNER_CHANNELS / winChannels.ts).
+        this.channelPaint = {
+            fellowColor: this.runnerColor,
+            amblyopicColor: this.obstacleColor,
+            fellowAlpha: this.runnerAlpha,
+            amblyopicAlpha: this.obstacleAlpha,
+        };
 
         // Contrast engine
         this.contrastConfig = createContrastConfig();
@@ -155,6 +178,14 @@ export default class RunnerGameScene extends Phaser.Scene {
         this.lastSpawnTime = 0;
         this.nextSpawnDelay = this.randomSpawnDelay();
 
+        // Coins (fellow eye) — mandatory for level progress
+        this.coins = [];
+        this.coinGraphics = [];
+        this.coinsCollected = 0;
+        this.levelCoins = 0;
+        this.lastCoinSpawn = 0;
+        this.nextCoinDelay = this.randomCoinDelay();
+
         // HUD (GRAY — both eyes)
         this.hud = GameVisuals.createHUD(this, this.field);
 
@@ -212,6 +243,7 @@ export default class RunnerGameScene extends Phaser.Scene {
             this.input.setDefaultCursor('none');
             this.safetyTimer.start();
             this.lastSpawnTime = this.time.now;
+            this.lastCoinSpawn = this.time.now;
         });
     }
 
@@ -327,10 +359,8 @@ export default class RunnerGameScene extends Phaser.Scene {
                     );
                 }
 
-                // Level up
-                if (this.obstaclesPassed >= this.obstaclesForNextLevel) {
-                    this.levelUp();
-                }
+                // Level up requires enough coins too (see maybeLevelUp)
+                this.maybeLevelUp();
             }
 
             // Collision detection (AABB)
@@ -344,6 +374,8 @@ export default class RunnerGameScene extends Phaser.Scene {
                 toRemove.push(i);
             }
         }
+
+        this.updateCoins(now, moveAmount);
 
         // Remove off-screen (reverse order)
         for (let ri = toRemove.length - 1; ri >= 0; ri--) {
@@ -445,6 +477,123 @@ export default class RunnerGameScene extends Phaser.Scene {
         return Phaser.Math.Between(Math.round(min), Math.round(max));
     }
 
+    randomCoinDelay() {
+        return Phaser.Math.Between(COIN_SPAWN_MIN, COIN_SPAWN_MAX);
+    }
+
+    spawnCoin() {
+        const { x: fx, w: fw, h: fh } = this.field;
+        const coinR = Math.round(fw * 0.018);
+        // Variable height above the running runner — always requires a jump, so
+        // the coin cannot be collected without perceiving it (fellow eye).
+        const coinY =
+            this.groundY -
+            Phaser.Math.Between(Math.round(fh * 0.08), Math.round(fh * 0.2));
+        const coinX = fx + fw + coinR;
+
+        // Fellow-eye contrast, floored so children can still see the coin.
+        const coinAlpha = Math.max(
+            this.contrastState.fellowEyeContrast / 100,
+            COIN_MIN_ALPHA,
+        );
+        const gfx = GameVisuals.glowCircle(
+            this,
+            coinX,
+            coinY,
+            coinR,
+            roleColor(RUNNER_CHANNELS, 'coins', this.channelPaint),
+            coinAlpha,
+        );
+        GameVisuals.pulse(this, gfx, 0.85, 1.15, 500);
+
+        this.coins.push({ x: coinX, y: coinY, r: coinR, collected: false });
+        this.coinGraphics.push(gfx);
+    }
+
+    updateCoins(now, moveAmount) {
+        // Spawn
+        if (now - this.lastCoinSpawn >= this.nextCoinDelay) {
+            this.spawnCoin();
+            this.lastCoinSpawn = now;
+            this.nextCoinDelay = this.randomCoinDelay();
+        }
+
+        // Move, collect, cull
+        const remove = [];
+        for (let i = 0; i < this.coins.length; i++) {
+            const coin = this.coins[i];
+            const updated = { ...coin, x: coin.x - moveAmount };
+            this.coins[i] = updated;
+
+            const cg = this.coinGraphics[i];
+            if (cg) cg.x = updated.x;
+
+            if (!updated.collected && this.checkCoinCollect(updated)) {
+                this.coins[i] = { ...updated, collected: true };
+                this.collectCoin(updated);
+                remove.push(i);
+                continue;
+            }
+
+            if (updated.x + updated.r < this.field.x) {
+                remove.push(i);
+            }
+        }
+
+        for (let ri = remove.length - 1; ri >= 0; ri--) {
+            const idx = remove[ri];
+            if (this.coinGraphics[idx]) this.coinGraphics[idx].destroy();
+            this.coins.splice(idx, 1);
+            this.coinGraphics.splice(idx, 1);
+        }
+    }
+
+    checkCoinCollect(coin) {
+        const dx = Math.abs(this.runner.x - coin.x);
+        const dy = Math.abs(this.runner.y - coin.y);
+        return (
+            dx < this.runner.size / 2 + coin.r &&
+            dy < this.runner.size / 2 + coin.r
+        );
+    }
+
+    collectCoin(coin) {
+        this.coinsCollected++;
+        this.levelCoins++;
+        this.score += COIN_SCORE;
+        if (this.hud) this.hud.scoreText.setText(`${this.score}m`);
+
+        SynthSounds.score();
+        GameVFX.scorePopup(this, coin.x, coin.y - 10, `+${COIN_SCORE}`);
+        GameVFX.circleFlash(
+            this,
+            coin.x,
+            coin.y,
+            coin.r * 1.6,
+            this.runnerColor,
+            150,
+        );
+
+        // Hit trial — coin collected
+        this.contrastState = recordTrial(
+            this.contrastState,
+            this.contrastConfig,
+            true,
+        );
+        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+
+        this.maybeLevelUp();
+    }
+
+    maybeLevelUp() {
+        if (
+            this.obstaclesPassed >= this.obstaclesForNextLevel &&
+            this.levelCoins >= COINS_PER_LEVEL
+        ) {
+            this.levelUp();
+        }
+    }
+
     checkCollision(runner, obstacle) {
         const rHalfW = runner.size / 2;
         const rHalfH = runner.size / 2;
@@ -470,6 +619,7 @@ export default class RunnerGameScene extends Phaser.Scene {
     levelUp() {
         this.level++;
         this.obstaclesForNextLevel += 10;
+        this.levelCoins = 0; // fresh coin quota for the next level
         this.scrollSpeed *= 1.08;
         if (this.hud) this.hud.levelText.setText(`Ур.${this.level}`);
 
@@ -530,8 +680,14 @@ export default class RunnerGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        // Update the runner (fellow eye element), not obstacles
-        if (this.runnerVisual) this.runnerVisual.setAlpha(alpha);
+        // Update the runner (fellow eye element), not obstacles — tween it.
+        if (this.runnerVisual) {
+            this.tweens.add({
+                targets: this.runnerVisual,
+                alpha,
+                duration: CONTRAST_TWEEN_MS,
+            });
+        }
     }
 
     togglePause() {

@@ -14,6 +14,12 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import {
+    CONTRAST_TWEEN_MS,
+    MAZERUNNER_CHANNELS,
+    roleAlpha,
+    roleColor,
+} from '../dichoptic/winChannels';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -255,6 +261,15 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
                 ? this.settings.contrastRight
                 : this.settings.contrastLeft) / 100;
 
+        // Dichoptic channel paint — walls resolve to the amblyopic eye, player +
+        // exit to the fellow eye (see MAZERUNNER_CHANNELS / winChannels.ts).
+        this.channelPaint = {
+            fellowColor: this.platformColor,
+            amblyopicColor: this.ballColor,
+            fellowAlpha: this.platformAlpha,
+            amblyopicAlpha: this.ballAlpha,
+        };
+
         // Contrast engine
         this.contrastConfig = createContrastConfig();
         this.contrastState = createContrastState(
@@ -392,9 +407,13 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
         this.mazeOffsetX = this.field.x;
         this.mazeOffsetY = this.field.y;
 
-        // Draw walls (gray — both eyes)
+        // Draw walls (amblyopic eye only — opposite the player; the maze cannot
+        // be navigated without perceiving them, closing the blind-bypass hole).
         this.mazeGraphics = this.add.graphics();
-        this.mazeGraphics.fillStyle(COLORS.GRAY, 0.22);
+        this.mazeGraphics.fillStyle(
+            roleColor(MAZERUNNER_CHANNELS, 'walls', this.channelPaint),
+            roleAlpha(MAZERUNNER_CHANNELS, 'walls', this.channelPaint),
+        );
 
         for (let r = 0; r < this.rRows; r++) {
             for (let c = 0; c < this.rCols; c++) {
@@ -442,8 +461,8 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
                 cx,
                 cy,
                 coinRadius,
-                this.ballColor,
-                this.ballAlpha,
+                roleColor(MAZERUNNER_CHANNELS, 'coins', this.channelPaint),
+                roleAlpha(MAZERUNNER_CHANNELS, 'coins', this.channelPaint),
             );
             GameVisuals.pulse(this, obj, 0.85, 1.15, 700);
             this.coinObjects.push({
@@ -454,18 +473,30 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             });
         }
 
-        // Exit marker (ballColor — other eye, pulsing)
+        // Exit marker (fellow eye — same eye as the player, opposite the walls;
+        // reaching it requires navigating the amblyopic-eye walls, so both eyes
+        // are needed).
         const exitX = this.cellToX(this.exitRC.c);
         const exitY = this.cellToY(this.exitRC.r);
         const exitSize = Math.min(this.cellW, this.cellH) * 0.35;
+        const exitColor = roleColor(
+            MAZERUNNER_CHANNELS,
+            'exit',
+            this.channelPaint,
+        );
+        // Keep the goal visible for children even at low fellow-eye contrast.
+        const exitAlpha = Math.max(
+            roleAlpha(MAZERUNNER_CHANNELS, 'exit', this.channelPaint),
+            0.8,
+        );
         this.exitObj = this.add.star(
             exitX,
             exitY,
             5,
             exitSize * 0.5,
             exitSize,
-            this.ballColor,
-            this.ballAlpha,
+            exitColor,
+            exitAlpha,
         );
         this.exitObj.setDepth(5);
         // Pulsing glow around exit
@@ -473,8 +504,8 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             exitX,
             exitY,
             exitSize * 1.2,
-            this.ballColor,
-            this.ballAlpha * 0.15,
+            exitColor,
+            exitAlpha * 0.15,
         );
         GameVisuals.pulse(this, this.exitGlow, 0.7, 1.3, 1000);
 
@@ -762,7 +793,7 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             const ex = this.cellToX(this.exitRC.c);
             const ey = this.cellToY(this.exitRC.r);
             SynthSounds.victory();
-            GameVFX.particleBurst(this, ex, ey, this.ballColor, 10);
+            GameVFX.particleBurst(this, ex, ey, this.platformColor, 10);
 
             // Hit trial — exit reached
             this.contrastState = recordTrial(
@@ -830,7 +861,28 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
     // --- Contrast updates ---
 
     updateFellowEyeAlpha(alpha) {
-        if (this.playerObj) this.playerObj.setAlpha(alpha);
+        // Player + exit share the fellow (adaptive) eye — tween both.
+        if (this.playerObj) {
+            this.tweens.add({
+                targets: this.playerObj,
+                alpha,
+                duration: CONTRAST_TWEEN_MS,
+            });
+        }
+        if (this.exitObj) {
+            this.tweens.add({
+                targets: this.exitObj,
+                alpha,
+                duration: CONTRAST_TWEEN_MS,
+            });
+        }
+        if (this.exitGlow) {
+            this.tweens.add({
+                targets: this.exitGlow,
+                alpha: alpha * 0.15,
+                duration: CONTRAST_TWEEN_MS,
+            });
+        }
     }
 
     // --- Pause ---

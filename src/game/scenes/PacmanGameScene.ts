@@ -14,6 +14,12 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import {
+    CONTRAST_TWEEN_MS,
+    PACMAN_CHANNELS,
+    roleAlpha,
+    roleColor,
+} from '../dichoptic/winChannels';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -168,6 +174,15 @@ export default class PacmanGameScene extends Phaser.Scene {
                 ? this.settings.contrastRight
                 : this.settings.contrastLeft) / 100;
 
+        // Dichoptic channel paint — dots/pellets resolve to the amblyopic eye,
+        // opposite Pac-Man (see PACMAN_CHANNELS / winChannels.ts).
+        this.channelPaint = {
+            fellowColor: this.platformColor,
+            amblyopicColor: this.ballColor,
+            fellowAlpha: this.platformAlpha,
+            amblyopicAlpha: this.ballAlpha,
+        };
+
         this.contrastConfig = createContrastConfig();
         this.contrastState = createContrastState(
             this.settings.fellowEyeContrast ?? 30,
@@ -321,27 +336,35 @@ export default class PacmanGameScene extends Phaser.Scene {
                         3,
                     );
                 } else if (cell === 2) {
-                    // Dot (platformColor — one eye)
+                    // Dot (amblyopic eye — opposite Pac-Man; win-critical)
                     const dot = this.add.circle(
                         cx,
                         cy,
                         3,
-                        this.platformColor,
-                        this.platformAlpha,
+                        roleColor(PACMAN_CHANNELS, 'dots', this.channelPaint),
+                        roleAlpha(PACMAN_CHANNELS, 'dots', this.channelPaint),
                     );
                     this.dotObjects.push(dot);
                     dot._col = c;
                     dot._row = r;
                     this.totalDots++;
                 } else if (cell === 3) {
-                    // Power pellet (platformColor — one eye, larger + pulsing)
+                    // Power pellet (amblyopic eye — opposite Pac-Man, pulsing)
                     const pellet = GameVisuals.glowCircle(
                         this,
                         cx,
                         cy,
                         6,
-                        this.platformColor,
-                        this.platformAlpha,
+                        roleColor(
+                            PACMAN_CHANNELS,
+                            'pellets',
+                            this.channelPaint,
+                        ),
+                        roleAlpha(
+                            PACMAN_CHANNELS,
+                            'pellets',
+                            this.channelPaint,
+                        ),
                     );
                     GameVisuals.pulse(this, pellet, 0.8, 1.2, 600);
                     this.powerObjects.push({
@@ -1096,13 +1119,14 @@ export default class PacmanGameScene extends Phaser.Scene {
     // --- Contrast updates ---
 
     updateFellowEyeAlpha(alpha) {
-        // Update Pac-Man + dots (platform color elements) alpha
-        if (this.pacmanObj) this.pacmanObj.setAlpha(alpha);
-        for (const dot of this.dotObjects) {
-            dot.setAlpha(alpha);
-        }
-        for (const pellet of this.powerObjects) {
-            if (pellet.active) pellet.obj.setAlpha(alpha);
+        // Only Pac-Man is on the fellow (adaptive) eye now — dots and pellets
+        // live on the amblyopic eye at full contrast. Tween the alpha change.
+        if (this.pacmanObj) {
+            this.tweens.add({
+                targets: this.pacmanObj,
+                alpha,
+                duration: CONTRAST_TWEEN_MS,
+            });
         }
     }
 
