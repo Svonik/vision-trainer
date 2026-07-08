@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import {
+    type AmblyopiaType,
     type CalibrationData,
     getCalibration,
     saveCalibration,
@@ -9,6 +10,7 @@ interface CalibrationOverrides {
     suppression_passed?: boolean;
     glasses_type?: string;
     weak_eye?: 'left' | 'right';
+    amblyopia_type?: AmblyopiaType;
 }
 
 export function useCalibration() {

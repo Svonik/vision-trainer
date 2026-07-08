@@ -1,5 +1,11 @@
 import { CURRENT_VERSION, STORAGE_KEYS } from './constants';
 
+export type AmblyopiaType =
+    | 'strabismus'
+    | 'anisometropia'
+    | 'mixed'
+    | 'unspecified';
+
 export interface CalibrationData {
     suppression_passed: boolean;
     deep_suppression: boolean;
@@ -7,6 +13,7 @@ export interface CalibrationData {
     glasses_type: string;
     age_group: '4-7' | '8-12';
     weak_eye: 'left' | 'right';
+    amblyopia_type: AmblyopiaType;
     suppression_result?: {
         suppressionDepth: number;
         balancePoint: number;
@@ -27,6 +34,7 @@ const DEFAULT_CALIBRATION: CalibrationData = {
     glasses_type: 'red-cyan',
     age_group: '8-12',
     weak_eye: 'left',
+    amblyopia_type: 'unspecified',
 };
 
 const DEFAULT_SETTINGS: DefaultSettings = {
@@ -99,9 +107,9 @@ export interface SuppressionRecord {
 }
 
 export const getSuppressionHistory = (): SuppressionRecord[] => {
-    const stored = read(
-        STORAGE_KEYS.SUPPRESSION_HISTORY,
-    ) as SuppressionRecord[] | null;
+    const stored = read(STORAGE_KEYS.SUPPRESSION_HISTORY) as
+        | SuppressionRecord[]
+        | null;
     if (stored) return stored;
     // Legacy migration: suppression_history was introduced after some users
     // already had a suppression_result on their calibration — seed the

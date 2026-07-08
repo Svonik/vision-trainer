@@ -8,7 +8,7 @@ import { getGameById, routeIdToGameId } from '../config/games';
 import { GAME, SPEEDS } from '../modules/constants';
 import { t } from '../modules/i18n';
 import { getCachedSessions } from '../modules/sessionCache';
-import { getSuppressionHistory } from '../modules/storage';
+import { getCalibration, getSuppressionHistory } from '../modules/storage';
 
 function CountUp({ target }: { target: number }) {
     const [count, setCount] = useState(0);
@@ -87,6 +87,7 @@ export function StatsPage() {
         suppressionHistory.length > 1
             ? suppressionHistory[suppressionHistory.length - 2]
             : null;
+    const { amblyopia_type } = getCalibration();
 
     // Settings to pass for "play again" — location.state.settings is passed from GamePage
     const playSettings = location.state?.settings ?? null;
@@ -123,12 +124,21 @@ export function StatsPage() {
                                 <p className="text-sm mt-1 tabular-nums text-[var(--text-secondary)]">
                                     {t('stats.suppressionWasNow')}:{' '}
                                     {previousSuppression.suppressionDepth}%
-                                    &rarr;{' '}
-                                    {currentSuppression.suppressionDepth}%
+                                    &rarr; {currentSuppression.suppressionDepth}
+                                    %
                                 </p>
                             )}
                         </div>
                     )}
+
+                    <div className="text-center pt-2 border-t border-[var(--border)]/50">
+                        <p className="font-[var(--font-display)] text-lg text-[var(--text)]">
+                            {t(`amblyopiaType.${amblyopia_type}`)}
+                        </p>
+                        <p className="text-[var(--text-secondary)] text-sm">
+                            {t('stats.amblyopiaType')}
+                        </p>
+                    </div>
 
                     {result ? (
                         <div className="space-y-6">
