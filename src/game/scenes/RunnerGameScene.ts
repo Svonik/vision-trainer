@@ -15,7 +15,7 @@ import {
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const SCROLL_SPEEDS = { slow: 140, normal: 200, fast: 270, pro: 350 };
 const GRAVITY = 900; // px/s² — snappy jump feel
@@ -75,7 +75,7 @@ export default class RunnerGameScene extends DichopticScene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Eye colors — dichoptic split
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

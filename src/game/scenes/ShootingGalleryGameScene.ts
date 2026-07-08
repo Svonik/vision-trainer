@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // --- Target type definitions ---
 const TARGET_TYPES = [
@@ -49,26 +43,24 @@ export function isValidHit(
 /**
  * Resolve the anaglyph channel for each dichoptic object. The crosshair
  * marker carries the ADAPTIVE (clinical-contrast) alpha, so it is the
- * fellow/strong-eye object and must use Formula A — the strong-eye
- * channel, exactly as `platformColor` in GameScene.ts:97-104. The target
- * body is fixed at alpha 1.0 (amblyopic/weak eye, always 100%) and uses
- * the mirrored Formula B.
+ * fellow/strong-eye object; the target body is fixed at alpha 1.0
+ * (amblyopic/weak eye). Delegates to the shared DichopticScene
+ * implementation — kept as a named export here for the existing unit test
+ * (ShootingGalleryGameScene.test.ts).
  */
 export function resolveChannelColors(
     eyeConfig: string,
     glassesType: 'red-cyan' | 'cyan-red',
 ) {
-    const eyeColors = getEyeColors(glassesType);
-    const isLeftStrong = eyeConfig === 'platform_left';
-    return {
-        crosshairColor: isLeftStrong
-            ? eyeColors.leftColor
-            : eyeColors.rightColor,
-        targetColor: isLeftStrong ? eyeColors.rightColor : eyeColors.leftColor,
-    };
+    const { fellowColor, amblyopicColor } = resolveEyeChannelColors(
+        eyeConfig,
+        glassesType,
+    );
+    return { crosshairColor: fellowColor, targetColor: amblyopicColor };
 }
 
-export default class ShootingGalleryGameScene extends Phaser.Scene {
+
+export default class ShootingGalleryGameScene extends DichopticScene {
     constructor() {
         super('ShootingGalleryGameScene');
     }
@@ -113,14 +105,10 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         );
         this.targetColor = channelColors.targetColor;
         this.crosshairColor = channelColors.crosshairColor;
-        // Clinical contrast engine
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
-        );
+        this.initDichoptics(this.settings);
 
         // Fellow eye (crosshair) uses clinical contrast; amblyopic eye (targets) always 100%
-        this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.crosshairAlpha = this.fellowAlpha;
         this.targetAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Game state
@@ -497,20 +485,6 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         }
     }
 
-    // --- Update crosshair (fellow eye) alpha from contrast engine ---
-    updateTargetAlpha() {
-        this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
-        // Tween the ACTUAL visible marker object (not just the JS value) so
-        // the contrast change is perceivable, per clinical protocol.
-        if (this.markedTarget?.marker) {
-            this.tweens.add({
-                targets: this.markedTarget.marker,
-                alpha: this.crosshairAlpha,
-                duration: 250,
-                ease: 'Linear',
-            });
-        }
-    }
 
     // --- Update loop ---
     update(_time, delta) {
@@ -706,10 +680,10 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

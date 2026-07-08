@@ -17,7 +17,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const OBSTACLE_SPEEDS = { slow: 60, normal: 100, fast: 150, pro: 200 };
 const LANE_COUNT = 5;
@@ -68,7 +68,7 @@ export default class FroggerGameScene extends DichopticScene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

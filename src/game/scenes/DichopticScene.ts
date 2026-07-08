@@ -175,25 +175,26 @@ export default abstract class DichopticScene extends Phaser.Scene {
             fellowContrastEnd: this.contrastState.fellowEyeContrast,
         };
     }
+}
 
-    /**
-     * Anaglyph channel assignment from calibration glasses_type — the fellow
-     * (strong) eye is visible through `eyeConfig === 'platform_left'` iff the
-     * platform/marker/player object is on the left lens. Consolidates the
-     * three identical module-level `resolveChannelColors` copies previously
-     * duplicated in BalloonPop/WhackMole/ShootingGallery.
-     */
-    resolveEyeColors(
-        eyeConfig: string | undefined,
-        glassesType: GlassesType | string | undefined,
-    ): EyeChannelColors {
-        const eyeColors = getEyeColors((glassesType as GlassesType) || 'red-cyan');
-        const isFellowLeft = eyeConfig === 'platform_left';
-        return {
-            fellowColor: isFellowLeft ? eyeColors.leftColor : eyeColors.rightColor,
-            amblyopicColor: isFellowLeft
-                ? eyeColors.rightColor
-                : eyeColors.leftColor,
-        };
-    }
+/**
+ * Pure, framework-free anaglyph channel assignment — the fellow (strong) eye
+ * is visible through `eyeConfig === 'platform_left'` iff the object is on the
+ * left lens. Exported standalone (not just as a DichopticScene method) so
+ * scenes that must keep a module-level `resolveChannelColors` export for
+ * their existing unit tests (BalloonPop/WhackMole/ShootingGallery) can
+ * delegate to this single implementation instead of duplicating it.
+ */
+export function resolveEyeChannelColors(
+    eyeConfig: string | undefined,
+    glassesType: GlassesType | string | undefined,
+): EyeChannelColors {
+    const eyeColors = getEyeColors((glassesType as GlassesType) || 'red-cyan');
+    const isFellowLeft = eyeConfig === 'platform_left';
+    return {
+        fellowColor: isFellowLeft ? eyeColors.leftColor : eyeColors.rightColor,
+        amblyopicColor: isFellowLeft
+            ? eyeColors.rightColor
+            : eyeColors.leftColor,
+    };
 }

@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const BALLOON_RADIUS = 25;
 const WIN_COUNT = 30;
@@ -42,26 +36,24 @@ export function isValidHit(
 /**
  * Resolve the anaglyph channel for each dichoptic object. The crosshair
  * marker carries the ADAPTIVE (clinical-contrast) alpha, so it is the
- * fellow/strong-eye object and must use Formula A — the strong-eye
- * channel, exactly as `platformColor` in GameScene.ts:97-104. The balloon
- * body is fixed at alpha 1.0 (amblyopic/weak eye, always 100%) and uses
- * the mirrored Formula B.
+ * fellow/strong-eye object; the balloon body is fixed at alpha 1.0
+ * (amblyopic/weak eye). Delegates to the shared DichopticScene
+ * implementation — kept as a named export here for the existing unit test
+ * (BalloonPopGameScene.test.ts).
  */
 export function resolveChannelColors(
     eyeConfig: string,
     glassesType: 'red-cyan' | 'cyan-red',
 ) {
-    const eyeColors = getEyeColors(glassesType);
-    const isLeftStrong = eyeConfig === 'platform_left';
-    return {
-        crosshairColor: isLeftStrong
-            ? eyeColors.leftColor
-            : eyeColors.rightColor,
-        balloonColor: isLeftStrong ? eyeColors.rightColor : eyeColors.leftColor,
-    };
+    const { fellowColor, amblyopicColor } = resolveEyeChannelColors(
+        eyeConfig,
+        glassesType,
+    );
+    return { crosshairColor: fellowColor, balloonColor: amblyopicColor };
 }
 
-export default class BalloonPopGameScene extends Phaser.Scene {
+
+export default class BalloonPopGameScene extends DichopticScene {
     constructor() {
         super('BalloonPopGameScene');
     }
@@ -99,29 +91,16 @@ export default class BalloonPopGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const isLeftBalloon = this.settings.eyeConfig === 'platform_left';
         const channelColors = resolveChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType || 'red-cyan',
         );
         this.balloonColor = channelColors.balloonColor;
         this.crosshairColor = channelColors.crosshairColor;
-        this.balloonAlpha =
-            (isLeftBalloon
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.crosshairAlpha =
-            (isLeftBalloon
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
-        );
+        this.initDichoptics(this.settings);
 
         // Fellow eye (crosshair) uses clinical contrast; amblyopic eye (balloons) always 100%
-        this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.crosshairAlpha = this.fellowAlpha;
         this.balloonAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         this.level = 1;
@@ -381,12 +360,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
         GameVFX.particleBurst(this, x, y, this.balloonColor, 8);
         GameVFX.scorePopup(this, x, y);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
         this.ensureMarkedTarget();
 
         this.popped++;
@@ -417,12 +391,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
 
         SynthSounds.miss();
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
         this.ensureMarkedTarget();
 
         this.time.delayedCall(200, () => {
@@ -478,20 +447,6 @@ export default class BalloonPopGameScene extends Phaser.Scene {
         }
     }
 
-    updateFellowEyeAlpha(alpha) {
-        // Update crosshair (fellow eye) alpha — balloons (amblyopic eye) stay at 1.0
-        this.crosshairAlpha = alpha;
-        // Tween the ACTUAL visible marker object (not just the JS value) so
-        // the contrast change is perceivable, per clinical protocol.
-        if (this.markedBalloon?.marker) {
-            this.tweens.add({
-                targets: this.markedBalloon.marker,
-                alpha,
-                duration: 250,
-                ease: 'Linear',
-            });
-        }
-    }
 
     togglePause() {
         this.isPaused = !this.isPaused;

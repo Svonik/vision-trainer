@@ -10,7 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const BALL_SPEEDS = { slow: 180, normal: 260, fast: 360, pro: 460 };
 const AI_TRACKING = { slow: 0.4, normal: 0.6, fast: 0.8, pro: 0.95 };
@@ -70,7 +70,7 @@ export default class PongGameScene extends DichopticScene {
         // Left paddle (player) → platformColor (fellow eye)
         // Right paddle (AI)    → ballColor (amblyopic eye)
         // Ball                 → ballColor (amblyopic eye) — requires binocular integration
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

@@ -17,7 +17,7 @@ import { EventBus } from '../EventBus';
 import { pointerDragToVelocity, stepControl } from '../relativeControl';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const BALL_SPEEDS = { slow: 200, normal: 300, fast: 400, pro: 500 };
 const _BRICK_COLS = 8;
@@ -120,7 +120,7 @@ export default class BreakoutGameScene extends DichopticScene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

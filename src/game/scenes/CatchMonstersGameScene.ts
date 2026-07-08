@@ -10,7 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const MONSTER_SPEEDS = { slow: 40, normal: 70, fast: 110, pro: 160 };
 const MONSTER_COUNT = { slow: 2, normal: 3, fast: 3, pro: 4 };
@@ -60,7 +60,7 @@ export default class CatchMonstersGameScene extends DichopticScene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

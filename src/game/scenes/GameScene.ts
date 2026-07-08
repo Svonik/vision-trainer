@@ -15,7 +15,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 export default class GameScene extends DichopticScene {
     constructor() {
@@ -82,7 +82,7 @@ export default class GameScene extends DichopticScene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

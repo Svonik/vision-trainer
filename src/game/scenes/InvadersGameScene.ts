@@ -18,7 +18,7 @@ import { pointerDragToVelocity, stepControl } from '../relativeControl';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const ALIEN_COLS = 8;
 const ALIEN_ROWS = 5;
@@ -97,7 +97,7 @@ export default class InvadersGameScene extends DichopticScene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );

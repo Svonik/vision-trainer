@@ -17,7 +17,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
-import DichopticScene from './DichopticScene';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // --- Maze data: 0=path, 1=wall, 2=dot, 3=power pellet, 4=ghost spawn, 5=player spawn ---
 const MAZE_LAYOUTS = [
@@ -151,7 +151,7 @@ export default class PacmanGameScene extends DichopticScene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = this.resolveEyeColors(
+        const eyeColors = resolveEyeChannelColors(
             this.settings.eyeConfig,
             this.settings.glassesType,
         );
