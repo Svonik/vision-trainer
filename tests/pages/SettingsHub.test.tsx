@@ -14,6 +14,7 @@ vi.mock('../../src/modules/storage', () => ({
         weak_eye: 'left',
     })),
     saveCalibration: vi.fn(),
+    appendSuppressionHistory: vi.fn(),
     getDefaultSettings: vi.fn(() => ({
         speed: 'slow',
         eyeConfig: 'platform_left',

@@ -16,6 +16,7 @@ import type { GlassesType } from '../modules/glassesColors';
 import { deriveEyeConfig } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
 import {
+    appendSuppressionHistory,
     getCalibration,
     getDefaultSettings,
     saveCalibration,
@@ -57,17 +58,19 @@ export function SettingsHub() {
 
     const handleSuppressionComplete = (balancePoint: number) => {
         const deepSuppression = balancePoint > 80;
+        const suppressionResult = {
+            suppressionDepth: 100 - balancePoint,
+            balancePoint,
+            timestamp: new Date().toISOString(),
+        };
         save({ suppression_passed: true });
+        appendSuppressionHistory(suppressionResult);
         // Store full suppression result
         saveCalibration({
             ...getCalibration(),
             suppression_passed: true,
             deep_suppression: deepSuppression,
-            suppression_result: {
-                suppressionDepth: 100 - balancePoint,
-                balancePoint,
-                timestamp: new Date().toISOString(),
-            },
+            suppression_result: suppressionResult,
         });
         const settings = getDefaultSettings();
         saveDefaultSettings({

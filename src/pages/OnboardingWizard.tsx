@@ -8,6 +8,7 @@ import { SuppressionTestStep } from '../components/calibration/SuppressionTestSt
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import {
+    appendSuppressionHistory,
     getCalibration,
     getDefaultSettings,
     saveCalibration,
@@ -77,17 +78,19 @@ export function OnboardingWizard() {
 
     const handleContrastComplete = (balancePoint: number) => {
         const deepSuppression = balancePoint > 80;
+        const suppressionResult = {
+            suppressionDepth: 100 - balancePoint,
+            balancePoint,
+            timestamp: new Date().toISOString(),
+        };
         save({ suppression_passed: true });
+        appendSuppressionHistory(suppressionResult);
         // Store full suppression result
         saveCalibration({
             ...getCalibration(),
             suppression_passed: true,
             deep_suppression: deepSuppression,
-            suppression_result: {
-                suppressionDepth: 100 - balancePoint,
-                balancePoint,
-                timestamp: new Date().toISOString(),
-            },
+            suppression_result: suppressionResult,
         });
         // Save contrast value as initial fellowEyeContrast for gameplay
         const defaults = getDefaultSettings();

@@ -106,6 +106,7 @@ export const STORAGE_KEYS = {
     CALIBRATION: 'vt_calibration',
     SESSIONS: 'vt_sessions',
     DEFAULT_SETTINGS: 'vt_default_settings',
+    SUPPRESSION_HISTORY: 'vt_suppression_history',
 } as const;
 
 export const CURRENT_VERSION = '1.0' as const;

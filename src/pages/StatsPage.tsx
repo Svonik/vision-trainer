@@ -8,6 +8,7 @@ import { getGameById, routeIdToGameId } from '../config/games';
 import { GAME, SPEEDS } from '../modules/constants';
 import { t } from '../modules/i18n';
 import { getCachedSessions } from '../modules/sessionCache';
+import { getSuppressionHistory } from '../modules/storage';
 
 function CountUp({ target }: { target: number }) {
     const [count, setCount] = useState(0);
@@ -77,6 +78,16 @@ export function StatsPage() {
     const prevSession =
         gameSessions.length > 1 ? gameSessions[gameSessions.length - 2] : null;
 
+    const suppressionHistory = getSuppressionHistory();
+    const currentSuppression =
+        suppressionHistory.length > 0
+            ? suppressionHistory[suppressionHistory.length - 1]
+            : null;
+    const previousSuppression =
+        suppressionHistory.length > 1
+            ? suppressionHistory[suppressionHistory.length - 2]
+            : null;
+
     // Settings to pass for "play again" — location.state.settings is passed from GamePage
     const playSettings = location.state?.settings ?? null;
 
@@ -99,6 +110,25 @@ export function StatsPage() {
                             ? `${t('stats.resultsFor')}${t(game.titleKey)}`
                             : t('stats.title')}
                     </h2>
+
+                    {currentSuppression && (
+                        <div className="text-center pt-2 border-t border-[var(--border)]/50">
+                            <p className="font-[var(--font-display)] text-2xl text-[var(--text)] tabular-nums">
+                                {currentSuppression.suppressionDepth}%
+                            </p>
+                            <p className="text-[var(--text-secondary)] text-base">
+                                {t('stats.suppressionDepth')}
+                            </p>
+                            {previousSuppression && (
+                                <p className="text-sm mt-1 tabular-nums text-[var(--text-secondary)]">
+                                    {t('stats.suppressionWasNow')}:{' '}
+                                    {previousSuppression.suppressionDepth}%
+                                    &rarr;{' '}
+                                    {currentSuppression.suppressionDepth}%
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {result ? (
                         <div className="space-y-6">

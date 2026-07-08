@@ -92,6 +92,31 @@ export const getCalibration = (): CalibrationData => {
 export const saveCalibration = (cal: CalibrationData): void =>
     write(STORAGE_KEYS.CALIBRATION, cal);
 
+export interface SuppressionRecord {
+    suppressionDepth: number;
+    balancePoint: number;
+    timestamp: string;
+}
+
+export const getSuppressionHistory = (): SuppressionRecord[] => {
+    const stored = read(
+        STORAGE_KEYS.SUPPRESSION_HISTORY,
+    ) as SuppressionRecord[] | null;
+    if (stored) return stored;
+    // Legacy migration: suppression_history was introduced after some users
+    // already had a suppression_result on their calibration — seed the
+    // history with it so 'было' has data as soon as they recalibrate.
+    const { suppression_result } = getCalibration();
+    return suppression_result ? [suppression_result] : [];
+};
+
+export const appendSuppressionHistory = (record: SuppressionRecord): void => {
+    write(STORAGE_KEYS.SUPPRESSION_HISTORY, [
+        ...getSuppressionHistory(),
+        record,
+    ]);
+};
+
 export const getSessions = (): unknown[] =>
     (read(STORAGE_KEYS.SESSIONS) as unknown[] | null) || [];
 
