@@ -2,6 +2,7 @@ import { CURRENT_VERSION, STORAGE_KEYS } from './constants';
 
 export interface CalibrationData {
     suppression_passed: boolean;
+    deep_suppression: boolean;
     last_calibrated: string | null;
     glasses_type: string;
     age_group: '4-7' | '8-12';
@@ -21,6 +22,7 @@ export interface DefaultSettings {
 
 const DEFAULT_CALIBRATION: CalibrationData = {
     suppression_passed: false,
+    deep_suppression: false,
     last_calibrated: null,
     glasses_type: 'red-cyan',
     age_group: '8-12',

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initStorage } from '../../src/modules/storage';
+import { initStorage, saveCalibration } from '../../src/modules/storage';
 import { OnboardingWizard } from '../../src/pages/OnboardingWizard';
 
 const mockNavigate = vi.fn();
@@ -18,6 +18,7 @@ vi.mock('../../src/modules/storage', async () => {
         saveCalibration: vi.fn(),
         getCalibration: vi.fn(() => ({
             suppression_passed: false,
+            deep_suppression: false,
             last_calibrated: null,
             glasses_type: 'red-cyan',
             age_group: '8-12',
@@ -100,14 +101,14 @@ describe('OnboardingWizard', () => {
         ).toBeInTheDocument();
     });
 
-    it('shows 6 dot indicators', () => {
+    it('shows 5 dot indicators', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
             </MemoryRouter>,
         );
         const dots = document.querySelectorAll('[data-dot]');
-        expect(dots).toHaveLength(6);
+        expect(dots).toHaveLength(5);
     });
 
     it('progresses from disclaimer to glasses step after accepting', () => {
@@ -169,5 +170,73 @@ describe('OnboardingWizard', () => {
         expect(screen.getByRole('slider')).toBeInTheDocument();
         // Trial indicator: "1 / 2"
         expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument();
+    });
+
+    it('deep suppression (balancePoint > 80) persists deep_suppression, shows doctor warning, and still allows proceeding to therapy', () => {
+        render(
+            <MemoryRouter>
+                <OnboardingWizard />
+            </MemoryRouter>,
+        );
+        advanceToContrastStep();
+
+        // Trial 1: push contrast to max (100) — deep suppression
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '100' },
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: /проверим ещё раз/i }),
+        );
+        // Trial 2: same
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '100' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+
+        // Doctor warning must be shown before proceeding
+        expect(screen.getByRole('alert')).toHaveTextContent(/офтальмолог/i);
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                deep_suppression: true,
+                suppression_passed: true,
+            }),
+        );
+        // Navigation (therapy access) is not blocked — it's just deferred
+        // until the user acknowledges the warning.
+        expect(mockNavigate).not.toHaveBeenCalled();
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /продолжить всё равно/i }),
+        );
+        expect(mockNavigate).toHaveBeenCalledWith('/mode-select');
+    });
+
+    it('balancePoint <= 80 persists deep_suppression:false and shows no warning', () => {
+        render(
+            <MemoryRouter>
+                <OnboardingWizard />
+            </MemoryRouter>,
+        );
+        advanceToContrastStep();
+
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '30' },
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: /проверим ещё раз/i }),
+        );
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '30' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                deep_suppression: false,
+                suppression_passed: true,
+            }),
+        );
+        expect(mockNavigate).toHaveBeenCalledWith('/mode-select');
     });
 });
