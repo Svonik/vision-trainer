@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // --- Grid sizes per speed ---
 const GRID_CONFIG = {
@@ -44,7 +38,7 @@ const SHAPE_NAMES = [
 // Brightness variants: light, medium, dark
 const BRIGHTNESS_MULT = [1.0, 0.7, 0.45];
 
-export default class ColorFloodGameScene extends Phaser.Scene {
+export default class ColorFloodGameScene extends DichopticScene {
     constructor() {
         super('ColorFloodGameScene');
     }
@@ -83,28 +77,15 @@ export default class ColorFloodGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Eye color setup
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.colorA = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.colorB = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.alphaA =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.alphaB =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        // Contrast engine
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.colorA = eyeColors.fellowColor;
+        this.colorB = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+        this.alphaA = this.fellowAlpha;
+        this.alphaB = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Level / grid
         this.level = 1;
@@ -136,6 +117,10 @@ export default class ColorFloodGameScene extends Phaser.Scene {
 
         // Build grid data
         this.grid = this.buildGrid();
+
+        // Rebuild type-color table whenever the clinical contrast steps
+        // (caller redraws via updateFloodHighlight()/renderGrid()).
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // Compute initial flood region from top-left
         this.floodRegion = new Set();
@@ -550,12 +535,7 @@ export default class ColorFloodGameScene extends Phaser.Scene {
         const expanded = newSize > prevSize;
 
         // Record trial: Hit if flood expanded, Miss if wasted move
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            expanded,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(expanded);
 
         if (expanded) {
             SynthSounds.score();
@@ -766,10 +746,10 @@ export default class ColorFloodGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });
