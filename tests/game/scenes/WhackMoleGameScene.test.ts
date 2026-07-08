@@ -9,9 +9,11 @@ import { describe, expect, it, vi } from 'vitest';
 // EventBus singleton) so the scene module can be imported to reach the
 // pure, framework-free `isValidHit` gate under test.
 vi.hoisted(() => {
-    (globalThis as unknown as { Phaser: unknown }).Phaser = {
-        Scene: class {},
-    };
+    Object.assign(globalThis, {
+        Phaser: {
+            Scene: class {},
+        },
+    });
 });
 vi.mock('phaser', () => ({
     Events: {
@@ -25,7 +27,7 @@ vi.mock('phaser', () => ({
     },
 }));
 
-import {
+import WhackMoleGameScene, {
     isValidHit,
     resolveChannelColors,
 } from '../../../src/game/scenes/WhackMoleGameScene';
@@ -98,5 +100,43 @@ describe('WhackMole dichoptic channel assignment (resolveChannelColors)', () => 
 
         expect(crosshairColor).toBe(strongEyeColor);
         expect(moleColor).toBe(weakEyeColor);
+    });
+});
+
+describe('WhackMole fellow-alpha sync', () => {
+    it('updates the crosshair scalar, redraws the crosshair, and retints the active-hole marker', () => {
+        const scene = new WhackMoleGameScene();
+        const marker = { setAlpha: vi.fn() };
+        scene.crosshairAlpha = 0.3;
+        scene.crosshair = {};
+        scene.crosshairPosition = { x: 12, y: 34 };
+        scene.drawCrosshair = vi.fn();
+        scene.markedMole = { marker };
+
+        scene.updateFellowEyeAlpha(0.45);
+
+        expect(scene.crosshairAlpha).toBe(0.45);
+        expect(scene.drawCrosshair).toHaveBeenCalledWith(12, 34);
+        expect(marker.setAlpha).toHaveBeenCalledWith(0.45);
+    });
+
+    it('uses the latest crosshair alpha for newly attached active-hole markers', () => {
+        const scene = new WhackMoleGameScene();
+        const marker = {
+            setStrokeStyle: vi.fn().mockReturnThis(),
+            setAlpha: vi.fn().mockReturnThis(),
+            setDepth: vi.fn().mockReturnThis(),
+        };
+        scene.add = { circle: vi.fn(() => marker) };
+        scene.crosshairColor = 0xff0000;
+        scene.crosshairAlpha = 0.45;
+        const entry = { container: { x: 10, y: 20 } };
+
+        scene.attachMarker(entry);
+
+        expect(marker.setAlpha).toHaveBeenCalledWith(0.45);
+        expect(entry.marker).toBe(marker);
+        expect(entry.hasMarker).toBe(true);
+        expect(scene.markedMole).toBe(entry);
     });
 });

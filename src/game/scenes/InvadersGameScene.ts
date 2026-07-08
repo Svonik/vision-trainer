@@ -108,6 +108,7 @@ export default class InvadersGameScene extends DichopticScene {
         // Fellow eye (platform) uses clinical contrast; amblyopic eye (aliens) always 100%
         this.platformAlpha = this.fellowAlpha;
         this.alienAlpha = 1.0;
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // State
         this.level = 1;
@@ -592,6 +593,20 @@ export default class InvadersGameScene extends DichopticScene {
         this.playerBullets.push(bullet);
     }
 
+    updateFellowEyeAlpha(alpha) {
+        this.platformAlpha = alpha;
+        for (const bullet of this.playerBullets || []) {
+            if (!bullet || bullet.active === false) continue;
+            bullet.setAlpha?.(alpha);
+        }
+    }
+
+    setShipBlinkAlpha(visible) {
+        const alpha = visible ? this.platformAlpha : 0;
+        if (this.ship?.setAlpha) this.ship.setAlpha(alpha);
+        if (this.shipVisual) this.shipVisual.setAlpha(alpha);
+    }
+
     fireEnemyBullet() {
         const liveAliens = this.aliens.filter((a) => a.body?.active);
         if (liveAliens.length === 0) return;
@@ -710,20 +725,12 @@ export default class InvadersGameScene extends DichopticScene {
             callback: () => {
                 blinkCount++;
                 const visible = blinkCount % 2 === 0;
-                // Sprite mode
-                if (this.ship?.setAlpha) {
-                    this.ship.setAlpha(visible ? this.platformAlpha : 0);
-                }
-                // Fallback visual mode
-                if (this.shipVisual) {
-                    this.shipVisual.setAlpha(visible ? this.platformAlpha : 0);
-                }
+                this.setShipBlinkAlpha(visible);
             },
         });
         this.time.delayedCall(INVINCIBILITY_DURATION_MS, () => {
             this.invincible = false;
-            if (this.ship?.setAlpha) this.ship.setAlpha(this.platformAlpha);
-            if (this.shipVisual) this.shipVisual.setAlpha(this.platformAlpha);
+            this.setShipBlinkAlpha(true);
             if (this.blinkTimer) {
                 this.blinkTimer.remove();
                 this.blinkTimer = null;

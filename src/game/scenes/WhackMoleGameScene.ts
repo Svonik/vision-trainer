@@ -108,6 +108,7 @@ export default class WhackMoleGameScene extends DichopticScene {
         // eye (moles) always 100% — mole must always be visible per protocol.
         this.moleAlpha = 1.0;
         this.crosshairAlpha = this.fellowAlpha;
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         this.level = 1;
         const speed = this.settings.speed || 'normal';
@@ -247,6 +248,7 @@ export default class WhackMoleGameScene extends DichopticScene {
     }
 
     drawCrosshair(x, y) {
+        this.crosshairPosition = { x, y };
         this.crosshair.clear();
         this.crosshair.lineStyle(2, this.crosshairColor, this.crosshairAlpha);
         const size = 12;
@@ -259,6 +261,19 @@ export default class WhackMoleGameScene extends DichopticScene {
         this.crosshair.lineTo(x, y + size);
         this.crosshair.strokePath();
         this.crosshair.strokeCircle(x, y, size + 2);
+    }
+
+    updateFellowEyeAlpha(alpha) {
+        this.crosshairAlpha = alpha;
+        if (this.crosshair && this.crosshairPosition) {
+            this.drawCrosshair(
+                this.crosshairPosition.x,
+                this.crosshairPosition.y,
+            );
+        }
+        if (this.markedMole?.marker) {
+            this.markedMole.marker.setAlpha(alpha);
+        }
     }
 
     spawnMole() {
