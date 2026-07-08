@@ -105,8 +105,8 @@ describe('SettingsPage', () => {
         expect(screen.getByText(/другая игра/i)).toBeInTheDocument();
     });
 
-    it('displays the clamped fellow-eye contrast persisted in default settings', () => {
-        storeCompletedCalibrationWithDefault(50);
+    it('displays 50% for legacy default settings above the clinical ceiling', () => {
+        storeCompletedCalibrationWithDefault(100);
 
         renderSettingsPage();
 

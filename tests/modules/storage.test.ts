@@ -57,10 +57,26 @@ describe('Storage Module', () => {
         expect(settings.fellowEyeContrast).toBe(30);
     });
 
-    it('saves and retrieves fellowEyeContrast', () => {
+    it('clamps stored default fellowEyeContrast above the clinical ceiling', () => {
         initStorage();
         saveDefaultSettings({ ...getDefaultSettings(), fellowEyeContrast: 55 });
-        expect(getDefaultSettings().fellowEyeContrast).toBe(55);
+        expect(
+            JSON.parse(localStorage.getItem('vt_default_settings') ?? '{}')
+                .fellowEyeContrast,
+        ).toBe(50);
+        expect(getDefaultSettings().fellowEyeContrast).toBe(50);
+    });
+
+    it('clamps legacy stored default fellowEyeContrast below the clinical floor', () => {
+        localStorage.setItem(
+            'vt_default_settings',
+            JSON.stringify({
+                speed: 'slow',
+                eyeConfig: 'platform_left',
+                fellowEyeContrast: 10,
+            }),
+        );
+        expect(getDefaultSettings().fellowEyeContrast).toBe(15);
     });
 
     it('returns default calibration with age_group', () => {
@@ -129,6 +145,23 @@ describe('Storage Module', () => {
         // record itself is overwritten with the new suppression_result.
         appendSuppressionHistory(record);
         saveCalibration({ ...getCalibration(), suppression_result: record });
+        expect(getSuppressionHistory()).toEqual([record]);
+    });
+
+    it('does not clamp raw suppression_result measurements when default settings are normalized', () => {
+        initStorage();
+        const record = {
+            suppressionDepth: 0,
+            balancePoint: 100,
+            timestamp: '2026-01-01T00:00:00.000Z',
+        };
+
+        appendSuppressionHistory(record);
+        saveCalibration({ ...getCalibration(), suppression_result: record });
+        saveDefaultSettings({ ...getDefaultSettings(), fellowEyeContrast: 100 });
+
+        expect(getDefaultSettings().fellowEyeContrast).toBe(50);
+        expect(getCalibration().suppression_result).toEqual(record);
         expect(getSuppressionHistory()).toEqual([record]);
     });
 

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { TrainingSettingsPage } from '../../src/pages/TrainingSettingsPage';
+import { SettingsHub } from '../../src/pages/SettingsHub';
 
 function storeCompletedCalibrationWithDefault(fellowEyeContrast: number) {
     localStorage.setItem(
@@ -26,17 +26,17 @@ function storeCompletedCalibrationWithDefault(fellowEyeContrast: number) {
     );
 }
 
-describe('TrainingSettingsPage', () => {
+describe('SettingsHub storage boundary', () => {
     beforeEach(() => {
         localStorage.clear();
     });
 
     it('displays 50% for legacy default settings above the clinical ceiling', () => {
-        storeCompletedCalibrationWithDefault(55);
+        storeCompletedCalibrationWithDefault(100);
 
         render(
             <MemoryRouter>
-                <TrainingSettingsPage />
+                <SettingsHub />
             </MemoryRouter>,
         );
 
