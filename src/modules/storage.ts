@@ -1,4 +1,4 @@
-import { CURRENT_VERSION, STORAGE_KEYS } from './constants';
+import { CLINICAL_CONTRAST, CURRENT_VERSION, STORAGE_KEYS } from './constants';
 
 export type AmblyopiaType =
     | 'strabismus'
@@ -41,6 +41,24 @@ const DEFAULT_SETTINGS: DefaultSettings = {
     speed: 'slow',
     eyeConfig: 'platform_left',
     fellowEyeContrast: 30,
+};
+
+const clampDefaultFellowEyeContrast = (contrast: number): number =>
+    Math.min(
+        Math.max(contrast, CLINICAL_CONTRAST.FELLOW_FLOOR),
+        CLINICAL_CONTRAST.FELLOW_CEILING,
+    );
+
+const normalizeDefaultSettings = (
+    settings: Partial<DefaultSettings> | null,
+): DefaultSettings => {
+    const merged = { ...DEFAULT_SETTINGS, ...(settings || {}) };
+    return {
+        ...merged,
+        fellowEyeContrast: clampDefaultFellowEyeContrast(
+            merged.fellowEyeContrast,
+        ),
+    };
 };
 
 const read = (key: string): unknown => {
@@ -141,8 +159,8 @@ export const getDefaultSettings = (): DefaultSettings => {
     const stored = read(
         STORAGE_KEYS.DEFAULT_SETTINGS,
     ) as Partial<DefaultSettings> | null;
-    return { ...DEFAULT_SETTINGS, ...(stored || {}) };
+    return normalizeDefaultSettings(stored);
 };
 
 export const saveDefaultSettings = (settings: DefaultSettings): void =>
-    write(STORAGE_KEYS.DEFAULT_SETTINGS, settings);
+    write(STORAGE_KEYS.DEFAULT_SETTINGS, normalizeDefaultSettings(settings));
