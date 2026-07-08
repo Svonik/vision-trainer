@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -18,6 +11,7 @@ import { isMemoryPair } from '../crossChannelMatch';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const TILE_SIZE = 60;
 const TILE_GAP = 10;
@@ -46,7 +40,7 @@ const MISMATCH_SHOW_MS = 900;
 // How long tiles are shown face-up at start before flipping face-down
 const PREVIEW_MS = 2000;
 
-export default class MemoryTilesGameScene extends Phaser.Scene {
+export default class MemoryTilesGameScene extends DichopticScene {
     constructor() {
         super('MemoryTilesGameScene');
     }
@@ -84,31 +78,18 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.colorA = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.colorB = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.alphaA =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.alphaB =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.colorA = eyeColors.fellowColor;
+        this.colorB = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (colorA tiles) uses clinical contrast; amblyopic eye (colorB tiles) always 100%
-        this.alphaA = this.contrastState.fellowEyeContrast / 100;
+        this.alphaA = this.fellowAlpha;
         this.alphaB = 1.0; // Amblyopic eye always 100% per clinical protocol
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         this.level = 1;
         const gridConfig =
@@ -467,14 +448,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
             SynthSounds.score();
             this.pairsMatched++;
 
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                true,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(true);
             if (this.hud)
                 this.hud.scoreText.setText(
                     `★ ${this.pairsMatched}/${this.totalPairs}`,
@@ -516,14 +490,7 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
             this.isLocked = true;
         } else {
             // Mismatch — show briefly then flip back
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                false,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(false);
 
             this.isLocked = true;
             this.time.delayedCall(MISMATCH_SHOW_MS, () => {
@@ -738,10 +705,10 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });
