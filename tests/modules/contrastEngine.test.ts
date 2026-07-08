@@ -44,7 +44,7 @@ describe('contrastEngine', () => {
             expect(config.stepUpThreshold).toBe(0.75);
             expect(config.stepDownThreshold).toBe(0.5);
             expect(config.floor).toBe(15);
-            expect(config.ceiling).toBe(100);
+            expect(config.ceiling).toBe(50);
         });
     });
 
@@ -125,12 +125,12 @@ describe('contrastEngine', () => {
             expect(state.fellowEyeContrast).toBe(30);
         });
 
-        it('respects ceiling — does not exceed 100', () => {
-            let state = createContrastState(100);
+        it('respects ceiling — does not exceed 50', () => {
+            let state = createContrastState(50);
             for (let i = 0; i < 20; i++) {
                 state = recordTrial(state, config, true);
             }
-            expect(state.fellowEyeContrast).toBe(100);
+            expect(state.fellowEyeContrast).toBe(50);
         });
 
         it('respects floor — does not go below 15', () => {
@@ -139,6 +139,14 @@ describe('contrastEngine', () => {
                 state = recordTrial(state, config, false);
             }
             expect(state.fellowEyeContrast).toBe(15);
+        });
+
+        it('never exceeds a contrast of 50 after a long streak of successes (Jost 2020: preserving interocular contrast difference)', () => {
+            let state = createContrastState(CLINICAL_CONTRAST.FELLOW_INITIAL);
+            for (let i = 0; i < 500; i++) {
+                state = recordTrial(state, config, true);
+            }
+            expect(state.fellowEyeContrast).toBeLessThanOrEqual(50);
         });
 
         it('paces steps: 20 misses in a row after the window is full cause at most 1 step down', () => {
@@ -185,14 +193,14 @@ describe('contrastEngine', () => {
         });
 
         it('returns 1 at ceiling', () => {
-            const state = createContrastState(100);
+            const state = createContrastState(50);
             expect(getContrastProgress(state, config)).toBe(1);
         });
 
         it('returns fractional progress', () => {
-            const state = createContrastState(57.5);
+            const state = createContrastState(32.5);
             const progress = getContrastProgress(state, config);
-            expect(progress).toBeCloseTo((57.5 - 15) / (100 - 15));
+            expect(progress).toBeCloseTo((32.5 - 15) / (50 - 15));
         });
     });
 });

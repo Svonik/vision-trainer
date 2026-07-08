@@ -18,7 +18,7 @@
 |---|---|---|---|
 | `CLINICAL_CONTRAST.FELLOW_INITIAL` (`src/modules/constants.ts`) | 30% | Knox et al. 2012; Hess et al. 2010 | Старт контраста ведущего (парного) глаза 20-30% |
 | `CLINICAL_CONTRAST.FELLOW_FLOOR` (`src/modules/constants.ts`) | 15% | Li et al. 2011 | Нижний предел контраста парного глаза |
-| `CLINICAL_CONTRAST.FELLOW_CEILING` (`src/modules/constants.ts`) | 100% | Hess et al. 2010 | Верхний предел; амблиопичный глаз всегда 100% |
+| `CLINICAL_CONTRAST.FELLOW_CEILING` (`src/modules/constants.ts`) | 50% (было 100%) | Jost et al. 2020 | Верхний предел контраста ведущего глаза снижен со 100% до 50%: единственное прямое РКИ по инкременту контраста (Jost et al. 2020, J AAPOS, N=63) не нашло преимущества роста к 100% по остроте (P=0.73), а рост к 100% за ~18 дней устраняет межглазную контрастную разницу (ребаланс), на которой строится вся терапия. Потолок 50% сохраняет адаптивный вызов, но гарантирует, что разница между глазами (амблиопичный всегда 100%) никогда не исчезает. Это настраиваемый клинический параметр (clinical knob), а не жёсткая физиологическая константа — подлежит пересмотру по клиническим показаниям |
 | `CLINICAL_CONTRAST.ROLLING_WINDOW_SIZE` (`src/modules/constants.ts`) | 20 | Li et al. 2011 | Скользящее окно из 20 испытаний для расчёта accuracy |
 | `CLINICAL_CONTRAST.STEP_UP_THRESHOLD` (`src/modules/constants.ts`) | 0.75 | Knox et al. 2012 | Повышать контраст при accuracy > 75% |
 | `CLINICAL_CONTRAST.STEP_DOWN_THRESHOLD` (`src/modules/constants.ts`) | 0.5 | Knox et al. 2012 (порог адаптирован) | Понижать контраст при accuracy < 50% (точное значение <50% — адаптация приложения, не дословно из Knox) |
@@ -36,7 +36,7 @@
 | Экшн-жанры (Invaders, Asteroid, Flappy и др.) | — | Vedamurthy et al. 2015; Gambacorta et al. 2018 | Экшн-механики усиливают антисупрессивный эффект |
 | Терапия продолжается при любом баланс-поинте | — | Bossi et al. 2017 | Улучшение возможно без полного преодоления супрессии |
 
-## Источники (20 работ)
+## Источники (21 работа)
 
 1. Hess RF, Mansouri B, Thompson B (2010). *A new binocular approach to the treatment of amblyopia in adults and children.* J AAPOS.
 2. Li J, Thompson B, Deng D, Chan LYL, Yu M, Hess RF (2011). *Dichoptic training enables the adult amblyopic brain to learn.* Current Biology.
@@ -58,6 +58,7 @@
 18. Hess RF, Thompson B (2015). *Amblyopia and the binocular approach to its therapy.* Vision Research.
 19. Tsirlin I, Colpa L, Goltz HC, Wong AMF (2015). *Behavioral training as new treatment for adult amblyopia: a meta-analysis and systematic review.* Investigative Ophthalmology & Visual Science.
 20. Webber AL, Wood J (2005). *Amblyopia: prevalence, natural history, functional effects and treatment.* Clinical and Experimental Optometry.
+21. Jost RM, Stager DR Jr, Beauchamp CL, Wang YZ, Leffler J, Birch EE (2020). *A contrast-based dichoptic Portable Vision Trainer for amblyopia treatment: a randomized clinical trial.* J AAPOS. NCT03288948. (N=63; head-to-head comparison of fellow-eye contrast increment protocols (10%/5%/0%-constant) — no significant difference in visual acuity outcome, P=0.73; authors' conclusion: "no scientific evidence that a contrast increment is necessary.")
 
 Полный обзор со сравнительными таблицами эффективности, методологией поиска и
 дополнительным контекстом — `docs/research/2026-03-18-literature-review.md`.

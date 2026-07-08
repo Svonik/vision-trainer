@@ -59,8 +59,15 @@ export const CLINICAL_CONTRAST = {
     FELLOW_INITIAL: 30,
     /** Fellow eye contrast lower bound — Li et al. 2011 */
     FELLOW_FLOOR: 15,
-    /** Fellow eye contrast upper bound; amblyopic eye is always 100% — Hess et al. 2010 */
-    FELLOW_CEILING: 100,
+    /**
+     * Fellow eye contrast upper bound; amblyopic eye is always 100% — Hess et al. 2010.
+     * Capped at 50% (not 100%) per Jost et al. 2020: growing fellow-eye contrast to 100%
+     * showed no acuity benefit (P=0.73) and erases the interocular contrast difference
+     * within ~18 days. A 50% ceiling preserves adaptive challenge while guaranteeing a
+     * therapeutic contrast gap always remains. Tunable clinical parameter — adjust with
+     * clinical guidance, not a fixed physiological constant.
+     */
+    FELLOW_CEILING: 50,
     /** Rolling window of trials used to compute accuracy — Li et al. 2011 */
     ROLLING_WINDOW_SIZE: 20,
     /** Step contrast up when accuracy > 75% — Knox et al. 2012 */

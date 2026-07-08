@@ -42,10 +42,10 @@ describe('computeSessionSummary', () => {
     });
 
     it('computes contrast progress toward ceiling', () => {
-        const current = makeSession({ fellow_contrast_end: 57.5 });
+        const current = makeSession({ fellow_contrast_end: 32.5 });
         const summary = computeSessionSummary(current, []);
         expect(summary.contrastProgress).toBeCloseTo(
-            ((57.5 - 15) / (100 - 15)) * 100,
+            ((32.5 - 15) / (50 - 15)) * 100,
         );
     });
 
