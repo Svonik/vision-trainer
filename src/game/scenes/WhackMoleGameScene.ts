@@ -27,6 +27,22 @@ const MOLE_RADIUS = 22;
 const LIFESPAN_MS = { slow: 3000, normal: 2500, fast: 2000, pro: 1500 };
 const SPAWN_INTERVAL_MS = { slow: 1800, normal: 1400, fast: 1000, pro: 700 };
 const MAX_MOLES = { slow: 1, normal: 2, fast: 2, pro: 3 };
+const MARKER_EXTRA_RADIUS = 10;
+
+/**
+ * Dichoptic target gate — a whack only counts when it lands on a mole in
+ * the hole that currently carries the strong-eye "active hole" marker. The
+ * mole body (weak eye) and the marker (strong eye) are rendered in
+ * different anaglyph channels, so this can only be satisfied by a player
+ * fusing both channels.
+ */
+export function isValidHit(
+    hasMarker: boolean,
+    dist: number,
+    hitRadius: number,
+): boolean {
+    return hasMarker === true && dist <= hitRadius;
+}
 
 export default class WhackMoleGameScene extends Phaser.Scene {
     constructor() {
@@ -88,6 +104,11 @@ export default class WhackMoleGameScene extends Phaser.Scene {
             this.settings.fellowEyeContrast ?? 30,
         );
 
+        // Fellow eye (active-hole marker) uses clinical contrast; amblyopic
+        // eye (moles) always 100% — mole must always be visible per protocol.
+        this.moleAlpha = 1.0;
+        this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
+
         this.level = 1;
         const speed = this.settings.speed || 'normal';
         this.moleLifespan = LIFESPAN_MS[speed] || LIFESPAN_MS.normal;
@@ -136,6 +157,9 @@ export default class WhackMoleGameScene extends Phaser.Scene {
         this.moles = [];
         // Track which holes have moles to prevent double-spawn
         this.occupiedHoles = new Set();
+        // The one mole currently in the "active hole" (strong-eye marker) —
+        // only this mole is a valid whack (dichoptic fusion requirement).
+        this.markedMole = null;
 
         // Input
         this.input.on('pointermove', (pointer) => {
@@ -314,6 +338,34 @@ export default class WhackMoleGameScene extends Phaser.Scene {
         this.moles.push(entry);
         this.occupiedHoles.add(holeIndex);
         this.totalSpawned++;
+        this.ensureMarkedHole();
+    }
+
+    // Attach the strong-eye "active hole" marker (ring) to a mole \u2014 this is
+    // the only mole that is a valid whack until it's hit or expires.
+    attachMarker(entry) {
+        const marker = this.add.circle(
+            entry.container.x,
+            entry.container.y,
+            MOLE_RADIUS + MARKER_EXTRA_RADIUS,
+            this.crosshairColor,
+            0,
+        );
+        marker.setStrokeStyle(3, this.crosshairColor, 1);
+        marker.setAlpha(this.crosshairAlpha);
+        marker.setDepth(50);
+        entry.marker = marker;
+        entry.hasMarker = true;
+        this.markedMole = entry;
+    }
+
+    // Guarantee exactly one active mole carries the marker whenever any
+    // mole is up (keeps the game playable for 4-7 year olds).
+    ensureMarkedHole() {
+        if (this.markedMole && this.moles.includes(this.markedMole)) return;
+        this.markedMole = null;
+        if (this.moles.length === 0) return;
+        this.attachMarker(Phaser.Math.RND.pick(this.moles));
     }
 
     tryHitMole(px, py) {
@@ -322,8 +374,13 @@ export default class WhackMoleGameScene extends Phaser.Scene {
             const dx = px - m.container.x;
             const dy = py - m.container.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist <= HOLE_RADIUS + 8) {
-                this.hitMole(i);
+            const hitRadius = HOLE_RADIUS + 8;
+            if (dist <= hitRadius) {
+                // Topmost mole under the tap \u2014 only counts if its hole
+                // carries the strong-eye marker (fusion required to see it).
+                if (isValidHit(m.hasMarker, dist, hitRadius)) {
+                    this.hitMole(i);
+                }
                 return;
             }
         }
@@ -335,6 +392,8 @@ export default class WhackMoleGameScene extends Phaser.Scene {
 
         m.popTween.stop();
         this.occupiedHoles.delete(m.holeIndex);
+        if (m.marker) m.marker.destroy();
+        if (this.markedMole === m) this.markedMole = null;
 
         // Squash animation then destroy
         this.tweens.add({
@@ -358,6 +417,7 @@ export default class WhackMoleGameScene extends Phaser.Scene {
             true,
         );
         this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.ensureMarkedHole();
 
         this.hits++;
         if (this.hud)
@@ -374,6 +434,8 @@ export default class WhackMoleGameScene extends Phaser.Scene {
 
         m.popTween.stop();
         this.occupiedHoles.delete(m.holeIndex);
+        if (m.marker) m.marker.destroy();
+        if (this.markedMole === m) this.markedMole = null;
 
         // Sink back down
         this.tweens.add({
@@ -394,6 +456,7 @@ export default class WhackMoleGameScene extends Phaser.Scene {
             false,
         );
         this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.ensureMarkedHole();
     }
 
     shutdown() {
@@ -441,7 +504,20 @@ export default class WhackMoleGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        this.moleAlpha = alpha;
+        // Fellow (strong) eye handicap must land on the "active hole"
+        // marker, NOT the mole — the mole is the amblyopic-eye target and
+        // must always stay at 100% per clinical protocol.
+        this.crosshairAlpha = alpha;
+        // Tween the ACTUAL visible marker object (not just the JS value) so
+        // the contrast change is perceivable, per clinical protocol.
+        if (this.markedMole?.marker) {
+            this.tweens.add({
+                targets: this.markedMole.marker,
+                alpha,
+                duration: 250,
+                ease: 'Linear',
+            });
+        }
     }
 
     togglePause() {
