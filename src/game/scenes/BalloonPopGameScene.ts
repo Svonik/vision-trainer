@@ -102,6 +102,7 @@ export default class BalloonPopGameScene extends DichopticScene {
         // Fellow eye (crosshair) uses clinical contrast; amblyopic eye (balloons) always 100%
         this.crosshairAlpha = this.fellowAlpha;
         this.balloonAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         this.level = 1;
         this.balloonLifespan =
@@ -191,6 +192,7 @@ export default class BalloonPopGameScene extends DichopticScene {
     }
 
     drawCrosshair(x, y) {
+        this.crosshairPosition = { x, y };
         this.crosshair.clear();
         this.crosshair.lineStyle(2, this.crosshairColor, this.crosshairAlpha);
         const size = 12;
@@ -204,6 +206,19 @@ export default class BalloonPopGameScene extends DichopticScene {
         this.crosshair.strokePath();
         // Circle around crosshair
         this.crosshair.strokeCircle(x, y, size + 2);
+    }
+
+    updateFellowEyeAlpha(alpha) {
+        this.crosshairAlpha = alpha;
+        if (this.crosshair && this.crosshairPosition) {
+            this.drawCrosshair(
+                this.crosshairPosition.x,
+                this.crosshairPosition.y,
+            );
+        }
+        if (this.markedBalloon?.marker) {
+            this.markedBalloon.marker.setAlpha(alpha);
+        }
     }
 
     spawnBalloon() {
