@@ -202,7 +202,7 @@ const strings = {
     'weak_eye.right': 'Правый',
     'amblyopiaType.title': 'Тип амблиопии',
     'amblyopiaType.subtitle':
-        'Если врач называл тип, выберите его. Если не уверены — оставьте «не указан».',
+        'Выберите тип амблиопии, если он вам известен. Если не уверены — оставьте «не указан».',
     'amblyopiaType.unspecified': 'Не указан',
     'amblyopiaType.strabismus': 'Страбизм',
     'amblyopiaType.anisometropia': 'Анизометропия',

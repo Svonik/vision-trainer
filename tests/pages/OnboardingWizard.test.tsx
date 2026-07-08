@@ -151,7 +151,7 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/8-12 лет/i));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
-        expect(screen.getByText(/тип амблиопии/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /тип амблиопии/i })).toBeInTheDocument();
     });
 
     it('persists selected amblyopia type before weak eye step', () => {
