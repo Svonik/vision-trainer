@@ -122,7 +122,7 @@ export function SessionSummaryCard({
                     <div className="flex justify-between mb-1">
                         <span>{t('summary.contrast_progress')}</span>
                         <span className="font-bold">
-                            {Math.round(summary.contrastProgress)}%
+                            {Math.min(100, Math.max(0, Math.round(summary.contrastProgress)))}%
                         </span>
                     </div>
                     <div className="w-full bg-[var(--border)] rounded-full h-2">
