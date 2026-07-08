@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -18,6 +11,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const MAX_LIVES = 3;
 const INITIAL_ASTEROID_COUNT = 5;
@@ -51,7 +45,7 @@ const ASTEROID_SPRITE_KEYS = {
 
 const ASTEROID_ROT_SPEED = 45; // degrees per second, base rotation for sprites
 
-export default class AsteroidGameScene extends Phaser.Scene {
+export default class AsteroidGameScene extends DichopticScene {
     constructor() {
         super('AsteroidGameScene');
     }
@@ -100,31 +94,18 @@ export default class AsteroidGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.platformAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.ballAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (ship) uses clinical contrast; amblyopic eye (asteroids) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.ballAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // State
         this.lives = MAX_LIVES;
@@ -159,6 +140,11 @@ export default class AsteroidGameScene extends Phaser.Scene {
                 Math.max(this.shipSprite.width, this.shipSprite.height);
             this.shipSprite.setScale(shipScale);
             this.shipGraphics = null;
+            // Approved behavior delta (bead Vision-so0): sprite mode
+            // previously never received fellow-eye alpha updates after
+            // creation (confirmed frozen-alpha bug) — register it so
+            // contrast steps tween it like every other fellow-eye object.
+            this.setFellowEyeTargets(this.shipSprite);
         } else {
             // Fallback: draw with graphics
             this.shipSprite = null;
@@ -725,12 +711,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
         GameVFX.particleBurst(this, asteroid.x, asteroid.y, this.ballColor, 10);
         GameVFX.scorePopup(this, asteroid.x, asteroid.y);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         // Flash effect at asteroid position
         this.spawnFlash(asteroid.x, asteroid.y, asteroid.radius);
@@ -808,12 +789,7 @@ export default class AsteroidGameScene extends Phaser.Scene {
         SynthSounds.miss();
         GameVFX.screenShake(this, 4, 150);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         // Reset ship to center with brief invulnerability
         this.shipX = this.field.x + this.field.w / 2;
@@ -950,10 +926,10 @@ export default class AsteroidGameScene extends Phaser.Scene {
             lives_remaining: this.lives,
             completed: won,
             level: this.level,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

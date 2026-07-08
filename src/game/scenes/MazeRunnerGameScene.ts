@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -24,6 +17,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // --- Maze grid sizes by speed setting ---
 const MAZE_SIZES = {
@@ -196,7 +190,7 @@ function placeCoins(renderGrid, rCols, rRows, count, startRC, exitRC) {
 
 // =============================================================
 
-export default class MazeRunnerGameScene extends Phaser.Scene {
+export default class MazeRunnerGameScene extends DichopticScene {
     constructor() {
         super('MazeRunnerGameScene');
     }
@@ -244,22 +238,15 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Eye color setup
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.platformAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.ballAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
+        );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+        this.platformAlpha = this.fellowAlpha;
+        this.ballAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Dichoptic channel paint — walls resolve to the amblyopic eye, player +
         // exit to the fellow eye (see MAZERUNNER_CHANNELS / winChannels.ts).
@@ -269,12 +256,6 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             fellowAlpha: this.platformAlpha,
             amblyopicAlpha: this.ballAlpha,
         };
-
-        // Contrast engine
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
-        );
 
         // Game state
         this.level = 1;
@@ -306,6 +287,11 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
 
         // Build the maze
         this.buildMaze();
+
+        // Tween player/exit/exitGlow (fellow eye) whenever the clinical
+        // contrast steps — updateFellowEyeAlpha() re-resolves the live
+        // objects each call, so it stays correct across buildMaze() relevels.
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // HUD
         this.hud = GameVisuals.createHUD(this, this.field);
@@ -714,14 +700,7 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
                 // If we revisited a cell (no new cells), it's a backtrack (miss trial)
                 if (this.visitedCells.size === prevCount) {
                     this.totalBacktracks++;
-                    this.contrastState = recordTrial(
-                        this.contrastState,
-                        this.contrastConfig,
-                        false,
-                    );
-                    this.updateFellowEyeAlpha(
-                        this.contrastState.fellowEyeContrast / 100,
-                    );
+                    this.recordDichopticTrial(false);
                 }
             }
 
@@ -770,14 +749,7 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
                 GameVFX.particleBurst(this, cx, cy, this.ballColor, 6);
 
                 // Hit trial — coin collected
-                this.contrastState = recordTrial(
-                    this.contrastState,
-                    this.contrastConfig,
-                    true,
-                );
-                this.updateFellowEyeAlpha(
-                    this.contrastState.fellowEyeContrast / 100,
-                );
+                this.recordDichopticTrial(true);
             }
         }
     }
@@ -796,14 +768,7 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             GameVFX.particleBurst(this, ex, ey, this.platformColor, 10);
 
             // Hit trial — exit reached
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                true,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(true);
 
             this.onLevelClear();
         }
@@ -981,10 +946,10 @@ export default class MazeRunnerGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

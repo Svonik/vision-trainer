@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -24,6 +17,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // --- Maze data: 0=path, 1=wall, 2=dot, 3=power pellet, 4=ghost spawn, 5=player spawn ---
 const MAZE_LAYOUTS = [
@@ -106,7 +100,7 @@ const OPPOSITES = {
     none: 'none',
 };
 
-export default class PacmanGameScene extends Phaser.Scene {
+export default class PacmanGameScene extends DichopticScene {
     constructor() {
         super('PacmanGameScene');
     }
@@ -157,22 +151,15 @@ export default class PacmanGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.platformAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.ballAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
+        );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+        this.platformAlpha = this.fellowAlpha;
+        this.ballAlpha = 1.0;
 
         // Dichoptic channel paint — dots/pellets resolve to the amblyopic eye,
         // opposite Pac-Man (see PACMAN_CHANNELS / winChannels.ts).
@@ -182,11 +169,6 @@ export default class PacmanGameScene extends Phaser.Scene {
             fellowAlpha: this.platformAlpha,
             amblyopicAlpha: this.ballAlpha,
         };
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
-        );
 
         this.level = 1;
         this.score = 0;
@@ -434,6 +416,7 @@ export default class PacmanGameScene extends Phaser.Scene {
             this.platformColor,
             this.platformAlpha,
         );
+        this.setFellowEyeTargets(this.pacmanObj);
 
         // Mouth — a small black wedge drawn as a triangle via graphics
         this.pacmanMouth = this.add.graphics();
@@ -913,14 +896,7 @@ export default class PacmanGameScene extends Phaser.Scene {
                 this.score += DOT_SCORE;
                 SynthSounds.tick();
 
-                this.contrastState = recordTrial(
-                    this.contrastState,
-                    this.contrastConfig,
-                    true,
-                );
-                this.updateFellowEyeAlpha(
-                    this.contrastState.fellowEyeContrast / 100,
-                );
+                this.recordDichopticTrial(true);
             }
         }
 
@@ -1000,12 +976,7 @@ export default class PacmanGameScene extends Phaser.Scene {
         GameVFX.scorePopup(this, gx, gy - 10, `+${GHOST_EATEN_BONUS}`);
         GameVFX.particleBurst(this, gx, gy, this.ballColor, 6);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
     }
 
     playerHit() {
@@ -1023,12 +994,7 @@ export default class PacmanGameScene extends Phaser.Scene {
             8,
         );
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         if (this.lives <= 0) {
             SynthSounds.gameOver();
@@ -1114,20 +1080,6 @@ export default class PacmanGameScene extends Phaser.Scene {
                 this.buildMaze();
             },
         });
-    }
-
-    // --- Contrast updates ---
-
-    updateFellowEyeAlpha(alpha) {
-        // Only Pac-Man is on the fellow (adaptive) eye now — dots and pellets
-        // live on the amblyopic eye at full contrast. Tween the alpha change.
-        if (this.pacmanObj) {
-            this.tweens.add({
-                targets: this.pacmanObj,
-                alpha,
-                duration: CONTRAST_TWEEN_MS,
-            });
-        }
     }
 
     // --- Pause ---
@@ -1227,10 +1179,10 @@ export default class PacmanGameScene extends Phaser.Scene {
             lives_remaining: this.lives,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

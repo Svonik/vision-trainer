@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const MONSTER_SPEEDS = { slow: 40, normal: 70, fast: 110, pro: 160 };
 const MONSTER_COUNT = { slow: 2, normal: 3, fast: 3, pro: 4 };
@@ -28,7 +22,7 @@ const CROSSHAIR_SIZE = 16;
 const SPEED_BOOST_PER_TIER = 0.05; // 5%
 const CATCHES_PER_TIER = 5;
 
-export default class CatchMonstersGameScene extends Phaser.Scene {
+export default class CatchMonstersGameScene extends DichopticScene {
     constructor() {
         super('CatchMonstersGameScene');
     }
@@ -66,21 +60,16 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (platform) uses clinical contrast; amblyopic eye (monsters) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.ballAlpha = 1.0;
 
         this.level = 1;
@@ -129,6 +118,11 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
                 .setStrokeStyle(1.5, this.platformColor)
                 .setAlpha(this.platformAlpha),
         };
+        this.setFellowEyeTargets(
+            this.crosshair.h,
+            this.crosshair.v,
+            this.crosshair.ring,
+        );
 
         // Monsters
         this.monsters = [];
@@ -278,12 +272,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
             }
         }
         // Missed click — no monster caught
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
     }
 
     catchMonster(index) {
@@ -304,12 +293,7 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
         GameVFX.particleBurst(this, x, y, this.ballColor, 8);
         GameVFX.scorePopup(this, x, y - 20, `+${points}`);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         // Remove monster graphics
         m.circle.destroy();
@@ -437,30 +421,6 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
         }
     }
 
-    updateFellowEyeAlpha(alpha) {
-        // Fellow (strong) eye handicap must land on the actually-rendered
-        // crosshair (platformColor channel) — previously only this JS
-        // variable was updated and .setAlpha() was never called again,
-        // freezing the handicap at its initial value.
-        this.platformAlpha = alpha;
-        if (!this.crosshair) return;
-        const targets = [
-            this.crosshair.h,
-            this.crosshair.v,
-            this.crosshair.ring,
-        ];
-        if (this.tweens) {
-            this.tweens.killTweensOf(targets);
-            this.tweens.add({
-                targets,
-                alpha,
-                duration: 250,
-                ease: 'Sine.easeInOut',
-            });
-        } else {
-            targets.forEach((target) => target.setAlpha(alpha));
-        }
-    }
 
     togglePause() {
         this.isPaused = !this.isPaused;
@@ -606,9 +566,9 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
             total_trials: this.contrastState.totalTrials,
         };
 

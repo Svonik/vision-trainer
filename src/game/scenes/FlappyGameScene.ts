@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const SCROLL_SPEEDS = { slow: 100, normal: 150, fast: 200, pro: 260 };
 const GRAVITY = 400; // px/s²
@@ -24,7 +18,7 @@ const FLAP_IMPULSE = -200; // px/s (upward)
 const PIPE_SPAWN_INTERVAL = 2500; // ms
 const GAP_RATIO = 0.4; // 40% of field height
 
-export default class FlappyGameScene extends Phaser.Scene {
+export default class FlappyGameScene extends DichopticScene {
     constructor() {
         super('FlappyGameScene');
     }
@@ -66,31 +60,17 @@ export default class FlappyGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        // Bird → platformColor, Pipes → ballColor (dichoptic split)
-        this.birdColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.pipeColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.birdAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.pipeAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        // Bird → fellowColor (one eye), Pipes → amblyopicColor (other eye)
+        this.birdColor = eyeColors.fellowColor;
+        this.pipeColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (bird) uses clinical contrast; amblyopic eye (pipes) always 100%
-        this.birdAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.birdAlpha = this.fellowAlpha;
         this.pipeAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         this.scrollSpeed = SCROLL_SPEEDS[this.settings.speed] || 150;
@@ -152,6 +132,7 @@ export default class FlappyGameScene extends Phaser.Scene {
             this.birdAlpha,
         );
         GameVisuals.pulse(this, this.birdVisual, 0.92, 1.08, 600);
+        this.setFellowEyeTargets(this.birdVisual);
 
         // HUD
         this.hud = GameVisuals.createHUD(this, this.field);
@@ -320,14 +301,7 @@ export default class FlappyGameScene extends Phaser.Scene {
                 SynthSounds.score();
                 GameVFX.scorePopup(this, this.bird.x, this.bird.y);
 
-                this.contrastState = recordTrial(
-                    this.contrastState,
-                    this.contrastConfig,
-                    true,
-                );
-                this.updateFellowEyeAlpha(
-                    this.contrastState.fellowEyeContrast / 100,
-                );
+                this.recordDichopticTrial(true);
 
                 // Level up every pipesForNextLevel pipes
                 if (this.score >= this.pipesForNextLevel) {
@@ -499,21 +473,12 @@ export default class FlappyGameScene extends Phaser.Scene {
         SynthSounds.gameOver();
         GameVFX.screenShake(this);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
         this.time.delayedCall(300, () => {
             this.endGame();
         });
     }
 
-    updateFellowEyeAlpha(alpha) {
-        // Update bird (fellow eye) alpha — pipes (amblyopic eye) stay at 1.0
-        this.birdAlpha = alpha;
-    }
 
     togglePause() {
         this.isPaused = !this.isPaused;
@@ -611,10 +576,10 @@ export default class FlappyGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             completed: false,
             level: this.level,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

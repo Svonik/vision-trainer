@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // ── Tuning constants ────────────────────────────────────────────────
 const KNIVES_PER_LEVEL = 8;
@@ -33,7 +27,7 @@ const PRE_PLACED_KNIVES = { slow: 0, normal: 1, fast: 2, pro: 3 };
 const ROTATION_VARIATION = { slow: 0.5, normal: 1.0, fast: 1.5, pro: 2.0 };
 const DIRECTION_CHANGE_MS = 2500;
 
-export default class KnifeHitGameScene extends Phaser.Scene {
+export default class KnifeHitGameScene extends DichopticScene {
     constructor() {
         super('KnifeHitGameScene');
     }
@@ -74,28 +68,24 @@ export default class KnifeHitGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Dichoptic colour assignment
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isKnifeLeft = this.settings.eyeConfig === 'platform_left';
-        this.knifeColor = isKnifeLeft
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.stuckColor = isKnifeLeft
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.knifeAlpha =
-            (isKnifeLeft
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
+        );
+        this.knifeColor = eyeColors.fellowColor;
+        this.stuckColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+
+        // Fellow (strong) eye handicap belongs on the thrown/waiting knife
+        // (knifeColor channel). Stuck knives are the amblyopic (weak) eye's
+        // target and keep a static scene-owned alpha — intentional per
+        // clinical protocol, not registered with the base class.
+        this.knifeAlpha = this.fellowAlpha;
         this.stuckAlpha =
-            (isKnifeLeft
+            (this.settings.eyeConfig === 'platform_left'
                 ? this.settings.contrastRight
                 : this.settings.contrastLeft) / 100;
-
-        // Contrast engine
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
-        );
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // Level state
         this.level = 1;
@@ -401,12 +391,7 @@ export default class KnifeHitGameScene extends Phaser.Scene {
         GameVFX.particleBurst(this, impactX, impactY, this.knifeColor, 6);
         GameVFX.scorePopup(this, impactX, impactY - 10);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         if (this.knivesStuck >= KNIVES_PER_LEVEL) {
             this.nextLevel();
@@ -419,12 +404,7 @@ export default class KnifeHitGameScene extends Phaser.Scene {
         SynthSounds.miss();
         GameVFX.screenShake(this, 5, 200);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         this.lives--;
 
@@ -684,18 +664,18 @@ export default class KnifeHitGameScene extends Phaser.Scene {
 
         this.safetyTimer.stop();
 
-        const totalAttempts = this.contrastState.totalTrials;
+        const stats = this.getDichopticStats();
+        const totalAttempts = stats.totalTrials;
         const result = {
             game: 'knifehit',
             timestamp: new Date().toISOString(),
             duration_s: Math.round(this.safetyTimer.getElapsedMs() / 1000),
-            caught: this.contrastState.totalHits,
+            caught: this.knivesStuck,
             total_spawned: totalAttempts,
             hit_rate:
                 totalAttempts > 0
-                    ? Math.round(
-                          (this.contrastState.totalHits / totalAttempts) * 100,
-                      ) / 100
+                    ? Math.round((this.knivesStuck / totalAttempts) * 100) /
+                      100
                     : 0,
             contrast_left: this.settings.contrastLeft,
             contrast_right: this.settings.contrastRight,
@@ -703,10 +683,10 @@ export default class KnifeHitGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: stats.fellowContrastStart,
+            fellow_contrast_end: stats.fellowContrastEnd,
+            window_accuracy: stats.accuracy,
+            total_trials: stats.totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

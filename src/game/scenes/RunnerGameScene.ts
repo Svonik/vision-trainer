@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -22,6 +15,7 @@ import {
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const SCROLL_SPEEDS = { slow: 140, normal: 200, fast: 270, pro: 350 };
 const GRAVITY = 900; // px/s² — snappy jump feel
@@ -42,7 +36,7 @@ const COIN_SCORE = 5;
 const COINS_PER_LEVEL = 3; // coins that must be collected to advance a level
 const COIN_MIN_ALPHA = 0.4; // visibility floor even at low fellow-eye contrast
 
-export default class RunnerGameScene extends Phaser.Scene {
+export default class RunnerGameScene extends DichopticScene {
     constructor() {
         super('RunnerGameScene');
     }
@@ -81,23 +75,16 @@ export default class RunnerGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Eye colors — dichoptic split
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        // Runner → platformColor (one eye), Obstacles → ballColor (other eye)
-        this.runnerColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.obstacleColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.runnerAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.obstacleAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
+        );
+        // Runner → fellowColor (one eye), Obstacles → amblyopicColor (other eye)
+        this.runnerColor = eyeColors.fellowColor;
+        this.obstacleColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+        this.runnerAlpha = this.fellowAlpha;
+        this.obstacleAlpha = 1.0;
 
         // Dichoptic channel paint — coins resolve to the fellow (runner) eye,
         // obstacles to the amblyopic eye (see RUNNER_CHANNELS / winChannels.ts).
@@ -107,12 +94,6 @@ export default class RunnerGameScene extends Phaser.Scene {
             fellowAlpha: this.runnerAlpha,
             amblyopicAlpha: this.obstacleAlpha,
         };
-
-        // Contrast engine
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
-        );
 
         // Game state
         this.scrollSpeed = SCROLL_SPEEDS[this.settings.speed] || 200;
@@ -171,6 +152,7 @@ export default class RunnerGameScene extends Phaser.Scene {
             3,
         );
         GameVisuals.pulse(this, this.runnerVisual, 0.94, 1.06, 500);
+        this.setFellowEyeTargets(this.runnerVisual);
 
         // Obstacles array
         this.obstacles = [];
@@ -349,14 +331,7 @@ export default class RunnerGameScene extends Phaser.Scene {
 
                 // Record trial every TRIAL_INTERVAL obstacles
                 if (this.obstaclesPassed % TRIAL_INTERVAL === 0) {
-                    this.contrastState = recordTrial(
-                        this.contrastState,
-                        this.contrastConfig,
-                        true,
-                    );
-                    this.updateFellowEyeAlpha(
-                        this.contrastState.fellowEyeContrast / 100,
-                    );
+                    this.recordDichopticTrial(true);
                 }
 
                 // Level up requires enough coins too (see maybeLevelUp)
@@ -575,12 +550,7 @@ export default class RunnerGameScene extends Phaser.Scene {
         );
 
         // Hit trial — coin collected
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         this.maybeLevelUp();
     }
@@ -667,28 +637,13 @@ export default class RunnerGameScene extends Phaser.Scene {
         );
 
         // Record miss trial
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         this.time.delayedCall(400, () => {
             this.endGame();
         });
     }
 
-    updateFellowEyeAlpha(alpha) {
-        // Update the runner (fellow eye element), not obstacles — tween it.
-        if (this.runnerVisual) {
-            this.tweens.add({
-                targets: this.runnerVisual,
-                alpha,
-                duration: CONTRAST_TWEEN_MS,
-            });
-        }
-    }
 
     togglePause() {
         this.isPaused = !this.isPaused;
@@ -783,10 +738,10 @@ export default class RunnerGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             completed: false,
             level: this.level,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

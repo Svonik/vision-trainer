@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // Grid configs per speed
 const GRID_CONFIG = {
@@ -129,7 +123,7 @@ function correctValueAt(index: number, gridSize: number): number {
     return index === totalTiles - 1 ? 0 : index + 1;
 }
 
-export default class SlidingPuzzleGameScene extends Phaser.Scene {
+export default class SlidingPuzzleGameScene extends DichopticScene {
     constructor() {
         super('SlidingPuzzleGameScene');
     }
@@ -168,28 +162,15 @@ export default class SlidingPuzzleGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Eye color setup
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.alphaA =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.alphaB =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        // Contrast engine
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+        this.alphaA = this.fellowAlpha;
+        this.alphaB = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Grid size from speed
         this.gridSize = GRID_CONFIG[this.settings.speed] || GRID_CONFIG.normal;
@@ -498,14 +479,7 @@ export default class SlidingPuzzleGameScene extends Phaser.Scene {
                 // Check if tile landed in correct position
                 const isCorrect =
                     tileValue === correctValueAt(emptyIndex, this.gridSize);
-                this.contrastState = recordTrial(
-                    this.contrastState,
-                    this.contrastConfig,
-                    isCorrect,
-                );
-                this.updateFellowEyeAlpha(
-                    this.contrastState.fellowEyeContrast / 100,
-                );
+                this.recordDichopticTrial(isCorrect);
 
                 if (isCorrect) {
                     SynthSounds.score();
@@ -742,10 +716,10 @@ export default class SlidingPuzzleGameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

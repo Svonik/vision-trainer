@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -18,6 +11,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // Fall intervals in ms per speed level
 const FALL_INTERVALS = { slow: 1000, normal: 600, fast: 400, pro: 250 };
@@ -354,7 +348,7 @@ function shuffleArray(arr) {
     return result;
 }
 
-export default class TetrisGameScene extends Phaser.Scene {
+export default class TetrisGameScene extends DichopticScene {
     constructor() {
         super('TetrisGameScene');
     }
@@ -393,31 +387,18 @@ export default class TetrisGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // Dichoptic color assignment
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftActive = this.settings.eyeConfig === 'platform_left';
-        this.activeColor = isLeftActive
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.placedColor = isLeftActive
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.activeAlpha =
-            (isLeftActive
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.placedAlpha =
-            (isLeftActive
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.activeColor = eyeColors.fellowColor;
+        this.placedColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (active piece) uses clinical contrast; amblyopic eye (placed cells) always 100%
-        this.activeAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.activeAlpha = this.fellowAlpha;
         this.placedAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // Grid cell size — fit COLS x ROWS inside field with some padding
         const gridPadX = 10;
@@ -716,14 +697,7 @@ export default class TetrisGameScene extends Phaser.Scene {
         }
 
         if (fullRows.length === 0) {
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                false,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(false);
             this.spawnPiece();
             return;
         }
@@ -759,12 +733,7 @@ export default class TetrisGameScene extends Phaser.Scene {
         if (this.hud) this.hud.scoreText.setText(`${this.linesCleared} линий`);
         SynthSounds.score();
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         if (count === 4) {
             GameVFX.screenShake(this, 4, 150);
@@ -1273,10 +1242,10 @@ export default class TetrisGameScene extends Phaser.Scene {
             speed: this.settings.speed,
             eye_config: this.settings.eyeConfig,
             level: this.level,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });
