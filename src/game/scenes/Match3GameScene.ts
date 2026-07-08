@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -18,6 +11,7 @@ import { isValidMatchRun } from '../crossChannelMatch';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 // Grid size per speed
 const GRID_CONFIG = {
@@ -53,7 +47,7 @@ interface CellPos {
     readonly col: number;
 }
 
-export default class Match3GameScene extends Phaser.Scene {
+export default class Match3GameScene extends DichopticScene {
     constructor() {
         super('Match3GameScene');
     }
@@ -91,27 +85,15 @@ export default class Match3GameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.colorA = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.colorB = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.alphaA =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.alphaB =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.colorA = eyeColors.fellowColor;
+        this.colorB = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
+        this.alphaA = this.fellowAlpha;
+        this.alphaB = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         this.level = 1;
         this.gridSize = GRID_CONFIG[this.settings.speed] || GRID_CONFIG.normal;
@@ -165,6 +147,12 @@ export default class Match3GameScene extends Phaser.Scene {
 
         // Remove initial matches silently
         this.resolveInitialMatches();
+
+        // Redraw colorA (fellow-eye) gems whenever the clinical contrast steps.
+        this.onFellowAlphaChange((alpha) => {
+            this.alphaA = alpha;
+            this.redrawGemAlpha();
+        });
 
         // Safety timer
         const calibration = getCalibration();
@@ -268,6 +256,27 @@ export default class Match3GameScene extends Phaser.Scene {
                 }
             }
             this.gemObjects.push(row);
+        }
+    }
+
+    /** Repaint colorA (fellow-eye) gem graphics in place after a contrast step —
+     *  avoids tearing down cellBg/hitArea (and their listeners) mid-game. */
+    redrawGemAlpha() {
+        for (let r = 0; r < this.gemObjects.length; r++) {
+            for (let c = 0; c < (this.gemObjects[r]?.length || 0); c++) {
+                const obj = this.gemObjects[r][c];
+                const gem = this.grid[r]?.[c];
+                if (!obj || !gem || !gem.isColorA) continue;
+                const pos = this.getCellCenter(r, c);
+                this.drawGemShape(
+                    obj.graphics,
+                    pos.x,
+                    pos.y,
+                    gem.shape,
+                    this.colorA,
+                    this.alphaA,
+                );
+            }
         }
     }
 
@@ -497,23 +506,13 @@ export default class Match3GameScene extends Phaser.Scene {
         const matches = this.findAllMatches();
         if (matches.length > 0) {
             // Valid swap
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                true,
-            );
-            this.updateFellowEyeAlpha();
+            this.recordDichopticTrial(true);
             await this.resolveMatches(matches);
         } else {
             // Invalid swap -> swap back
             SynthSounds.miss();
             this.totalFailedSwaps++;
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                false,
-            );
-            this.updateFellowEyeAlpha();
+            this.recordDichopticTrial(false);
 
             // Swap back in grid
             const revertGrid = this.grid.map((row) => [...row]);
@@ -782,12 +781,6 @@ export default class Match3GameScene extends Phaser.Scene {
         });
     }
 
-    // --- Contrast engine integration ---
-
-    updateFellowEyeAlpha() {
-        this.alphaA = this.contrastState.fellowEyeContrast / 100;
-    }
-
     // --- Score bar ---
 
     updateScoreBar() {
@@ -907,10 +900,10 @@ export default class Match3GameScene extends Phaser.Scene {
             eye_config: this.settings.eyeConfig,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });
