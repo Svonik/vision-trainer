@@ -43,6 +43,13 @@ export const SPEEDS: Record<
 
 export const PLATFORM_KEYBOARD_SPEED = 400 as const;
 
+// Relative (velocity-integrated) pointer control — see src/game/relativeControl.ts.
+// Fraction of hand speed transferred to the object (<1 so it trails the hand,
+// keeping absolute pointer position decoupled from object position).
+export const PLATFORM_POINTER_SENSITIVITY = 0.7 as const;
+// Velocity low-pass per 60fps frame (0..1). Moderate = child-friendly, not slippery.
+export const PLATFORM_CONTROL_SMOOTHING = 0.6 as const;
+
 export const CONTRAST = {
     MIN: 0,
     MAX: 100,

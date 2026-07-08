@@ -1,6 +1,12 @@
 // @ts-nocheck
 
-import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
+import {
+    COLORS,
+    GAME,
+    PLATFORM_CONTROL_SMOOTHING,
+    PLATFORM_KEYBOARD_SPEED,
+    PLATFORM_POINTER_SENSITIVITY,
+} from '../../modules/constants';
 import {
     createContrastConfig,
     createContrastState,
@@ -15,6 +21,7 @@ import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
+import { pointerDragToVelocity, stepControl } from '../relativeControl';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
@@ -272,14 +279,17 @@ export default class InvadersGameScene extends Phaser.Scene {
         this.escKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.ESC,
         );
+        // Relative pointer control: accumulate drag DELTA (not absolute pos) —
+        // integrated into velocity in update(). See src/game/relativeControl.ts.
+        this.shipVX = 0;
+        this.pointerDragDX = 0;
+        this.lastPointerX = null;
         this.input.on('pointermove', (pointer) => {
-            if (!this.isPaused && this.ship) {
-                this.ship.x = Phaser.Math.Clamp(
-                    pointer.x,
-                    this.field.x + this.ship.width / 2,
-                    this.field.x + this.field.w - this.ship.width / 2,
-                );
+            if (this.isPaused || !this.ship) return;
+            if (this.lastPointerX !== null) {
+                this.pointerDragDX += pointer.x - this.lastPointerX;
             }
+            this.lastPointerX = pointer.x;
         });
         this.input.on('pointerup', () => {
             if (!this.isPaused) this.firePlayerBullet();
@@ -342,17 +352,34 @@ export default class InvadersGameScene extends Phaser.Scene {
         if (this.isPaused || this.gameOver) return;
         if (!this.ship) return;
 
-        // Ship keyboard + touch movement
+        // Relative velocity-integrated control (keyboard/touch hold or pointer
+        // drag delta) — never object.x = pointer.x. See src/game/relativeControl.ts.
+        let commandVx = 0;
         if (this.cursors.left.isDown || this.touchLR?.left?.isDown) {
-            this.ship.x -= PLATFORM_KEYBOARD_SPEED * (delta / 1000);
+            commandVx = -PLATFORM_KEYBOARD_SPEED;
         } else if (this.cursors.right.isDown || this.touchLR?.right?.isDown) {
-            this.ship.x += PLATFORM_KEYBOARD_SPEED * (delta / 1000);
+            commandVx = PLATFORM_KEYBOARD_SPEED;
+        } else {
+            commandVx = pointerDragToVelocity(
+                this.pointerDragDX,
+                delta,
+                PLATFORM_POINTER_SENSITIVITY,
+            );
         }
-        this.ship.x = Phaser.Math.Clamp(
-            this.ship.x,
-            this.field.x + this.ship.width / 2,
-            this.field.x + this.field.w - this.ship.width / 2,
+        this.pointerDragDX = 0;
+        const nextControl = stepControl(
+            { x: this.ship.x, vx: this.shipVX },
+            commandVx,
+            {
+                minX: this.field.x + this.ship.width / 2,
+                maxX: this.field.x + this.field.w - this.ship.width / 2,
+                smoothing: PLATFORM_CONTROL_SMOOTHING,
+                maxSpeed: PLATFORM_KEYBOARD_SPEED,
+            },
+            delta,
         );
+        this.ship.x = nextControl.x;
+        this.shipVX = nextControl.vx;
         // Sync ship visual (fallback rectangle mode)
         if (this.shipVisual) {
             this.shipVisual.x = this.ship.x;
@@ -739,8 +766,17 @@ export default class InvadersGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        if (this.ship) this.ship.setAlpha(alpha);
-        if (this.shipVisual) this.shipVisual.setAlpha(alpha);
+        this.platformAlpha = alpha;
+        // Adaptive fellow-eye contrast → smooth 250ms tween on the visible object.
+        const targets = [this.ship, this.shipVisual].filter(Boolean);
+        if (targets.length > 0) {
+            this.tweens.add({
+                targets,
+                alpha,
+                duration: 250,
+                ease: 'Sine.easeInOut',
+            });
+        }
     }
 
     togglePause() {
@@ -946,9 +982,12 @@ export default class InvadersGameScene extends Phaser.Scene {
         this.alienDirection = 1;
         this.lastAlienStepMs = 0;
 
-        // Respawn ship at center
+        // Respawn ship at center (reset control velocity so it doesn't drift)
         const ccx = fx + fw / 2;
         this.ship.x = ccx;
+        this.shipVX = 0;
+        this.pointerDragDX = 0;
+        this.lastPointerX = null;
         if (this.shipVisual) {
             this.shipVisual.x = ccx;
         }

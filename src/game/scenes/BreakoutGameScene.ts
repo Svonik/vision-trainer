@@ -1,6 +1,12 @@
 // @ts-nocheck
 
-import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
+import {
+    COLORS,
+    GAME,
+    PLATFORM_CONTROL_SMOOTHING,
+    PLATFORM_KEYBOARD_SPEED,
+    PLATFORM_POINTER_SENSITIVITY,
+} from '../../modules/constants';
 import {
     createContrastConfig,
     createContrastState,
@@ -15,6 +21,7 @@ import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
+import { pointerDragToVelocity, stepControl } from '../relativeControl';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 
@@ -261,15 +268,17 @@ export default class BreakoutGameScene extends Phaser.Scene {
         this.escKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.ESC,
         );
+        // Relative pointer control: accumulate drag DELTA (not absolute pos) —
+        // integrated into velocity in update(). See src/game/relativeControl.ts.
+        this.platformVX = 0;
+        this.pointerDragDX = 0;
+        this.lastPointerX = null;
         this.input.on('pointermove', (pointer) => {
-            if (!this.isPaused) {
-                this.platform.x = Phaser.Math.Clamp(
-                    pointer.x,
-                    this.field.x + this.platformW / 2,
-                    this.field.x + this.field.w - this.platformW / 2,
-                );
-                this.platform.body.reset(this.platform.x, this.platform.y);
+            if (this.isPaused) return;
+            if (this.lastPointerX !== null) {
+                this.pointerDragDX += pointer.x - this.lastPointerX;
             }
+            this.lastPointerX = pointer.x;
         });
         this.input.on('pointerup', () => {
             if (!this.ballLaunched && !this.isPaused) this.launchBall();
@@ -374,17 +383,34 @@ export default class BreakoutGameScene extends Phaser.Scene {
         if (this.isPaused) return;
         if (!this.platform) return;
 
-        // Keyboard movement
+        // Relative velocity-integrated control (keyboard hold or pointer drag
+        // delta) — never object.x = pointer.x. See src/game/relativeControl.ts.
+        let commandVx = 0;
         if (this.cursors.left.isDown) {
-            this.platform.x -= PLATFORM_KEYBOARD_SPEED * (delta / 1000);
+            commandVx = -PLATFORM_KEYBOARD_SPEED;
         } else if (this.cursors.right.isDown) {
-            this.platform.x += PLATFORM_KEYBOARD_SPEED * (delta / 1000);
+            commandVx = PLATFORM_KEYBOARD_SPEED;
+        } else {
+            commandVx = pointerDragToVelocity(
+                this.pointerDragDX,
+                delta,
+                PLATFORM_POINTER_SENSITIVITY,
+            );
         }
-        this.platform.x = Phaser.Math.Clamp(
-            this.platform.x,
-            this.field.x + this.platformW / 2,
-            this.field.x + this.field.w - this.platformW / 2,
+        this.pointerDragDX = 0;
+        const nextControl = stepControl(
+            { x: this.platform.x, vx: this.platformVX },
+            commandVx,
+            {
+                minX: this.field.x + this.platformW / 2,
+                maxX: this.field.x + this.field.w - this.platformW / 2,
+                smoothing: PLATFORM_CONTROL_SMOOTHING,
+                maxSpeed: PLATFORM_KEYBOARD_SPEED,
+            },
+            delta,
         );
+        this.platform.x = nextControl.x;
+        this.platformVX = nextControl.vx;
         this.platform.body.reset(this.platform.x, this.platform.y);
 
         // Space to launch
@@ -826,7 +852,16 @@ export default class BreakoutGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        if (this.platform) this.platform.setAlpha(alpha);
+        this.platformAlpha = alpha;
+        // Adaptive fellow-eye contrast → smooth 250ms tween on the visible object.
+        if (this.platform) {
+            this.tweens.add({
+                targets: this.platform,
+                alpha,
+                duration: 250,
+                ease: 'Sine.easeInOut',
+            });
+        }
     }
 
     togglePause() {
