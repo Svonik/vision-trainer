@@ -25,7 +25,14 @@ vi.mock('phaser', () => ({
     },
 }));
 
-import { isValidHit } from '../../../src/game/scenes/BalloonPopGameScene';
+import {
+    isValidHit,
+    resolveChannelColors,
+} from '../../../src/game/scenes/BalloonPopGameScene';
+import {
+    deriveEyeConfig,
+    getEyeColors,
+} from '../../../src/modules/glassesColors';
 
 // Vision-i55: dichoptic target gate.
 // A pop must only be counted when the balloon carries the strong-eye
@@ -55,5 +62,40 @@ describe('BalloonPop dichoptic target gate (isValidHit)', () => {
 
     it('rejects when marker is undefined (balloon never assigned a marker)', () => {
         expect(isValidHit(undefined as unknown as boolean, 0, 31)).toBe(false);
+    });
+});
+
+// Vision-kbn: dichoptic CHANNEL assignment.
+// The crosshair marker carries the ADAPTIVE (clinical-contrast) alpha, so
+// per the canonical Formula A in GameScene.ts:97-104 it must be drawn in
+// the STRONG (fellow) eye's anaglyph channel. The balloon body is fixed at
+// alpha 1.0 (weak/amblyopic eye, always 100%) and must use the opposite
+// (Formula B) channel. Cross-checked against the same glassesColors.ts
+// helpers (getEyeColors/deriveEyeConfig) the scene itself is built on.
+describe('BalloonPop dichoptic channel assignment (resolveChannelColors)', () => {
+    it.each([
+        { glassesType: 'red-cyan' as const, weakEye: 'left' as const },
+        { glassesType: 'red-cyan' as const, weakEye: 'right' as const },
+        { glassesType: 'cyan-red' as const, weakEye: 'left' as const },
+        { glassesType: 'cyan-red' as const, weakEye: 'right' as const },
+    ])('crosshair (adaptive) = strong-eye channel, balloon (fixed, alpha 1.0) = weak-eye channel — glasses=$glassesType, weak eye=$weakEye', ({
+        glassesType,
+        weakEye,
+    }) => {
+        const eyeConfig = deriveEyeConfig(glassesType, weakEye);
+        const eyeColors = getEyeColors(glassesType);
+        const strongEye = weakEye === 'left' ? 'right' : 'left';
+        const strongEyeColor =
+            strongEye === 'left' ? eyeColors.leftColor : eyeColors.rightColor;
+        const weakEyeColor =
+            weakEye === 'left' ? eyeColors.leftColor : eyeColors.rightColor;
+
+        const { crosshairColor, balloonColor } = resolveChannelColors(
+            eyeConfig,
+            glassesType,
+        );
+
+        expect(crosshairColor).toBe(strongEyeColor);
+        expect(balloonColor).toBe(weakEyeColor);
     });
 });

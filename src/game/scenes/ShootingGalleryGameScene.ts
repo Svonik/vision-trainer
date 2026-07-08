@@ -46,6 +46,28 @@ export function isValidHit(
     return hasMarker === true && dist <= hitRadius;
 }
 
+/**
+ * Resolve the anaglyph channel for each dichoptic object. The crosshair
+ * marker carries the ADAPTIVE (clinical-contrast) alpha, so it is the
+ * fellow/strong-eye object and must use Formula A — the strong-eye
+ * channel, exactly as `platformColor` in GameScene.ts:97-104. The target
+ * body is fixed at alpha 1.0 (amblyopic/weak eye, always 100%) and uses
+ * the mirrored Formula B.
+ */
+export function resolveChannelColors(
+    eyeConfig: string,
+    glassesType: 'red-cyan' | 'cyan-red',
+) {
+    const eyeColors = getEyeColors(glassesType);
+    const isLeftStrong = eyeConfig === 'platform_left';
+    return {
+        crosshairColor: isLeftStrong
+            ? eyeColors.leftColor
+            : eyeColors.rightColor,
+        targetColor: isLeftStrong ? eyeColors.rightColor : eyeColors.leftColor,
+    };
+}
+
 export default class ShootingGalleryGameScene extends Phaser.Scene {
     constructor() {
         super('ShootingGalleryGameScene');
@@ -85,14 +107,12 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
         // --- Dichoptic color setup ---
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isTargetLeft = this.settings.eyeConfig === 'platform_left';
-        this.targetColor = isTargetLeft
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.crosshairColor = isTargetLeft
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
+        const channelColors = resolveChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType || 'red-cyan',
+        );
+        this.targetColor = channelColors.targetColor;
+        this.crosshairColor = channelColors.crosshairColor;
         // Clinical contrast engine
         this.contrastConfig = createContrastConfig();
         this.contrastState = createContrastState(

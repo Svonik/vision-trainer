@@ -44,6 +44,28 @@ export function isValidHit(
     return hasMarker === true && dist <= hitRadius;
 }
 
+/**
+ * Resolve the anaglyph channel for each dichoptic object. The crosshair
+ * "active hole" marker carries the ADAPTIVE (clinical-contrast) alpha, so
+ * it is the fellow/strong-eye object and must use Formula A — the
+ * strong-eye channel, exactly as `platformColor` in GameScene.ts:97-104.
+ * The mole body is fixed at alpha 1.0 (amblyopic/weak eye, always 100%)
+ * and uses the mirrored Formula B.
+ */
+export function resolveChannelColors(
+    eyeConfig: string,
+    glassesType: 'red-cyan' | 'cyan-red',
+) {
+    const eyeColors = getEyeColors(glassesType);
+    const isLeftStrong = eyeConfig === 'platform_left';
+    return {
+        crosshairColor: isLeftStrong
+            ? eyeColors.leftColor
+            : eyeColors.rightColor,
+        moleColor: isLeftStrong ? eyeColors.rightColor : eyeColors.leftColor,
+    };
+}
+
 export default class WhackMoleGameScene extends Phaser.Scene {
     constructor() {
         super('WhackMoleGameScene');
@@ -82,14 +104,13 @@ export default class WhackMoleGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
         const isMoleLeft = this.settings.eyeConfig === 'platform_left';
-        this.moleColor = isMoleLeft
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.crosshairColor = isMoleLeft
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
+        const channelColors = resolveChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType || 'red-cyan',
+        );
+        this.moleColor = channelColors.moleColor;
+        this.crosshairColor = channelColors.crosshairColor;
         this.moleAlpha =
             (isMoleLeft
                 ? this.settings.contrastLeft
