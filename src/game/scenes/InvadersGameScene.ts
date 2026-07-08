@@ -126,6 +126,7 @@ export default class InvadersGameScene extends DichopticScene {
         this.lastEnemyFireMs = 0;
         this.gameOver = false;
         this.invincible = false;
+        this.shipBlinkVisible = true;
         this.blinkTimer = null;
 
         // Frame (both eyes)
@@ -176,7 +177,9 @@ export default class InvadersGameScene extends DichopticScene {
                 this.platformAlpha,
             );
         }
-        this.setFellowEyeTargets(this.ship, this.shipVisual);
+        // Ship alpha is owned by updateFellowEyeAlpha / setShipBlinkAlpha so
+        // invincibility blink never fights DichopticScene's fellow-target tween.
+        this.setShipBlinkAlpha(true);
 
         // Aliens grid (alienColor — other eye)
         this.aliens = [];
@@ -599,9 +602,15 @@ export default class InvadersGameScene extends DichopticScene {
             if (!bullet || bullet.active === false) continue;
             bullet.setAlpha?.(alpha);
         }
+        // Re-apply current blink phase so a contrast step mid-invincibility
+        // updates the visible ship without cancelling the blink.
+        if (this.ship || this.shipVisual) {
+            this.setShipBlinkAlpha(this.shipBlinkVisible !== false);
+        }
     }
 
     setShipBlinkAlpha(visible) {
+        this.shipBlinkVisible = visible;
         const alpha = visible ? this.platformAlpha : 0;
         if (this.ship?.setAlpha) this.ship.setAlpha(alpha);
         if (this.shipVisual) this.shipVisual.setAlpha(alpha);

@@ -163,6 +163,19 @@ function isRenderedOddTile(entry: unknown): entry is SlidingTileEntry {
     return 'label' in entry && entry.label instanceof MockText;
 }
 
+function isRenderedEvenTile(entry: unknown): entry is SlidingTileEntry {
+    if (!entry || typeof entry !== 'object') return false;
+    if (!('value' in entry) || typeof entry.value !== 'number') return false;
+    if (entry.value % 2 !== 0) return false;
+    if (
+        !('background' in entry) ||
+        !(entry.background instanceof MockGraphics)
+    ) {
+        return false;
+    }
+    return 'label' in entry && entry.label instanceof MockText;
+}
+
 describe('SlidingPuzzle fellow-alpha sync', () => {
     it('updates an already-rendered fellow-eye tile when the registered contrast listener fires', () => {
         const scene = new SlidingPuzzleGameScene();
@@ -198,5 +211,12 @@ describe('SlidingPuzzle fellow-alpha sync', () => {
         expect(background.fillCalls.at(-1)?.alpha).toBeCloseTo(0.0875);
         expect(background.lineCalls.at(-1)?.alpha).toBeCloseTo(0.21);
         expect(label.alpha).toBeCloseTo(0.35);
+
+        // Amblyopic-eye (even) tiles stay at 100% alpha through contrast steps.
+        const evenTile = scene.tileObjects.find(isRenderedEvenTile);
+        expect(evenTile).toBeDefined();
+        if (!evenTile) throw new Error('Expected an even SlidingPuzzle tile');
+        expect(evenTile.label.alpha).toBeCloseTo(1.0);
+        expect(evenTile.background.fillCalls.at(-1)?.alpha).toBeCloseTo(0.25);
     });
 });

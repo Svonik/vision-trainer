@@ -35,6 +35,15 @@ describe('contrastEngine', () => {
                 CLINICAL_CONTRAST.FELLOW_CEILING,
             );
         });
+
+        it('falls back to FELLOW_INITIAL for non-finite input', () => {
+            expect(createContrastState(Number.NaN).fellowEyeContrast).toBe(
+                CLINICAL_CONTRAST.FELLOW_INITIAL,
+            );
+            expect(
+                createContrastState(Number.POSITIVE_INFINITY).fellowEyeContrast,
+            ).toBe(CLINICAL_CONTRAST.FELLOW_INITIAL);
+        });
     });
 
     describe('createContrastConfig', () => {

@@ -8,7 +8,6 @@ import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
-import { CLINICAL_CONTRAST } from '../modules/constants';
 import {
     type AmblyopiaType,
     appendSuppressionHistory,
@@ -102,13 +101,11 @@ export function OnboardingWizard() {
             deep_suppression: deepSuppression,
             suppression_result: suppressionResult,
         });
+        // Clamp lives in storage.normalizeDefaultSettings / clampFellowEyeContrast
         const defaults = getDefaultSettings();
         saveDefaultSettings({
             ...defaults,
-            fellowEyeContrast: Math.min(
-                Math.max(balancePoint, CLINICAL_CONTRAST.FELLOW_FLOOR),
-                CLINICAL_CONTRAST.FELLOW_CEILING,
-            ),
+            fellowEyeContrast: balancePoint,
         });
         if (deepSuppression) {
             setDeepSuppressionWarning(true);

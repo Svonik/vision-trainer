@@ -85,6 +85,24 @@ export const CLINICAL_CONTRAST = {
     STEP_SIZE: 5,
 } as const;
 
+/**
+ * Clamp a fellow-eye contrast percentage into the clinical [floor, ceiling]
+ * range. Non-finite / non-numeric input falls back to FELLOW_INITIAL so corrupt
+ * localStorage or bad form values cannot produce NaN alphas in Phaser.
+ * null/undefined also fall back (Number(null)===0 would otherwise hit the floor).
+ */
+export function clampFellowEyeContrast(value: unknown): number {
+    if (value === null || value === undefined) {
+        return CLINICAL_CONTRAST.FELLOW_INITIAL;
+    }
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) return CLINICAL_CONTRAST.FELLOW_INITIAL;
+    return Math.min(
+        Math.max(n, CLINICAL_CONTRAST.FELLOW_FLOOR),
+        CLINICAL_CONTRAST.FELLOW_CEILING,
+    );
+}
+
 export const CALIBRATION = {
     SLIDER_MIN: 0,
     SLIDER_MAX: 100,

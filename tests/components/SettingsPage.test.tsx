@@ -2,30 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { SettingsPage } from '../../src/pages/SettingsPage';
+import { storeCompletedCalibrationWithDefault } from '../helpers/storageFixtures';
 
-
-function storeCompletedCalibrationWithDefault(fellowEyeContrast: number) {
-    localStorage.setItem(
-        'vt_calibration',
-        JSON.stringify({
-            suppression_passed: true,
-            deep_suppression: false,
-            last_calibrated: new Date().toISOString(),
-            glasses_type: 'red-cyan',
-            age_group: '8-12',
-            weak_eye: 'left',
-            amblyopia_type: 'unspecified',
-        }),
-    );
-    localStorage.setItem(
-        'vt_default_settings',
-        JSON.stringify({
-            speed: 'slow',
-            eyeConfig: 'platform_left',
-            fellowEyeContrast,
-        }),
-    );
-}
 
 function renderSettingsPage() {
     render(

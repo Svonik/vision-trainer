@@ -104,19 +104,59 @@ describe('BalloonPop dichoptic channel assignment (resolveChannelColors)', () =>
 
 
 describe('BalloonPop fellow-alpha sync', () => {
-    it('updates the crosshair scalar, redraws the crosshair, and retints the active marker', () => {
+    function createCrosshairGraphics() {
+        const lineCalls: Array<{ color: number; alpha: number }> = [];
+        return {
+            lineCalls,
+            clear: vi.fn(function clear(this: { lineCalls: unknown[] }) {
+                this.lineCalls.length = 0;
+                return this;
+            }),
+            lineStyle: vi.fn(function lineStyle(
+                this: { lineCalls: Array<{ color: number; alpha: number }> },
+                _w: number,
+                color: number,
+                alpha: number,
+            ) {
+                this.lineCalls.push({ color, alpha });
+                return this;
+            }),
+            beginPath: vi.fn(function beginPath() {
+                return this;
+            }),
+            moveTo: vi.fn(function moveTo() {
+                return this;
+            }),
+            lineTo: vi.fn(function lineTo() {
+                return this;
+            }),
+            strokePath: vi.fn(function strokePath() {
+                return this;
+            }),
+            strokeCircle: vi.fn(function strokeCircle() {
+                return this;
+            }),
+        };
+    }
+
+    it('redraws the crosshair with the updated alpha (not a stale scalar)', () => {
         const scene = new BalloonPopGameScene();
         const marker = { setAlpha: vi.fn() };
+        const crosshair = createCrosshairGraphics();
         scene.crosshairAlpha = 0.3;
-        scene.crosshair = {};
+        scene.crosshair = crosshair;
+        scene.crosshairColor = 0xff0000;
         scene.crosshairPosition = { x: 12, y: 34 };
-        scene.drawCrosshair = vi.fn();
         scene.markedBalloon = { marker };
 
         scene.updateFellowEyeAlpha(0.45);
 
         expect(scene.crosshairAlpha).toBe(0.45);
-        expect(scene.drawCrosshair).toHaveBeenCalledWith(12, 34);
+        expect(crosshair.clear).toHaveBeenCalled();
+        expect(crosshair.lineCalls.at(-1)).toEqual({
+            color: 0xff0000,
+            alpha: 0.45,
+        });
         expect(marker.setAlpha).toHaveBeenCalledWith(0.45);
     });
 

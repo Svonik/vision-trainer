@@ -179,9 +179,10 @@ describe('SettingsHub', () => {
                 suppression_passed: true,
             }),
         );
+        // UI passes raw balancePoint; storage layer clamps to clinical ceiling.
         expect(saveDefaultSettings).toHaveBeenCalledWith(
             expect.objectContaining({
-                fellowEyeContrast: 50,
+                fellowEyeContrast: 100,
             }),
         );
         expect(saveCalibration).toHaveBeenCalledWith(
@@ -230,9 +231,10 @@ describe('SettingsHub', () => {
             target: { value: '80' },
         });
         fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+        // UI passes raw balancePoint; storage layer clamps to clinical ceiling.
         expect(saveDefaultSettings).toHaveBeenCalledWith(
             expect.objectContaining({
-                fellowEyeContrast: 50,
+                fellowEyeContrast: 80,
             }),
         );
         expect(saveCalibration).toHaveBeenCalledWith(

@@ -59,7 +59,11 @@ describe('Invaders fellow-alpha sync', () => {
         const shipVisual = { setAlpha: vi.fn() };
         scene.ship = ship;
         scene.shipVisual = shipVisual;
-        scene.updateFellowEyeAlpha(0.52);
+        scene.playerBullets = [];
+        // Seed scalar without going through updateFellowEyeAlpha (which also
+        // applies the current blink phase to the ship).
+        scene.platformAlpha = 0.52;
+        scene.shipBlinkVisible = true;
 
         scene.setShipBlinkAlpha(false);
         scene.setShipBlinkAlpha(true);
@@ -68,5 +72,40 @@ describe('Invaders fellow-alpha sync', () => {
         expect(shipVisual.setAlpha).toHaveBeenNthCalledWith(1, 0);
         expect(ship.setAlpha).toHaveBeenNthCalledWith(2, 0.52);
         expect(shipVisual.setAlpha).toHaveBeenNthCalledWith(2, 0.52);
+    });
+
+    it('updates ship alpha on contrast step while preserving blink phase', () => {
+        const scene = new InvadersGameScene();
+        const ship = { setAlpha: vi.fn() };
+        const shipVisual = { setAlpha: vi.fn() };
+        scene.ship = ship;
+        scene.shipVisual = shipVisual;
+        scene.playerBullets = [];
+        scene.invincible = true;
+        scene.shipBlinkVisible = false;
+
+        scene.updateFellowEyeAlpha(0.4);
+        expect(ship.setAlpha).toHaveBeenCalledWith(0);
+        expect(shipVisual.setAlpha).toHaveBeenCalledWith(0);
+
+        scene.shipBlinkVisible = true;
+        scene.updateFellowEyeAlpha(0.45);
+        expect(ship.setAlpha).toHaveBeenLastCalledWith(0.45);
+        expect(shipVisual.setAlpha).toHaveBeenLastCalledWith(0.45);
+    });
+
+    it('applies ship alpha immediately when not invincible', () => {
+        const scene = new InvadersGameScene();
+        const ship = { setAlpha: vi.fn() };
+        scene.ship = ship;
+        scene.shipVisual = null;
+        scene.playerBullets = [];
+        scene.invincible = false;
+        scene.shipBlinkVisible = true;
+
+        scene.updateFellowEyeAlpha(0.48);
+
+        expect(scene.platformAlpha).toBe(0.48);
+        expect(ship.setAlpha).toHaveBeenCalledWith(0.48);
     });
 });

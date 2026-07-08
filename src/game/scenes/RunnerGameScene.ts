@@ -153,6 +153,9 @@ export default class RunnerGameScene extends DichopticScene {
         );
         GameVisuals.pulse(this, this.runnerVisual, 0.94, 1.06, 500);
         this.setFellowEyeTargets(this.runnerVisual);
+        // Keep runnerAlpha / channelPaint / in-flight coins in sync when
+        // clinical contrast steps (setFellowEyeTargets only covers runnerVisual).
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
 
         // Obstacles array
         this.obstacles = [];
@@ -614,6 +617,18 @@ export default class RunnerGameScene extends DichopticScene {
             hold: 1000,
             onComplete: () => flashText.destroy(),
         });
+    }
+
+    updateFellowEyeAlpha(alpha) {
+        this.runnerAlpha = alpha;
+        if (this.channelPaint) {
+            this.channelPaint.fellowAlpha = alpha;
+        }
+        const coinAlpha = Math.max(alpha, COIN_MIN_ALPHA);
+        for (const gfx of this.coinGraphics || []) {
+            if (!gfx || gfx.active === false) continue;
+            gfx.setAlpha?.(coinAlpha);
+        }
     }
 
     triggerGameOver() {

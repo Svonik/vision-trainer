@@ -1,4 +1,8 @@
-import { CLINICAL_CONTRAST, CURRENT_VERSION, STORAGE_KEYS } from './constants';
+import {
+    clampFellowEyeContrast,
+    CURRENT_VERSION,
+    STORAGE_KEYS,
+} from './constants';
 
 export type AmblyopiaType =
     | 'strabismus'
@@ -43,21 +47,13 @@ const DEFAULT_SETTINGS: DefaultSettings = {
     fellowEyeContrast: 30,
 };
 
-const clampDefaultFellowEyeContrast = (contrast: number): number =>
-    Math.min(
-        Math.max(contrast, CLINICAL_CONTRAST.FELLOW_FLOOR),
-        CLINICAL_CONTRAST.FELLOW_CEILING,
-    );
-
 const normalizeDefaultSettings = (
     settings: Partial<DefaultSettings> | null,
 ): DefaultSettings => {
     const merged = { ...DEFAULT_SETTINGS, ...(settings || {}) };
     return {
         ...merged,
-        fellowEyeContrast: clampDefaultFellowEyeContrast(
-            merged.fellowEyeContrast,
-        ),
+        fellowEyeContrast: clampFellowEyeContrast(merged.fellowEyeContrast),
     };
 };
 

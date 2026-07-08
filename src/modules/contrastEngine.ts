@@ -1,4 +1,4 @@
-import { CLINICAL_CONTRAST } from './constants';
+import { clampFellowEyeContrast, CLINICAL_CONTRAST } from './constants';
 
 export interface ContrastState {
     readonly fellowEyeContrast: number;
@@ -34,10 +34,7 @@ export function createContrastConfig(): ContrastConfig {
 export function createContrastState(
     initialFellowContrast: number,
 ): ContrastState {
-    const clamped = Math.max(
-        CLINICAL_CONTRAST.FELLOW_FLOOR,
-        Math.min(CLINICAL_CONTRAST.FELLOW_CEILING, initialFellowContrast),
-    );
+    const clamped = clampFellowEyeContrast(initialFellowContrast);
     return {
         fellowEyeContrast: clamped,
         amblyopicEyeContrast: 100,

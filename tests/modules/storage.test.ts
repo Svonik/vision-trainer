@@ -79,6 +79,28 @@ describe('Storage Module', () => {
         expect(getDefaultSettings().fellowEyeContrast).toBe(15);
     });
 
+    it('falls back to FELLOW_INITIAL for non-finite fellowEyeContrast', () => {
+        localStorage.setItem(
+            'vt_default_settings',
+            JSON.stringify({
+                speed: 'slow',
+                eyeConfig: 'platform_left',
+                fellowEyeContrast: 'not-a-number',
+            }),
+        );
+        expect(getDefaultSettings().fellowEyeContrast).toBe(30);
+
+        saveDefaultSettings({
+            ...getDefaultSettings(),
+            fellowEyeContrast: Number.NaN,
+        });
+        expect(getDefaultSettings().fellowEyeContrast).toBe(30);
+        expect(
+            JSON.parse(localStorage.getItem('vt_default_settings') ?? '{}')
+                .fellowEyeContrast,
+        ).toBe(30);
+    });
+
     it('returns default calibration with age_group', () => {
         initStorage();
         const cal = getCalibration();
