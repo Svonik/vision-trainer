@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -18,6 +11,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene, { resolveEyeChannelColors } from './DichopticScene';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
@@ -30,7 +24,7 @@ const DIR = {
     RIGHT: { x: 1, y: 0 },
 };
 
-export default class SnakeGameScene extends Phaser.Scene {
+export default class SnakeGameScene extends DichopticScene {
     constructor() {
         super('SnakeGameScene');
     }
@@ -72,30 +66,16 @@ export default class SnakeGameScene extends Phaser.Scene {
         this.cellW = fw / GRID_COLS;
         this.cellH = fh / GRID_ROWS;
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.platformAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.ballAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = resolveEyeChannelColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (snake) uses clinical contrast; amblyopic eye (food) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.ballAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Background fill
@@ -212,6 +192,12 @@ export default class SnakeGameScene extends Phaser.Scene {
 
         this.renderSnake();
         this.renderFood();
+
+        // Redraw the snake (fellow eye) whenever the clinical contrast steps.
+        this.onFellowAlphaChange((alpha) => {
+            this.updateFellowEyeAlpha(alpha);
+            this.renderSnake();
+        });
 
         // Countdown before snake starts moving
         const cx = this.field.x + this.field.w / 2;
@@ -346,14 +332,7 @@ export default class SnakeGameScene extends Phaser.Scene {
             this.isGameOver = true;
             SynthSounds.gameOver();
             GameVFX.screenShake(this, 5, 200);
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                false,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(false);
             this.endGame();
             return;
         }
@@ -364,14 +343,7 @@ export default class SnakeGameScene extends Phaser.Scene {
                 this.isGameOver = true;
                 SynthSounds.gameOver();
                 GameVFX.screenShake(this, 5, 200);
-                this.contrastState = recordTrial(
-                    this.contrastState,
-                    this.contrastConfig,
-                    false,
-                );
-                this.updateFellowEyeAlpha(
-                    this.contrastState.fellowEyeContrast / 100,
-                );
+                this.recordDichopticTrial(false);
                 this.endGame();
                 return;
             }
@@ -395,14 +367,7 @@ export default class SnakeGameScene extends Phaser.Scene {
             GameVFX.particleBurst(this, foodPx, foodPy, this.ballColor);
             GameVFX.scorePopup(this, foodPx, foodPy);
 
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                true,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(true);
 
             // Level up every nextLevelAt food
             if (this.score >= this.nextLevelAt) {
@@ -665,10 +630,10 @@ export default class SnakeGameScene extends Phaser.Scene {
             speed: this.settings.speed,
             eye_config: this.settings.eyeConfig,
             level: this.level,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });
