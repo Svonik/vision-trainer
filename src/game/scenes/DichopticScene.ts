@@ -80,7 +80,7 @@ export default abstract class DichopticScene extends Phaser.Scene {
         this.contrastState = createContrastState(
             settings.fellowEyeContrast ?? 30,
         );
-        this.fellowContrastStart = settings.fellowEyeContrast ?? 30;
+        this.fellowContrastStart = this.contrastState.fellowEyeContrast;
         this.fellowAlpha = this.contrastState.fellowEyeContrast / 100;
         this.fellowEyeTargets = [];
         this.amblyopicEyeTargets = [];
