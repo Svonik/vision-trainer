@@ -6,17 +6,7 @@ import {
     PLATFORM_KEYBOARD_SPEED,
     SPEEDS,
 } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
-import {
-    createGameSettings,
-    createSessionResult,
-} from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
+import { createGameSettings, createSessionResult } from '../../modules/gameState';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -25,11 +15,9 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene from './DichopticScene';
 
-export default class GameScene extends Phaser.Scene {
-    contrastState;
-    contrastConfig;
-
+export default class GameScene extends DichopticScene {
     constructor() {
         super('GameScene');
     }
@@ -94,21 +82,16 @@ export default class GameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.targetColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = this.resolveEyeColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.targetColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (platform) uses clinical contrast; amblyopic eye (targets) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.targetAlpha = 1.0;
 
         // Frame (both eyes)
@@ -144,6 +127,7 @@ export default class GameScene extends Phaser.Scene {
             1,
         );
         platformContainer.setAlpha(this.platformAlpha);
+        this.setFellowEyeTargets(platformContainer);
         // Create a plain rectangle for physics (invisible, same bounds)
         this.platform = this.add.rectangle(
             ccx,
@@ -449,32 +433,8 @@ export default class GameScene extends Phaser.Scene {
     }
 
     checkDynamicDifficulty(hit) {
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            hit,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(hit);
     }
-
-    updateFellowEyeAlpha(alpha) {
-        // Fellow (strong) eye handicap must land on the actually-rendered
-        // platform (platformVisual/glowRect), not the invisible physics
-        // rectangle (this.platform, fillAlpha=0) used only for collision.
-        if (!this.platformVisual) return;
-        if (this.tweens) {
-            this.tweens.killTweensOf(this.platformVisual);
-            this.tweens.add({
-                targets: this.platformVisual,
-                alpha,
-                duration: 250,
-                ease: 'Sine.easeInOut',
-            });
-        } else {
-            this.platformVisual.setAlpha(alpha);
-        }
-    }
-
     togglePause() {
         this.isPaused = !this.isPaused;
         if (this.isPaused) {
@@ -610,16 +570,17 @@ export default class GameScene extends Phaser.Scene {
         this.safetyTimer.stop();
         if (this.spawnTimer) this.spawnTimer.remove();
 
+        const stats = this.getDichopticStats();
         const result = createSessionResult({
             settings: this.settings,
             caught: this.caught,
             totalSpawned: this.totalSpawned,
             durationMs: this.safetyTimer.getElapsedMs(),
             level: this.level,
-            fellowContrastStart: this.settings.fellowEyeContrast ?? 30,
-            fellowContrastEnd: this.contrastState.fellowEyeContrast,
-            windowAccuracy: getAccuracy(this.contrastState),
-            totalTrials: this.contrastState.totalTrials,
+            fellowContrastStart: stats.fellowContrastStart,
+            fellowContrastEnd: stats.fellowContrastEnd,
+            windowAccuracy: stats.accuracy,
+            totalTrials: stats.totalTrials,
         });
 
         EventBus.emit('game-complete', { result, settings: this.settings });

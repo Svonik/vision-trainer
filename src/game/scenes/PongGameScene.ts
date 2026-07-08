@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME, PLATFORM_KEYBOARD_SPEED } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -17,6 +10,7 @@ import { SynthSounds } from '../audio/SynthSounds';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene from './DichopticScene';
 
 const BALL_SPEEDS = { slow: 180, normal: 260, fast: 360, pro: 460 };
 const AI_TRACKING = { slow: 0.4, normal: 0.6, fast: 0.8, pro: 0.95 };
@@ -28,7 +22,7 @@ const PADDLE_W_RATIO = 0.03;
 const PADDLE_H_RATIO = 0.2;
 const PADDLE_EDGE_RATIO = 0.05;
 
-export default class PongGameScene extends Phaser.Scene {
+export default class PongGameScene extends DichopticScene {
     constructor() {
         super('PongGameScene');
     }
@@ -76,21 +70,16 @@ export default class PongGameScene extends Phaser.Scene {
         // Left paddle (player) → platformColor (fellow eye)
         // Right paddle (AI)    → ballColor (amblyopic eye)
         // Ball                 → ballColor (amblyopic eye) — requires binocular integration
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = this.resolveEyeColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (platform) uses clinical contrast; amblyopic eye (ball) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.ballAlpha = 1.0;
 
         this.level = 1;
@@ -204,6 +193,7 @@ export default class PongGameScene extends Phaser.Scene {
         }
         this.physics.add.existing(this.playerPaddle, false);
         this.playerPaddle.body.setImmovable(true);
+        this.setFellowEyeTargets(this.playerPaddle);
 
         // Right paddle — AI — ballColor (other eye)
         const rx = fx + fw - edgeOffset - pw / 2;
@@ -427,14 +417,7 @@ export default class PongGameScene extends Phaser.Scene {
             this.aiScore++;
             SynthSounds.miss();
             this.aiScoreText.setText(String(this.aiScore));
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                false,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(false);
             this.checkWinCondition();
             return;
         }
@@ -445,14 +428,7 @@ export default class PongGameScene extends Phaser.Scene {
             this.playerScore++;
             SynthSounds.score();
             this.playerScoreText.setText(String(this.playerScore));
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                true,
-            );
-            this.updateFellowEyeAlpha(
-                this.contrastState.fellowEyeContrast / 100,
-            );
+            this.recordDichopticTrial(true);
             this.checkWinCondition();
         }
     }
@@ -475,9 +451,6 @@ export default class PongGameScene extends Phaser.Scene {
         });
     }
 
-    updateFellowEyeAlpha(alpha) {
-        if (this.playerPaddle) this.playerPaddle.setAlpha(alpha);
-    }
 
     togglePause() {
         this.isPaused = !this.isPaused;
@@ -660,6 +633,7 @@ export default class PongGameScene extends Phaser.Scene {
         SynthSounds.gameOver();
 
         const total = this.playerScore + this.aiScore;
+        const stats = this.getDichopticStats();
         const result = {
             game: 'pong',
             timestamp: new Date().toISOString(),
@@ -678,10 +652,10 @@ export default class PongGameScene extends Phaser.Scene {
             ai_score: this.aiScore,
             level: this.level,
             completed: false,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: stats.fellowContrastStart,
+            fellow_contrast_end: stats.fellowContrastEnd,
+            window_accuracy: stats.accuracy,
+            total_trials: stats.totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

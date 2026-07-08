@@ -1,14 +1,7 @@
 // @ts-nocheck
 
 import { COLORS, GAME } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -24,6 +17,7 @@ import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene from './DichopticScene';
 
 const OBSTACLE_SPEEDS = { slow: 60, normal: 100, fast: 150, pro: 200 };
 const LANE_COUNT = 5;
@@ -36,7 +30,7 @@ const PLAYER_H = 30;
 const MAX_LIVES = 3;
 const WIN_CROSSINGS = 10;
 
-export default class FroggerGameScene extends Phaser.Scene {
+export default class FroggerGameScene extends DichopticScene {
     constructor() {
         super('FroggerGameScene');
     }
@@ -74,30 +68,16 @@ export default class FroggerGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.platformAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastLeft
-                : this.settings.contrastRight) / 100;
-        this.ballAlpha =
-            (isLeftPlatform
-                ? this.settings.contrastRight
-                : this.settings.contrastLeft) / 100;
-
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = this.resolveEyeColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (player) uses clinical contrast; amblyopic eye (obstacles) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.ballAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
 
         // Dichoptic channel paint — the goal pad (and cars) resolve to the
@@ -261,6 +241,7 @@ export default class FroggerGameScene extends Phaser.Scene {
         this.player.setDepth(10);
         this.playerEyeL.setDepth(11);
         this.playerEyeR.setDepth(11);
+        this.setFellowEyeTargets(this.player);
 
         // Goal lily-pad (amblyopic eye — opposite the player). A crossing only
         // counts when the player is aligned onto it, so the player's position
@@ -549,12 +530,7 @@ export default class FroggerGameScene extends Phaser.Scene {
             6,
         );
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         if (this.lives <= 0) {
             SynthSounds.gameOver();
@@ -596,12 +572,7 @@ export default class FroggerGameScene extends Phaser.Scene {
             COLORS.WHITE,
         );
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         // Fix: apply speed multiplier multiplicatively using per-lane stored factors
         this.speedMultiplier = 1 + this.crossings * 0.08;
@@ -629,15 +600,6 @@ export default class FroggerGameScene extends Phaser.Scene {
         });
     }
 
-    updateFellowEyeAlpha(alpha) {
-        if (this.player) {
-            this.tweens.add({
-                targets: this.player,
-                alpha,
-                duration: CONTRAST_TWEEN_MS,
-            });
-        }
-    }
 
     togglePause() {
         this.isPaused = !this.isPaused;
@@ -780,10 +742,10 @@ export default class FroggerGameScene extends Phaser.Scene {
             lives_remaining: this.lives,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: this.getDichopticStats().fellowContrastStart,
+            fellow_contrast_end: this.getDichopticStats().fellowContrastEnd,
+            window_accuracy: this.getDichopticStats().accuracy,
+            total_trials: this.getDichopticStats().totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

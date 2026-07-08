@@ -7,14 +7,7 @@ import {
     PLATFORM_KEYBOARD_SPEED,
     PLATFORM_POINTER_SENSITIVITY,
 } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -24,6 +17,7 @@ import { EventBus } from '../EventBus';
 import { pointerDragToVelocity, stepControl } from '../relativeControl';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
+import DichopticScene from './DichopticScene';
 
 const BALL_SPEEDS = { slow: 200, normal: 300, fast: 400, pro: 500 };
 const _BRICK_COLS = 8;
@@ -81,7 +75,7 @@ function getPattern(level: number): boolean[][] {
     return BRICK_PATTERNS[Math.floor(Math.random() * BRICK_PATTERNS.length)];
 }
 
-export default class BreakoutGameScene extends Phaser.Scene {
+export default class BreakoutGameScene extends DichopticScene {
     constructor() {
         super('BreakoutGameScene');
     }
@@ -126,21 +120,16 @@ export default class BreakoutGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.ballColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = this.resolveEyeColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.ballColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (platform) uses clinical contrast; amblyopic eye (ball) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.ballAlpha = 1.0;
 
         // Frame (both eyes)
@@ -178,6 +167,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
         }
         this.physics.add.existing(this.platform, false);
         this.platform.body.setImmovable(true);
+        this.setFellowEyeTargets(this.platform);
 
         // Remember original platform dimensions and ball radius for later reference
         this.originalPlatformWidth = pw;
@@ -640,12 +630,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
         GameVFX.particleBurst(this, brick.x, brick.y, 0x808080, 6);
         GameVFX.scorePopup(this, brick.x, brick.y);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         // Power-up drop chance
         if (Math.random() < POWERUP_CHANCE) {
@@ -818,12 +803,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
         SynthSounds.miss();
         GameVFX.screenShake(this);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         if (this.lives <= 0) {
             SynthSounds.gameOver();
@@ -848,19 +828,6 @@ export default class BreakoutGameScene extends Phaser.Scene {
                     fontFamily: 'Arial, sans-serif',
                 })
                 .setOrigin(0.5);
-        }
-    }
-
-    updateFellowEyeAlpha(alpha) {
-        this.platformAlpha = alpha;
-        // Adaptive fellow-eye contrast → smooth 250ms tween on the visible object.
-        if (this.platform) {
-            this.tweens.add({
-                targets: this.platform,
-                alpha,
-                duration: 250,
-                ease: 'Sine.easeInOut',
-            });
         }
     }
 
@@ -1070,6 +1037,7 @@ export default class BreakoutGameScene extends Phaser.Scene {
             this.powerups = [];
         }
 
+        const stats = this.getDichopticStats();
         const result = {
             game: 'breakout',
             timestamp: new Date().toISOString(),
@@ -1089,10 +1057,10 @@ export default class BreakoutGameScene extends Phaser.Scene {
             lives_remaining: this.lives,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: stats.fellowContrastStart,
+            fellow_contrast_end: stats.fellowContrastEnd,
+            window_accuracy: stats.accuracy,
+            total_trials: stats.totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });

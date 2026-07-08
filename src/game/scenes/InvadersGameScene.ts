@@ -7,14 +7,7 @@ import {
     PLATFORM_KEYBOARD_SPEED,
     PLATFORM_POINTER_SENSITIVITY,
 } from '../../modules/constants';
-import {
-    createContrastConfig,
-    createContrastState,
-    getAccuracy,
-    recordTrial,
-} from '../../modules/contrastEngine';
 import { createGameSettings } from '../../modules/gameState';
-import { getEyeColors } from '../../modules/glassesColors';
 import { t } from '../../modules/i18n';
 import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
@@ -25,6 +18,7 @@ import { pointerDragToVelocity, stepControl } from '../relativeControl';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
 import { TouchControls } from '../vfx/TouchControls';
+import DichopticScene from './DichopticScene';
 
 const ALIEN_COLS = 8;
 const ALIEN_ROWS = 5;
@@ -55,7 +49,7 @@ const ENEMY_FIRE_MAX_MS = 3000;
 
 const ALIEN_SPRITE_KEYS = ['alien1', 'alien2', 'alien3', 'alien4', 'alien1'];
 
-export default class InvadersGameScene extends Phaser.Scene {
+export default class InvadersGameScene extends DichopticScene {
     constructor() {
         super('InvadersGameScene');
     }
@@ -103,21 +97,16 @@ export default class InvadersGameScene extends Phaser.Scene {
         const fy = (GAME.HEIGHT - fh) / 2;
         this.field = { x: fx, y: fy, w: fw, h: fh };
 
-        const eyeColors = getEyeColors(this.settings.glassesType || 'red-cyan');
-        const isLeftPlatform = this.settings.eyeConfig === 'platform_left';
-        this.platformColor = isLeftPlatform
-            ? eyeColors.leftColor
-            : eyeColors.rightColor;
-        this.alienColor = isLeftPlatform
-            ? eyeColors.rightColor
-            : eyeColors.leftColor;
-        this.contrastConfig = createContrastConfig();
-        this.contrastState = createContrastState(
-            this.settings.fellowEyeContrast ?? 30,
+        const eyeColors = this.resolveEyeColors(
+            this.settings.eyeConfig,
+            this.settings.glassesType,
         );
+        this.platformColor = eyeColors.fellowColor;
+        this.alienColor = eyeColors.amblyopicColor;
+        this.initDichoptics(this.settings);
 
         // Fellow eye (platform) uses clinical contrast; amblyopic eye (aliens) always 100%
-        this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
+        this.platformAlpha = this.fellowAlpha;
         this.alienAlpha = 1.0;
 
         // State
@@ -186,6 +175,7 @@ export default class InvadersGameScene extends Phaser.Scene {
                 this.platformAlpha,
             );
         }
+        this.setFellowEyeTargets(this.ship, this.shipVisual);
 
         // Aliens grid (alienColor — other eye)
         this.aliens = [];
@@ -689,12 +679,7 @@ export default class InvadersGameScene extends Phaser.Scene {
         GameVFX.particleBurst(this, alien.x, alien.y, this.alienColor);
         GameVFX.scorePopup(this, alien.x, alien.y);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(true);
 
         if (this.enemiesDestroyed >= TOTAL_ALIENS) {
             this.nextLevel();
@@ -706,12 +691,7 @@ export default class InvadersGameScene extends Phaser.Scene {
         SynthSounds.miss();
         GameVFX.screenShake(this, 5, 150);
 
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            false,
-        );
-        this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.recordDichopticTrial(false);
 
         if (this.lives <= 0) {
             this.endGame(false);
@@ -763,20 +743,6 @@ export default class InvadersGameScene extends Phaser.Scene {
             ENEMY_FIRE_MIN_MS +
             Math.random() * (ENEMY_FIRE_MAX_MS - ENEMY_FIRE_MIN_MS)
         );
-    }
-
-    updateFellowEyeAlpha(alpha) {
-        this.platformAlpha = alpha;
-        // Adaptive fellow-eye contrast → smooth 250ms tween on the visible object.
-        const targets = [this.ship, this.shipVisual].filter(Boolean);
-        if (targets.length > 0) {
-            this.tweens.add({
-                targets,
-                alpha,
-                duration: 250,
-                ease: 'Sine.easeInOut',
-            });
-        }
     }
 
     togglePause() {
