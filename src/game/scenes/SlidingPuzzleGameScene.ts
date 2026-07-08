@@ -171,7 +171,7 @@ export default class SlidingPuzzleGameScene extends DichopticScene {
         this.initDichoptics(this.settings);
         this.alphaA = this.fellowAlpha;
         this.alphaB = 1.0; // Amblyopic eye always 100% per clinical protocol
-
+        this.onFellowAlphaChange((alpha) => this.updateFellowEyeAlpha(alpha));
         // Grid size from speed
         this.gridSize = GRID_CONFIG[this.settings.speed] || GRID_CONFIG.normal;
         this.level = 1;
@@ -292,9 +292,47 @@ export default class SlidingPuzzleGameScene extends DichopticScene {
                 continue;
             }
 
-            const container = this.createTileContainer(x, y, value, i);
-            this.tileObjects.push({ container, value });
+            const tileObject = this.createTileContainer(x, y, value, i);
+            this.tileObjects.push(tileObject);
         }
+    }
+
+
+    drawTileBackground(bg, tileColor, tileAlpha, isHovered = false) {
+        const halfSize = this.tileSize / 2;
+        bg.clear();
+        bg.fillStyle(tileColor, tileAlpha * (isHovered ? 0.35 : 0.25));
+        bg.fillRoundedRect(
+            -halfSize,
+            -halfSize,
+            this.tileSize,
+            this.tileSize,
+            6,
+        );
+        if (isHovered) {
+            bg.lineStyle(2, COLORS.WHITE, 0.5);
+        } else {
+            bg.lineStyle(2, tileColor, tileAlpha * 0.6);
+        }
+        bg.strokeRoundedRect(
+            -halfSize,
+            -halfSize,
+            this.tileSize,
+            this.tileSize,
+            6,
+        );
+    }
+
+    redrawTileVisual(tileObject) {
+        if (!tileObject) return;
+        const tileAlpha = tileObject.value % 2 === 1 ? this.alphaA : this.alphaB;
+        this.drawTileBackground(
+            tileObject.background,
+            tileObject.tileColor,
+            tileAlpha,
+            tileObject.isHovered,
+        );
+        tileObject.label.setAlpha(tileAlpha);
     }
 
     createTileContainer(x, y, value, index) {
@@ -308,22 +346,7 @@ export default class SlidingPuzzleGameScene extends DichopticScene {
 
         // Tile background
         const bg = this.add.graphics();
-        bg.fillStyle(tileColor, tileAlpha * 0.25);
-        bg.fillRoundedRect(
-            -halfSize,
-            -halfSize,
-            this.tileSize,
-            this.tileSize,
-            6,
-        );
-        bg.lineStyle(2, tileColor, tileAlpha * 0.6);
-        bg.strokeRoundedRect(
-            -halfSize,
-            -halfSize,
-            this.tileSize,
-            this.tileSize,
-            6,
-        );
+        this.drawTileBackground(bg, tileColor, tileAlpha);
         container.add(bg);
 
         // Number text
@@ -345,6 +368,16 @@ export default class SlidingPuzzleGameScene extends DichopticScene {
             .setOrigin(0.5)
             .setAlpha(tileAlpha);
         container.add(text);
+
+        const tileObject = {
+            container,
+            value,
+            background: bg,
+            label: text,
+            tileColor,
+            isFellowEyeTile: isOdd,
+            isHovered: false,
+        };
 
         // Correct position indicator (subtle dot at bottom-right when in place)
         const correctVal = correctValueAt(index, this.gridSize);
@@ -374,46 +407,16 @@ export default class SlidingPuzzleGameScene extends DichopticScene {
         // Hover highlight
         hitArea.on('pointerover', () => {
             if (!this.isAnimating && !this.gameEnded) {
-                bg.clear();
-                bg.fillStyle(tileColor, tileAlpha * 0.35);
-                bg.fillRoundedRect(
-                    -halfSize,
-                    -halfSize,
-                    this.tileSize,
-                    this.tileSize,
-                    6,
-                );
-                bg.lineStyle(2, COLORS.WHITE, 0.5);
-                bg.strokeRoundedRect(
-                    -halfSize,
-                    -halfSize,
-                    this.tileSize,
-                    this.tileSize,
-                    6,
-                );
+                tileObject.isHovered = true;
+                this.redrawTileVisual(tileObject);
             }
         });
         hitArea.on('pointerout', () => {
-            bg.clear();
-            bg.fillStyle(tileColor, tileAlpha * 0.25);
-            bg.fillRoundedRect(
-                -halfSize,
-                -halfSize,
-                this.tileSize,
-                this.tileSize,
-                6,
-            );
-            bg.lineStyle(2, tileColor, tileAlpha * 0.6);
-            bg.strokeRoundedRect(
-                -halfSize,
-                -halfSize,
-                this.tileSize,
-                this.tileSize,
-                6,
-            );
+            tileObject.isHovered = false;
+            this.redrawTileVisual(tileObject);
         });
 
-        return container;
+        return tileObject;
     }
 
     onTileClick(index) {
@@ -587,6 +590,9 @@ export default class SlidingPuzzleGameScene extends DichopticScene {
 
     updateFellowEyeAlpha(alpha) {
         this.alphaA = alpha;
+        for (const tileObject of this.tileObjects || []) {
+            if (tileObject?.isFellowEyeTile) this.redrawTileVisual(tileObject);
+        }
     }
 
     shutdown() {
