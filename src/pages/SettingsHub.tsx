@@ -6,12 +6,12 @@ import { ContrastIndicator } from '@/components/ContrastIndicator';
 import { MathGate } from '@/components/MathGate';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Card, CardContent } from '@/components/ui/card';
-import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
+import { DeepSuppressionWarning } from '../components/calibration/DeepSuppressionWarning';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
-import { CALIBRATION, SPEED_KEYS, SPEEDS } from '../modules/constants';
+import { SPEED_KEYS, SPEEDS } from '../modules/constants';
 import type { GlassesType } from '../modules/glassesColors';
 import { deriveEyeConfig } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
@@ -26,15 +26,15 @@ type CalibrationMode =
     | 'view'
     | 'glasses'
     | 'weak_eye'
-    | 'suppression'
-    | 'adjust';
+    | 'suppression';
 
 export function SettingsHub() {
     const { glassesType, setGlassesType, passed, save } = useCalibration();
     const calibrationData = getCalibration();
     const [calibMode, setCalibMode] = useState<CalibrationMode>('view');
     const [showGate, setShowGate] = useState(false);
-    const [adjustAttempts, setAdjustAttempts] = useState(0);
+    const [deepSuppressionWarning, setDeepSuppressionWarning] =
+        useState(false);
     const [recalibGlassesType, setRecalibGlassesType] = useState<
         'red-cyan' | 'cyan-red'
     >(glassesType as 'red-cyan' | 'cyan-red');
@@ -56,12 +56,13 @@ export function SettingsHub() {
     };
 
     const handleSuppressionComplete = (balancePoint: number) => {
-        const passed = balancePoint <= 80;
-        save({ suppression_passed: passed });
+        const deepSuppression = balancePoint > 80;
+        save({ suppression_passed: true });
         // Store full suppression result
         saveCalibration({
             ...getCalibration(),
-            suppression_passed: passed,
+            suppression_passed: true,
+            deep_suppression: deepSuppression,
             suppression_result: {
                 suppressionDepth: 100 - balancePoint,
                 balancePoint,
@@ -73,23 +74,18 @@ export function SettingsHub() {
             ...settings,
             fellowEyeContrast: balancePoint,
         });
-        if (passed) {
+        if (deepSuppression) {
+            setDeepSuppressionWarning(true);
+        } else {
             setCalibMode('view');
             toast.success(t('settings.calibrationStatus'));
-        } else {
-            setAdjustAttempts((prev) => prev + 1);
-            setCalibMode('adjust');
         }
     };
 
-    const handleAdjustRetry = () => {
-        setAdjustAttempts((prev) => prev + 1);
-        setCalibMode('suppression');
-    };
-
-    const handleAdjustComplete = () => {
-        save({ suppression_passed: true });
+    const handleWarningContinue = () => {
+        setDeepSuppressionWarning(false);
         setCalibMode('view');
+        toast.success(t('settings.calibrationStatus'));
     };
 
     // Inline calibration steps
@@ -139,32 +135,16 @@ export function SettingsHub() {
                 >
                     <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
                 </AppButton>
-                <SuppressionTestStep
-                    glassesType={recalibGlassesType}
-                    onComplete={handleSuppressionComplete}
-                />
-            </div>
-        );
-    }
-
-    if (calibMode === 'adjust') {
-        return (
-            <div className="p-4 max-w-lg mx-auto">
-                <AppButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCalibMode('suppression')}
-                    className="mb-4"
-                >
-                    <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
-                </AppButton>
-                <BrightnessAdjustStep
-                    glassesType={recalibGlassesType}
-                    onRetry={handleAdjustRetry}
-                    onComplete={handleAdjustComplete}
-                    attempts={adjustAttempts}
-                    maxAttempts={CALIBRATION.MAX_ATTEMPTS}
-                />
+                {deepSuppressionWarning ? (
+                    <DeepSuppressionWarning
+                        onContinue={handleWarningContinue}
+                    />
+                ) : (
+                    <SuppressionTestStep
+                        glassesType={recalibGlassesType}
+                        onComplete={handleSuppressionComplete}
+                    />
+                )}
             </div>
         );
     }

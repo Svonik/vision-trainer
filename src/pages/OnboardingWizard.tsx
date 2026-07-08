@@ -2,12 +2,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
-import { BrightnessAdjustStep } from '../components/calibration/BrightnessAdjustStep';
+import { DeepSuppressionWarning } from '../components/calibration/DeepSuppressionWarning';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
-import { CALIBRATION } from '../modules/constants';
 import {
     getCalibration,
     getDefaultSettings,
@@ -21,8 +20,7 @@ type WizardStep =
     | 'glasses'
     | 'age_group'
     | 'weak_eye'
-    | 'contrast'
-    | 'adjust';
+    | 'contrast';
 
 const STEP_ORDER: WizardStep[] = [
     'disclaimer',
@@ -30,7 +28,6 @@ const STEP_ORDER: WizardStep[] = [
     'age_group',
     'weak_eye',
     'contrast',
-    'adjust',
 ];
 
 export function OnboardingWizard() {
@@ -41,7 +38,8 @@ export function OnboardingWizard() {
     const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>(
         'red-cyan',
     );
-    const [adjustAttempts, setAdjustAttempts] = useState(0);
+    const [deepSuppressionWarning, setDeepSuppressionWarning] =
+        useState(false);
     const {
         save,
         setGlassesType: saveGlassesType,
@@ -78,12 +76,13 @@ export function OnboardingWizard() {
     };
 
     const handleContrastComplete = (balancePoint: number) => {
-        const passed = balancePoint <= 80;
-        save({ suppression_passed: passed });
+        const deepSuppression = balancePoint > 80;
+        save({ suppression_passed: true });
         // Store full suppression result
         saveCalibration({
             ...getCalibration(),
-            suppression_passed: passed,
+            suppression_passed: true,
+            deep_suppression: deepSuppression,
             suppression_result: {
                 suppressionDepth: 100 - balancePoint,
                 balancePoint,
@@ -93,23 +92,14 @@ export function OnboardingWizard() {
         // Save contrast value as initial fellowEyeContrast for gameplay
         const defaults = getDefaultSettings();
         saveDefaultSettings({ ...defaults, fellowEyeContrast: balancePoint });
-        if (passed) {
-            navigate('/mode-select');
+        if (deepSuppression) {
+            setDeepSuppressionWarning(true);
         } else {
-            setAdjustAttempts((prev) => prev + 1);
-            setDirection(1);
-            setStep('adjust');
+            navigate('/mode-select');
         }
     };
 
-    const handleAdjustRetry = () => {
-        setAdjustAttempts((prev) => prev + 1);
-        setDirection(-1);
-        setStep('contrast');
-    };
-
-    const handleAdjustComplete = () => {
-        save({ suppression_passed: true });
+    const handleWarningContinue = () => {
         navigate('/mode-select');
     };
 
@@ -155,19 +145,15 @@ export function OnboardingWizard() {
                     {step === 'weak_eye' && (
                         <WeakEyeStep onSelect={handleWeakEyeSelect} />
                     )}
-                    {step === 'contrast' && (
+                    {step === 'contrast' && !deepSuppressionWarning && (
                         <SuppressionTestStep
                             glassesType={glassesType}
                             onComplete={handleContrastComplete}
                         />
                     )}
-                    {step === 'adjust' && (
-                        <BrightnessAdjustStep
-                            glassesType={glassesType}
-                            onRetry={handleAdjustRetry}
-                            onComplete={handleAdjustComplete}
-                            attempts={adjustAttempts}
-                            maxAttempts={CALIBRATION.MAX_ATTEMPTS}
+                    {step === 'contrast' && deepSuppressionWarning && (
+                        <DeepSuppressionWarning
+                            onContinue={handleWarningContinue}
                         />
                     )}
                 </motion.div>

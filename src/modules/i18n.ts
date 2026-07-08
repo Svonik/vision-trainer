@@ -13,15 +13,9 @@ const strings = {
         'Наденьте анаглифные очки. Видите ли вы оба квадрата одновременно?',
     'calibration.seeBoth': 'Да, вижу оба',
     'calibration.seeOne': 'Нет, вижу только один',
-    'calibration.adjustBrightness': 'Подстройте яркость каналов:',
-    'calibration.red': 'Красный канал',
-    'calibration.cyan': 'Циановый канал',
-    'calibration.save': 'Сохранить настройки',
-    'calibration.retry': 'Проверить снова',
     'calibration.doctorWarning':
-        'Рекомендуем обратиться к офтальмологу для подбора параметров.',
+        'Обнаружена глубокая супрессия одного глаза. Рекомендуем как можно скорее проконсультироваться с офтальмологом для точной настройки терапии.',
     'calibration.continueAnyway': 'Продолжить всё равно',
-    'calibration.recalibrate': 'Перекалибровать',
     'gameSelect.title': 'Выбор упражнения',
     'gameSelect.catcher.title': 'Бинокулярный захват',
     'gameSelect.catcher.description':

@@ -1,11 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsHub } from '../../src/pages/SettingsHub';
+import { saveCalibration } from '../../src/modules/storage';
 
 vi.mock('../../src/modules/storage', () => ({
     getCalibration: vi.fn(() => ({
         suppression_passed: true,
+        deep_suppression: false,
         last_calibrated: null,
         glasses_type: 'red-cyan',
         age_group: '8-12',
@@ -20,9 +22,36 @@ vi.mock('../../src/modules/storage', () => ({
     saveDefaultSettings: vi.fn(),
 }));
 
+/** Helper: pass the math gate deterministically (Math.random mocked to 0 → 6×6=36) */
+function passMathGate() {
+    fireEvent.change(screen.getByRole('spinbutton'), {
+        target: { value: '36' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /ответить/i }));
+}
+
+/** Helper: recalibrate → math gate → glasses → weak eye → suppression step */
+function advanceToSuppressionStep() {
+    fireEvent.click(
+        screen.getByRole('button', { name: /перекалибровать/i }),
+    );
+    passMathGate();
+    fireEvent.click(screen.getByText(/красная слева/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+    fireEvent.click(screen.getByText(/левый/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+}
+
 describe('SettingsHub', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // MathGate uses Math.random() for its arithmetic challenge — pin it
+        // so passMathGate()'s hardcoded answer (6×6=36) is deterministic.
+        vi.spyOn(Math, 'random').mockReturnValue(0);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('renders 3 sections', () => {
@@ -82,6 +111,88 @@ describe('SettingsHub', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: /нормально/i }),
+        ).toBeInTheDocument();
+    });
+
+    it('does not reference the removed BrightnessAdjustStep flow', () => {
+        render(
+            <MemoryRouter>
+                <SettingsHub />
+            </MemoryRouter>,
+        );
+        expect(
+            screen.queryByText(/подстройте яркость/i),
+        ).not.toBeInTheDocument();
+    });
+
+    it('deep suppression (balancePoint > 80) persists deep_suppression, shows doctor warning, and still allows finishing recalibration', () => {
+        render(
+            <MemoryRouter>
+                <SettingsHub />
+            </MemoryRouter>,
+        );
+        advanceToSuppressionStep();
+
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '100' },
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: /проверим ещё раз/i }),
+        );
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '100' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+
+        expect(screen.getByRole('alert')).toHaveTextContent(/офтальмолог/i);
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                deep_suppression: true,
+                suppression_passed: true,
+            }),
+        );
+        // View section (with the recalibrate button) is not yet shown —
+        // it appears once the warning is acknowledged.
+        expect(
+            screen.queryByRole('button', { name: /перекалибровать/i }),
+        ).not.toBeInTheDocument();
+
+        fireEvent.click(
+            screen.getByRole('button', { name: /продолжить всё равно/i }),
+        );
+        expect(
+            screen.getByRole('button', { name: /перекалибровать/i }),
+        ).toBeInTheDocument();
+    });
+
+    it('balancePoint <= 80 persists deep_suppression:false and shows no warning', () => {
+        render(
+            <MemoryRouter>
+                <SettingsHub />
+            </MemoryRouter>,
+        );
+        advanceToSuppressionStep();
+
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '30' },
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: /проверим ещё раз/i }),
+        );
+        fireEvent.change(screen.getByRole('slider'), {
+            target: { value: '30' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                deep_suppression: false,
+                suppression_passed: true,
+            }),
+        );
+        expect(
+            screen.getByRole('button', { name: /перекалибровать/i }),
         ).toBeInTheDocument();
     });
 });
