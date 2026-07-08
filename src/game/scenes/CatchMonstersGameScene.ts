@@ -438,7 +438,28 @@ export default class CatchMonstersGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
+        // Fellow (strong) eye handicap must land on the actually-rendered
+        // crosshair (platformColor channel) — previously only this JS
+        // variable was updated and .setAlpha() was never called again,
+        // freezing the handicap at its initial value.
         this.platformAlpha = alpha;
+        if (!this.crosshair) return;
+        const targets = [
+            this.crosshair.h,
+            this.crosshair.v,
+            this.crosshair.ring,
+        ];
+        if (this.tweens) {
+            this.tweens.killTweensOf(targets);
+            this.tweens.add({
+                targets,
+                alpha,
+                duration: 250,
+                ease: 'Sine.easeInOut',
+            });
+        } else {
+            targets.forEach((target) => target.setAlpha(alpha));
+        }
     }
 
     togglePause() {

@@ -601,7 +601,14 @@ export default class KnifeHitGameScene extends Phaser.Scene {
 
     // ── Contrast engine callback ──────────────────────────────────────
     updateFellowEyeAlpha(alpha) {
-        this.stuckAlpha = alpha;
+        // Fellow (strong) eye handicap belongs on the thrown/waiting knife
+        // (knifeColor channel). stuckKnives are the amblyopic (weak) eye's
+        // target and must stay at their own fixed alpha — writing to
+        // stuckAlpha here was an inversion of the clinical protocol.
+        // this.waitingKnife is redrawn from this.knifeAlpha on every throw
+        // (drawWaitingKnife/resetWaitingKnife), so updating the variable is
+        // enough to make the change visible on the next throw.
+        this.knifeAlpha = alpha;
     }
 
     // ── Pause ─────────────────────────────────────────────────────────

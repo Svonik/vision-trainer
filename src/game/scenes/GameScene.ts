@@ -129,6 +129,11 @@ export default class GameScene extends Phaser.Scene {
         const ph = fh * GAME.PLATFORM_HEIGHT_RATIO;
         const py = fy + fh - ph / 2 - 10;
 
+        // Bake the glow/body/highlight layers at full opacity (alpha=1) and
+        // drive the clinical contrast exclusively through the container's own
+        // alpha below — this is the ONLY alpha multiplier applied, so later
+        // updateFellowEyeAlpha() calls set an absolute value instead of
+        // compounding on top of a baked-in fraction.
         const platformContainer = GameVisuals.glowRect(
             this,
             ccx,
@@ -136,8 +141,9 @@ export default class GameScene extends Phaser.Scene {
             pw,
             ph,
             this.platformColor,
-            this.platformAlpha,
+            1,
         );
+        platformContainer.setAlpha(this.platformAlpha);
         // Create a plain rectangle for physics (invisible, same bounds)
         this.platform = this.add.rectangle(
             ccx,
@@ -452,17 +458,20 @@ export default class GameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        if (!this.platform) return;
+        // Fellow (strong) eye handicap must land on the actually-rendered
+        // platform (platformVisual/glowRect), not the invisible physics
+        // rectangle (this.platform, fillAlpha=0) used only for collision.
+        if (!this.platformVisual) return;
         if (this.tweens) {
-            this.tweens.killTweensOf(this.platform);
+            this.tweens.killTweensOf(this.platformVisual);
             this.tweens.add({
-                targets: this.platform,
+                targets: this.platformVisual,
                 alpha,
                 duration: 250,
                 ease: 'Sine.easeInOut',
             });
         } else {
-            this.platform.setAlpha(alpha);
+            this.platformVisual.setAlpha(alpha);
         }
     }
 
