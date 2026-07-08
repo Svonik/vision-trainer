@@ -272,6 +272,8 @@ const strings = {
     'stats.fellow_contrast': 'Контраст ведущего глаза',
     'stats.window_accuracy': 'Точность (окно)',
     'stats.contrast_change': 'Изменение контраста',
+    'stats.suppressionDepth': 'Глубина подавления',
+    'stats.suppressionWasNow': 'Было → стало',
     'training_summary.course_result': 'Итоги курса',
     'training_summary.contrast_start': 'Начало курса',
     'training_summary.contrast_now': 'Текущий уровень',

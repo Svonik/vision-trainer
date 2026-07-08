@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
     acceptDisclaimer,
     addSession,
+    appendSuppressionHistory,
     getCalibration,
     getDefaultSettings,
     getSessions,
+    getSuppressionHistory,
     initStorage,
     isDisclaimerAccepted,
     isStorageAvailable,
@@ -85,5 +87,73 @@ describe('Storage Module', () => {
         );
         const settings = getDefaultSettings();
         expect(settings.fellowEyeContrast).toBe(30);
+    });
+
+    it('history getter returns [] when nothing was ever calibrated', () => {
+        initStorage();
+        expect(getSuppressionHistory()).toEqual([]);
+    });
+
+    it('appends a suppression record on save, and getter returns it', () => {
+        initStorage();
+        const record = {
+            suppressionDepth: 40,
+            balancePoint: 60,
+            timestamp: '2026-01-01T00:00:00.000Z',
+        };
+        // Mirrors OnboardingWizard/SettingsHub: append before the calibration
+        // record itself is overwritten with the new suppression_result.
+        appendSuppressionHistory(record);
+        saveCalibration({ ...getCalibration(), suppression_result: record });
+        expect(getSuppressionHistory()).toEqual([record]);
+    });
+
+    it('a second (re)calibration appends a second history record', () => {
+        initStorage();
+        const first = {
+            suppressionDepth: 40,
+            balancePoint: 60,
+            timestamp: '2026-01-01T00:00:00.000Z',
+        };
+        const second = {
+            suppressionDepth: 25,
+            balancePoint: 75,
+            timestamp: '2026-02-01T00:00:00.000Z',
+        };
+        appendSuppressionHistory(first);
+        saveCalibration({ ...getCalibration(), suppression_result: first });
+        appendSuppressionHistory(second);
+        saveCalibration({ ...getCalibration(), suppression_result: second });
+        expect(getSuppressionHistory()).toEqual([first, second]);
+    });
+
+    it('legacy migration: seeds history from an existing suppression_result when history was never written', () => {
+        initStorage();
+        const legacyResult = {
+            suppressionDepth: 35,
+            balancePoint: 65,
+            timestamp: '2025-06-01T00:00:00.000Z',
+        };
+        // Simulate a pre-feature user: calibration already has a
+        // suppression_result, but vt_suppression_history was never written.
+        saveCalibration({
+            ...getCalibration(),
+            suppression_result: legacyResult,
+        });
+        expect(getSuppressionHistory()).toEqual([legacyResult]);
+
+        // Their first recalibration under the new code appends a second
+        // record, giving them a 'было → стало' comparison immediately.
+        const newResult = {
+            suppressionDepth: 20,
+            balancePoint: 80,
+            timestamp: '2025-07-01T00:00:00.000Z',
+        };
+        appendSuppressionHistory(newResult);
+        saveCalibration({
+            ...getCalibration(),
+            suppression_result: newResult,
+        });
+        expect(getSuppressionHistory()).toEqual([legacyResult, newResult]);
     });
 });

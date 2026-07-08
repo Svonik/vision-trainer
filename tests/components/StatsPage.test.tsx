@@ -2,9 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { StatsPage } from '../../src/pages/StatsPage';
+import { getSuppressionHistory } from '../../src/modules/storage';
 
 vi.mock('../../src/modules/storage', () => ({
     getSessions: vi.fn(() => []),
+    getSuppressionHistory: vi.fn(() => []),
 }));
 
 const mockResult = {
