@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SettingsHub } from '../../src/pages/SettingsHub';
 import { saveCalibration } from '../../src/modules/storage';
+import { SettingsHub } from '../../src/pages/SettingsHub';
 
 vi.mock('../../src/modules/storage', () => ({
     getCalibration: vi.fn(() => ({
@@ -12,6 +12,7 @@ vi.mock('../../src/modules/storage', () => ({
         glasses_type: 'red-cyan',
         age_group: '8-12',
         weak_eye: 'left',
+        amblyopia_type: 'unspecified',
     })),
     saveCalibration: vi.fn(),
     appendSuppressionHistory: vi.fn(),
@@ -31,13 +32,13 @@ function passMathGate() {
     fireEvent.click(screen.getByRole('button', { name: /ответить/i }));
 }
 
-/** Helper: recalibrate → math gate → glasses → weak eye → suppression step */
+/** Helper: recalibrate → math gate → glasses → amblyopia type → weak eye → suppression step */
 function advanceToSuppressionStep() {
-    fireEvent.click(
-        screen.getByRole('button', { name: /перекалибровать/i }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: /перекалибровать/i }));
     passMathGate();
     fireEvent.click(screen.getByText(/красная слева/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^не указан$/i }));
     fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
     fireEvent.click(screen.getByText(/левый/i));
     fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
@@ -126,6 +127,28 @@ describe('SettingsHub', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('recalibration persists selected amblyopia type before weak eye step', () => {
+        render(
+            <MemoryRouter>
+                <SettingsHub />
+            </MemoryRouter>,
+        );
+        fireEvent.click(
+            screen.getByRole('button', { name: /перекалибровать/i }),
+        );
+        passMathGate();
+        fireEvent.click(screen.getByText(/красная слева/i));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        fireEvent.click(screen.getByText(/смешанная/i));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                amblyopia_type: 'mixed',
+            }),
+        );
+        expect(screen.getByText(/какой глаз тренируем/i)).toBeInTheDocument();
+    });
     it('deep suppression (balancePoint > 80) persists deep_suppression, shows doctor warning, and still allows finishing recalibration', () => {
         render(
             <MemoryRouter>

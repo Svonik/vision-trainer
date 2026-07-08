@@ -200,6 +200,14 @@ const strings = {
     'weak_eye.subtitle': 'Укажите глаз по назначению врача',
     'weak_eye.left': 'Левый',
     'weak_eye.right': 'Правый',
+    'amblyopiaType.title': 'Тип амблиопии',
+    'amblyopiaType.subtitle':
+        'Выберите тип амблиопии, если он вам известен. Если не уверены — оставьте «не указан».',
+    'amblyopiaType.unspecified': 'Не указан',
+    'amblyopiaType.strabismus': 'Страбизм',
+    'amblyopiaType.anisometropia': 'Анизометропия',
+    'amblyopiaType.mixed': 'Смешанная',
+    'stats.amblyopiaType': 'Тип амблиопии',
     'contrast_slider.title': 'Настройка контраста',
     'contrast_slider.subtitle':
         'Наденьте очки на ребёнка. Медленно двигайте ползунок, пока он не увидит обе фигуры',

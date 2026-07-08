@@ -6,6 +6,7 @@ import { ContrastIndicator } from '@/components/ContrastIndicator';
 import { MathGate } from '@/components/MathGate';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Card, CardContent } from '@/components/ui/card';
+import { AmblyopiaTypeStep } from '../components/calibration/AmblyopiaTypeStep';
 import { DeepSuppressionWarning } from '../components/calibration/DeepSuppressionWarning';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
@@ -16,6 +17,7 @@ import type { GlassesType } from '../modules/glassesColors';
 import { deriveEyeConfig } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
 import {
+    type AmblyopiaType,
     appendSuppressionHistory,
     getCalibration,
     getDefaultSettings,
@@ -26,6 +28,7 @@ import {
 type CalibrationMode =
     | 'view'
     | 'glasses'
+    | 'amblyopia_type'
     | 'weak_eye'
     | 'suppression';
 
@@ -34,8 +37,7 @@ export function SettingsHub() {
     const calibrationData = getCalibration();
     const [calibMode, setCalibMode] = useState<CalibrationMode>('view');
     const [showGate, setShowGate] = useState(false);
-    const [deepSuppressionWarning, setDeepSuppressionWarning] =
-        useState(false);
+    const [deepSuppressionWarning, setDeepSuppressionWarning] = useState(false);
     const [recalibGlassesType, setRecalibGlassesType] = useState<
         'red-cyan' | 'cyan-red'
     >(glassesType as 'red-cyan' | 'cyan-red');
@@ -48,6 +50,11 @@ export function SettingsHub() {
         setRecalibGlassesType(type);
         setGlassesType(type);
         save({ suppression_passed: false, glasses_type: type });
+        setCalibMode('amblyopia_type');
+    };
+
+    const handleAmblyopiaTypeSelect = (amblyopiaType: AmblyopiaType) => {
+        save({ amblyopia_type: amblyopiaType });
         setCalibMode('weak_eye');
     };
 
@@ -111,13 +118,32 @@ export function SettingsHub() {
         );
     }
 
-    if (calibMode === 'weak_eye') {
+    if (calibMode === 'amblyopia_type') {
         return (
             <div className="p-4 max-w-lg mx-auto">
                 <AppButton
                     variant="ghost"
                     size="sm"
                     onClick={() => setCalibMode('glasses')}
+                    className="mb-4"
+                >
+                    <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
+                </AppButton>
+                <AmblyopiaTypeStep
+                    amblyopiaType={getCalibration().amblyopia_type}
+                    onSelect={handleAmblyopiaTypeSelect}
+                />
+            </div>
+        );
+    }
+
+    if (calibMode === 'weak_eye') {
+        return (
+            <div className="p-4 max-w-lg mx-auto">
+                <AppButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCalibMode('amblyopia_type')}
                     className="mb-4"
                 >
                     <ArrowLeft className="w-4 h-4" /> {t('nav.back')}
@@ -221,6 +247,16 @@ export function SettingsHub() {
                                 {calibrationData.weak_eye === 'left'
                                     ? t('weak_eye.left')
                                     : t('weak_eye.right')}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[var(--text-secondary)] text-sm">
+                                {t('amblyopiaType.title')}
+                            </span>
+                            <span className="text-[var(--text)] text-sm font-medium">
+                                {t(
+                                    `amblyopiaType.${calibrationData.amblyopia_type}`,
+                                )}
                             </span>
                         </div>
                         {calibrationData.last_calibrated && (

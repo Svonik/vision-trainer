@@ -1,10 +1,18 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
+import { describe, expect, it, vi } from 'vitest';
 import { StatsPage } from '../../src/pages/StatsPage';
-import { getSuppressionHistory } from '../../src/modules/storage';
 
 vi.mock('../../src/modules/storage', () => ({
+    getCalibration: vi.fn(() => ({
+        suppression_passed: true,
+        deep_suppression: false,
+        last_calibrated: null,
+        glasses_type: 'red-cyan',
+        age_group: '8-12',
+        weak_eye: 'left',
+        amblyopia_type: 'unspecified',
+    })),
     getSessions: vi.fn(() => []),
     getSuppressionHistory: vi.fn(() => []),
 }));
@@ -25,22 +33,42 @@ const mockResult = {
 describe('StatsPage', () => {
     it('renders results', () => {
         render(
-            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/stats', state: { result: mockResult } }]}>
+            <MemoryRouter
+                initialEntries={[
+                    {
+                        pathname: '/games/catcher/stats',
+                        state: { result: mockResult },
+                    },
+                ]}
+            >
                 <Routes>
-                    <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                    <Route
+                        path="/games/:gameId/stats"
+                        element={<StatsPage />}
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText(/результаты/i)).toBeInTheDocument();
     });
 
     it('has play again, change settings, and other game buttons', () => {
         render(
-            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/stats', state: { result: mockResult } }]}>
+            <MemoryRouter
+                initialEntries={[
+                    {
+                        pathname: '/games/catcher/stats',
+                        state: { result: mockResult },
+                    },
+                ]}
+            >
                 <Routes>
-                    <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                    <Route
+                        path="/games/:gameId/stats"
+                        element={<StatsPage />}
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(screen.getByText(/играть снова/i)).toBeInTheDocument();
         expect(screen.getByText(/изменить настройки/i)).toBeInTheDocument();
@@ -49,33 +77,62 @@ describe('StatsPage', () => {
 
     it('renders progress ring for hit rate', () => {
         const { container } = render(
-            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/stats', state: { result: mockResult } }]}>
+            <MemoryRouter
+                initialEntries={[
+                    {
+                        pathname: '/games/catcher/stats',
+                        state: { result: mockResult },
+                    },
+                ]}
+            >
                 <Routes>
-                    <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                    <Route
+                        path="/games/:gameId/stats"
+                        element={<StatsPage />}
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         expect(container.querySelector('svg circle')).toBeInTheDocument();
     });
 
     it('shows game name in title', () => {
         render(
-            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/stats', state: { result: mockResult } }]}>
+            <MemoryRouter
+                initialEntries={[
+                    {
+                        pathname: '/games/catcher/stats',
+                        state: { result: mockResult },
+                    },
+                ]}
+            >
                 <Routes>
-                    <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                    <Route
+                        path="/games/:gameId/stats"
+                        element={<StatsPage />}
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
-        expect(screen.getByText(/результаты: бинокулярный захват/i)).toBeInTheDocument();
+        expect(
+            screen.getByText(/результаты: бинокулярный захват/i),
+        ).toBeInTheDocument();
     });
 
     it('shows single CTA when no result (empty state)', () => {
         render(
-            <MemoryRouter initialEntries={[{ pathname: '/games/catcher/stats', state: {} }]}>
+            <MemoryRouter
+                initialEntries={[
+                    { pathname: '/games/catcher/stats', state: {} },
+                ]}
+            >
                 <Routes>
-                    <Route path="/games/:gameId/stats" element={<StatsPage />} />
+                    <Route
+                        path="/games/:gameId/stats"
+                        element={<StatsPage />}
+                    />
                 </Routes>
-            </MemoryRouter>
+            </MemoryRouter>,
         );
         // Should show "Начать игру!" as the only button
         expect(screen.getByText(/начать игру!/i)).toBeInTheDocument();

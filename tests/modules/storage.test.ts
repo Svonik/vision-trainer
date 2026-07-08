@@ -75,6 +75,30 @@ describe('Storage Module', () => {
         expect(getCalibration().age_group).toBe('4-7');
     });
 
+    it('persists amblyopia_type in calibration', () => {
+        initStorage();
+        saveCalibration({
+            ...getCalibration(),
+            amblyopia_type: 'anisometropia',
+        });
+        expect(getCalibration().amblyopia_type).toBe('anisometropia');
+    });
+
+    it('defaults amblyopia_type to unspecified for legacy calibration', () => {
+        localStorage.setItem(
+            'vt_calibration',
+            JSON.stringify({
+                suppression_passed: true,
+                deep_suppression: false,
+                last_calibrated: null,
+                glasses_type: 'red-cyan',
+                age_group: '8-12',
+                weak_eye: 'left',
+            }),
+        );
+        expect(getCalibration().amblyopia_type).toBe('unspecified');
+    });
+
     it('defaults fellowEyeContrast to 30 for legacy settings', () => {
         localStorage.setItem(
             'vt_default_settings',

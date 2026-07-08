@@ -23,6 +23,7 @@ vi.mock('../../src/modules/storage', async () => {
             glasses_type: 'red-cyan',
             age_group: '8-12',
             weak_eye: 'left',
+            amblyopia_type: 'unspecified',
         })),
     };
 });
@@ -67,7 +68,7 @@ vi.mock('framer-motion', async () => {
     };
 });
 
-/** Helper: advance through disclaimer → glasses → age group → weak eye */
+/** Helper: advance through disclaimer → glasses → age group → amblyopia type → weak eye */
 function advanceToContrastStep() {
     // Disclaimer: accept + continue
     fireEvent.click(screen.getByRole('checkbox'));
@@ -77,6 +78,9 @@ function advanceToContrastStep() {
     fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
     // Age group: select + continue
     fireEvent.click(screen.getByText(/8-12 лет/i));
+    fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+    // Amblyopia type: keep default unspecified + continue
+    fireEvent.click(screen.getByRole('button', { name: /^не указан$/i }));
     fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
     // Weak eye: select + continue
     fireEvent.click(screen.getByText(/левый/i));
@@ -101,14 +105,14 @@ describe('OnboardingWizard', () => {
         ).toBeInTheDocument();
     });
 
-    it('shows 5 dot indicators', () => {
+    it('shows 6 dot indicators', () => {
         render(
             <MemoryRouter>
                 <OnboardingWizard />
             </MemoryRouter>,
         );
         const dots = document.querySelectorAll('[data-dot]');
-        expect(dots).toHaveLength(5);
+        expect(dots).toHaveLength(6);
     });
 
     it('progresses from disclaimer to glasses step after accepting', () => {
@@ -147,6 +151,29 @@ describe('OnboardingWizard', () => {
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
         fireEvent.click(screen.getByText(/8-12 лет/i));
         fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        expect(screen.getByRole('heading', { name: /тип амблиопии/i })).toBeInTheDocument();
+    });
+
+    it('persists selected amblyopia type before weak eye step', () => {
+        render(
+            <MemoryRouter>
+                <OnboardingWizard />
+            </MemoryRouter>,
+        );
+        fireEvent.click(screen.getByRole('checkbox'));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        fireEvent.click(screen.getByText(/красная слева/i));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        fireEvent.click(screen.getByText(/8-12 лет/i));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+        fireEvent.click(screen.getByText(/анизометропия/i));
+        fireEvent.click(screen.getByRole('button', { name: /продолжить/i }));
+
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                amblyopia_type: 'anisometropia',
+            }),
+        );
         expect(screen.getByText(/какой глаз тренируем/i)).toBeInTheDocument();
     });
 

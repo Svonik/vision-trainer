@@ -2,12 +2,14 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AgeGroupStep } from '../components/calibration/AgeGroupStep';
+import { AmblyopiaTypeStep } from '../components/calibration/AmblyopiaTypeStep';
 import { DeepSuppressionWarning } from '../components/calibration/DeepSuppressionWarning';
 import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
 import {
+    type AmblyopiaType,
     appendSuppressionHistory,
     getCalibration,
     getDefaultSettings,
@@ -20,6 +22,7 @@ type WizardStep =
     | 'disclaimer'
     | 'glasses'
     | 'age_group'
+    | 'amblyopia_type'
     | 'weak_eye'
     | 'contrast';
 
@@ -27,6 +30,7 @@ const STEP_ORDER: WizardStep[] = [
     'disclaimer',
     'glasses',
     'age_group',
+    'amblyopia_type',
     'weak_eye',
     'contrast',
 ];
@@ -39,8 +43,7 @@ export function OnboardingWizard() {
     const [glassesType, setGlassesType] = useState<'red-cyan' | 'cyan-red'>(
         'red-cyan',
     );
-    const [deepSuppressionWarning, setDeepSuppressionWarning] =
-        useState(false);
+    const [deepSuppressionWarning, setDeepSuppressionWarning] = useState(false);
     const {
         save,
         setGlassesType: saveGlassesType,
@@ -66,6 +69,12 @@ export function OnboardingWizard() {
 
     const handleAgeGroupSelect = (ageGroup: '4-7' | '8-12') => {
         saveAgeGroup(ageGroup);
+        setDirection(1);
+        setStep('amblyopia_type');
+    };
+
+    const handleAmblyopiaTypeSelect = (amblyopiaType: AmblyopiaType) => {
+        save({ amblyopia_type: amblyopiaType });
         setDirection(1);
         setStep('weak_eye');
     };
@@ -145,6 +154,12 @@ export function OnboardingWizard() {
                     {step === 'age_group' && (
                         <AgeGroupStep onSelect={handleAgeGroupSelect} />
                     )}
+                    {step === 'amblyopia_type' && (
+                        <AmblyopiaTypeStep
+                            amblyopiaType={getCalibration().amblyopia_type}
+                            onSelect={handleAmblyopiaTypeSelect}
+                        />
+                    )}
                     {step === 'weak_eye' && (
                         <WeakEyeStep onSelect={handleWeakEyeSelect} />
                     )}
@@ -168,7 +183,6 @@ export function OnboardingWizard() {
                     <span
                         key={s}
                         data-dot={s}
-                        aria-label={`Шаг ${i + 1} из ${STEP_ORDER.length}`}
                         className={`w-2 h-2 rounded-full transition-colors ${
                             i < currentStepIndex
                                 ? 'bg-[var(--cta)] opacity-60'
