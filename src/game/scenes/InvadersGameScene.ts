@@ -967,6 +967,7 @@ export default class InvadersGameScene extends DichopticScene {
         this.safetyTimer.stop();
         if (!won) SynthSounds.gameOver();
 
+        const stats = this.getDichopticStats();
         const result = {
             game: 'invaders',
             timestamp: new Date().toISOString(),
@@ -985,10 +986,10 @@ export default class InvadersGameScene extends DichopticScene {
             lives_remaining: this.lives,
             level: this.level,
             completed: won,
-            fellow_contrast_start: this.settings?.fellowEyeContrast ?? 30,
-            fellow_contrast_end: this.contrastState.fellowEyeContrast,
-            window_accuracy: getAccuracy(this.contrastState),
-            total_trials: this.contrastState.totalTrials,
+            fellow_contrast_start: stats.fellowContrastStart,
+            fellow_contrast_end: stats.fellowContrastEnd,
+            window_accuracy: stats.accuracy,
+            total_trials: stats.totalTrials,
         };
 
         EventBus.emit('game-complete', { result, settings: this.settings });
