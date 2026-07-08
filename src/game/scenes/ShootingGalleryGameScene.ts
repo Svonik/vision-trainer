@@ -30,6 +30,21 @@ const MAX_TARGETS = 6;
 const AMMO_PER_ROUND = 20;
 const POINTS_TO_ADVANCE_BASE = 15;
 const SPAWN_INTERVAL_MS = 1200;
+const MARKER_EXTRA_RADIUS = 8;
+
+/**
+ * Dichoptic target gate — a shot only counts when it lands on a target that
+ * currently carries the strong-eye marker. The target body (weak eye) and
+ * the marker (strong eye) are rendered in different anaglyph channels, so
+ * this can only be satisfied by a player fusing both channels.
+ */
+export function isValidHit(
+    hasMarker: boolean,
+    dist: number,
+    hitRadius: number,
+): boolean {
+    return hasMarker === true && dist <= hitRadius;
+}
 
 export default class ShootingGalleryGameScene extends Phaser.Scene {
     constructor() {
@@ -97,6 +112,9 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         this.totalSpawned = 0;
         this.pointsToAdvance = POINTS_TO_ADVANCE_BASE;
         this.targets = [];
+        // The one target currently carrying the strong-eye marker — only
+        // this target is a valid shot (dichoptic fusion requirement).
+        this.markedTarget = null;
         this.lastSpawnTime = 0;
         this.spawnInterval = SPAWN_INTERVAL_MS;
 
@@ -332,6 +350,36 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
 
         this.targets.push(entry);
         this.totalSpawned++;
+        this.ensureMarkedTarget();
+    }
+
+    // Attach the strong-eye marker (ring) to a target — this is the only
+    // target that is a valid shot until it's hit or leaves the field.
+    attachMarker(entry) {
+        const r = entry.radius + MARKER_EXTRA_RADIUS;
+        const marker = this.add.circle(
+            entry.x,
+            entry.y,
+            r,
+            this.crosshairColor,
+            0,
+        );
+        marker.setStrokeStyle(3, this.crosshairColor, 1);
+        marker.setAlpha(this.crosshairAlpha);
+        marker.setDepth(50);
+        entry.marker = marker;
+        entry.hasMarker = true;
+        this.markedTarget = entry;
+    }
+
+    // Guarantee exactly one active target carries the marker whenever any
+    // target is on screen (keeps the game playable for 4-7 year olds).
+    ensureMarkedTarget() {
+        if (this.markedTarget && this.targets.includes(this.markedTarget))
+            return;
+        this.markedTarget = null;
+        if (this.targets.length === 0) return;
+        this.attachMarker(Phaser.Math.RND.pick(this.targets));
     }
 
     // --- Pick target type index, biased by level ---
@@ -364,7 +412,10 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
             const dx = px - tgt.x;
             const dy = py - tgt.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist <= tgt.radius + 8) {
+            const hitRadius = tgt.radius + 8;
+            // Only the target carrying the strong-eye marker is a valid
+            // hit — a target without it is not counted, per dichoptic gate.
+            if (isValidHit(tgt.hasMarker, dist, hitRadius)) {
                 this.hitTarget(i);
                 hitAny = true;
                 break; // Only hit one target per shot
@@ -397,6 +448,8 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
         // Destroy visuals
         tgt.visual.destroy();
         tgt.label.destroy();
+        if (tgt.marker) tgt.marker.destroy();
+        if (this.markedTarget === tgt) this.markedTarget = null;
         this.targets.splice(index, 1);
 
         // Effects
@@ -413,6 +466,7 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
             true,
         );
         this.updateTargetAlpha();
+        this.ensureMarkedTarget();
 
         // Score
         this.score += points;
@@ -426,6 +480,16 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
     // --- Update crosshair (fellow eye) alpha from contrast engine ---
     updateTargetAlpha() {
         this.crosshairAlpha = this.contrastState.fellowEyeContrast / 100;
+        // Tween the ACTUAL visible marker object (not just the JS value) so
+        // the contrast change is perceivable, per clinical protocol.
+        if (this.markedTarget?.marker) {
+            this.tweens.add({
+                targets: this.markedTarget.marker,
+                alpha: this.crosshairAlpha,
+                duration: 250,
+                ease: 'Linear',
+            });
+        }
     }
 
     // --- Update loop ---
@@ -451,27 +515,26 @@ export default class ShootingGalleryGameScene extends Phaser.Scene {
             tgt.x += tgt.speed * dtSec;
             tgt.visual.setPosition(tgt.x, tgt.y);
             tgt.label.setPosition(tgt.x, tgt.y);
+            if (tgt.marker) tgt.marker.setPosition(tgt.x, tgt.y);
 
             // Update alpha in case contrast changed
             tgt.visual.setAlpha(this.targetAlpha);
 
             // Remove if off-screen
-            if (
+            const offRight =
                 tgt.speed > 0 &&
-                tgt.x > this.field.x + this.field.w + tgt.radius + 10
-            ) {
+                tgt.x > this.field.x + this.field.w + tgt.radius + 10;
+            const offLeft =
+                tgt.speed < 0 && tgt.x < this.field.x - tgt.radius - 10;
+            if (offRight || offLeft) {
                 tgt.visual.destroy();
                 tgt.label.destroy();
-                this.targets.splice(i, 1);
-            } else if (
-                tgt.speed < 0 &&
-                tgt.x < this.field.x - tgt.radius - 10
-            ) {
-                tgt.visual.destroy();
-                tgt.label.destroy();
+                if (tgt.marker) tgt.marker.destroy();
+                if (this.markedTarget === tgt) this.markedTarget = null;
                 this.targets.splice(i, 1);
             }
         }
+        this.ensureMarkedTarget();
 
         // HUD
         if (this.hud) {

@@ -21,8 +21,23 @@ import { GameVisuals } from '../vfx/GameVisuals';
 const BALLOON_RADIUS = 25;
 const WIN_COUNT = 30;
 const MAX_BALLOONS = 3;
+const MARKER_RADIUS = BALLOON_RADIUS + 8;
 
 const LIFESPAN_MS = { slow: 4000, normal: 3000, fast: 2000, pro: 1500 };
+
+/**
+ * Dichoptic target gate — a tap only counts when it lands on a balloon that
+ * currently carries the strong-eye marker. The balloon body (weak eye) and
+ * the marker (strong eye) are rendered in different anaglyph channels, so
+ * this can only be satisfied by a player fusing both channels.
+ */
+export function isValidHit(
+    hasMarker: boolean,
+    dist: number,
+    hitRadius: number,
+): boolean {
+    return hasMarker === true && dist <= hitRadius;
+}
 
 export default class BalloonPopGameScene extends Phaser.Scene {
     constructor() {
@@ -128,6 +143,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
 
         // Active balloons list: { circle, timerBar, tweenY, spawnTime }
         this.balloons = [];
+        // The one balloon currently carrying the strong-eye marker — only
+        // this balloon is a valid pop target (dichoptic fusion requirement).
+        this.markedBalloon = null;
 
         // Input: click/tap pops balloon
         this.input.on('pointermove', (pointer) => {
@@ -276,6 +294,35 @@ export default class BalloonPopGameScene extends Phaser.Scene {
 
         this.balloons.push(entry);
         this.totalBalloons++;
+        this.ensureMarkedTarget();
+    }
+
+    // Attach the strong-eye marker (ring) to a balloon — this is the only
+    // balloon that is a valid pop target until it pops/expires.
+    attachMarker(entry) {
+        const marker = this.add.circle(
+            entry.circle.x,
+            entry.circle.y,
+            MARKER_RADIUS,
+            this.crosshairColor,
+            0,
+        );
+        marker.setStrokeStyle(3, this.crosshairColor, 1);
+        marker.setAlpha(this.crosshairAlpha);
+        marker.setDepth(50);
+        entry.marker = marker;
+        entry.hasMarker = true;
+        this.markedBalloon = entry;
+    }
+
+    // Guarantee exactly one active balloon carries the marker whenever any
+    // balloon is on screen (keeps the game playable for 4-7 year olds).
+    ensureMarkedTarget() {
+        if (this.markedBalloon && this.balloons.includes(this.markedBalloon))
+            return;
+        this.markedBalloon = null;
+        if (this.balloons.length === 0) return;
+        this.attachMarker(Phaser.Math.RND.pick(this.balloons));
     }
 
     tryPopBalloon(px, py) {
@@ -284,8 +331,13 @@ export default class BalloonPopGameScene extends Phaser.Scene {
             const dx = px - b.circle.x;
             const dy = py - b.circle.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist <= BALLOON_RADIUS + 6) {
-                this.popBalloon(i);
+            const hitRadius = BALLOON_RADIUS + 6;
+            if (dist <= hitRadius) {
+                // Topmost balloon under the tap — only pops if it carries
+                // the strong-eye marker (fusion required to identify it).
+                if (isValidHit(b.hasMarker, dist, hitRadius)) {
+                    this.popBalloon(i);
+                }
                 return;
             }
         }
@@ -300,6 +352,8 @@ export default class BalloonPopGameScene extends Phaser.Scene {
         b.string.destroy();
         b.barBg.destroy();
         b.barFill.destroy();
+        if (b.marker) b.marker.destroy();
+        if (this.markedBalloon === b) this.markedBalloon = null;
         this.balloons.splice(index, 1);
 
         SynthSounds.hit();
@@ -312,6 +366,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
             true,
         );
         this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.ensureMarkedTarget();
 
         this.popped++;
         if (this.hud)
@@ -335,6 +390,8 @@ export default class BalloonPopGameScene extends Phaser.Scene {
         b.string.destroy();
         b.barBg.destroy();
         b.barFill.destroy();
+        if (b.marker) b.marker.destroy();
+        if (this.markedBalloon === b) this.markedBalloon = null;
         this.balloons.splice(index, 1);
 
         SynthSounds.miss();
@@ -345,6 +402,7 @@ export default class BalloonPopGameScene extends Phaser.Scene {
             false,
         );
         this.updateFellowEyeAlpha(this.contrastState.fellowEyeContrast / 100);
+        this.ensureMarkedTarget();
 
         this.time.delayedCall(200, () => {
             if (!this.isPaused) this.spawnBalloon();
@@ -375,6 +433,9 @@ export default class BalloonPopGameScene extends Phaser.Scene {
             // Update life bar width
             b.barFill.width = b.barW * ratio;
 
+            // Keep the marker glued to its balloon through the float tween
+            if (b.marker) b.marker.setPosition(b.circle.x, b.circle.y);
+
             if (age >= this.balloonLifespan) {
                 this.expireBalloon(i);
             }
@@ -399,6 +460,16 @@ export default class BalloonPopGameScene extends Phaser.Scene {
     updateFellowEyeAlpha(alpha) {
         // Update crosshair (fellow eye) alpha — balloons (amblyopic eye) stay at 1.0
         this.crosshairAlpha = alpha;
+        // Tween the ACTUAL visible marker object (not just the JS value) so
+        // the contrast change is perceivable, per clinical protocol.
+        if (this.markedBalloon?.marker) {
+            this.tweens.add({
+                targets: this.markedBalloon.marker,
+                alpha,
+                duration: 250,
+                ease: 'Linear',
+            });
+        }
     }
 
     togglePause() {
