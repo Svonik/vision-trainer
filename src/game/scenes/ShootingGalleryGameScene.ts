@@ -170,10 +170,24 @@ export default class ShootingGalleryGameScene extends DichopticScene {
         // Crosshair cursor (other eye color — follows mouse/touch)
         this.crosshair = this.add.graphics();
         this.drawCrosshair(ccx, ccy);
+        this.crosshairPosition = { x: ccx, y: ccy };
+        this.onFellowAlphaChange((alpha) => {
+            this.crosshairAlpha = alpha;
+            if (this.crosshairPosition) {
+                this.drawCrosshair(
+                    this.crosshairPosition.x,
+                    this.crosshairPosition.y,
+                );
+            }
+            if (this.markedTarget?.marker) {
+                this.markedTarget.marker.setAlpha(alpha);
+            }
+        });
 
         // Input: mouse move updates crosshair, click shoots
         this.input.on('pointermove', (pointer) => {
             if (!this.isPaused) {
+                this.crosshairPosition = { x: pointer.x, y: pointer.y };
                 this.drawCrosshair(pointer.x, pointer.y);
             }
         });
@@ -432,12 +446,7 @@ export default class ShootingGalleryGameScene extends DichopticScene {
 
         if (!hitAny) {
             SynthSounds.miss();
-            this.contrastState = recordTrial(
-                this.contrastState,
-                this.contrastConfig,
-                false,
-            );
-            this.updateTargetAlpha();
+            this.recordDichopticTrial(false);
         }
 
         // Out of ammo with no advance -> check if round ends
@@ -468,12 +477,7 @@ export default class ShootingGalleryGameScene extends DichopticScene {
 
         // Record hit
         this.totalHits++;
-        this.contrastState = recordTrial(
-            this.contrastState,
-            this.contrastConfig,
-            true,
-        );
-        this.updateTargetAlpha();
+        this.recordDichopticTrial(true);
         this.ensureMarkedTarget();
 
         // Score
