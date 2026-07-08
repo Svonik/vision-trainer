@@ -14,6 +14,7 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import { isValidMatchRun } from '../crossChannelMatch';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -26,21 +27,12 @@ const GRID_CONFIG = {
     pro: 7,
 };
 
-// 6 gem types: 3 red shapes, 3 cyan shapes
-const GEM_SHAPES = [
-    'circle',
-    'square',
-    'triangle',
-    'diamond',
-    'star',
-    'hexagon',
-] as const;
+// Shape (symbol) is INDEPENDENT of the anaglyph channel: any shape can appear
+// in either channel. A match therefore needs the same shape AND both channels
+// present, so it can never be solved with a single eye. Four shapes keep
+// same-shape runs frequent enough that cross-channel matches stay available.
+const GEM_SHAPES = ['circle', 'square', 'triangle', 'diamond'] as const;
 type GemShape = (typeof GEM_SHAPES)[number];
-
-// Red eye: circle, square, triangle (indices 0-2)
-// Cyan eye: diamond, star, hexagon (indices 3-5)
-const _RED_GEMS: GemShape[] = ['circle', 'square', 'triangle'];
-const _CYAN_GEMS: GemShape[] = ['diamond', 'star', 'hexagon'];
 
 const CELL_SIZE = 56;
 const CELL_GAP = 4;
@@ -54,7 +46,6 @@ const LEVEL_SCORE_BASE = 500;
 interface GemData {
     readonly shape: GemShape;
     readonly isColorA: boolean;
-    readonly typeIndex: number; // 0-5
 }
 
 interface CellPos {
@@ -224,11 +215,10 @@ export default class Match3GameScene extends Phaser.Scene {
     // --- Grid initialization ---
 
     randomGem(): GemData {
-        const typeIndex = Math.floor(Math.random() * 6);
+        const shapeIndex = Math.floor(Math.random() * GEM_SHAPES.length);
         return {
-            shape: GEM_SHAPES[typeIndex],
-            isColorA: typeIndex < 3,
-            typeIndex,
+            shape: GEM_SHAPES[shapeIndex],
+            isColorA: Math.random() < 0.5,
         };
     }
 
@@ -588,63 +578,48 @@ export default class Match3GameScene extends Phaser.Scene {
     findAllMatches(): CellPos[] {
         const matched = new Set<string>();
 
-        // Horizontal
-        for (let r = 0; r < this.gridSize; r++) {
-            for (let c = 0; c <= this.gridSize - 3; c++) {
-                const g0 = this.grid[r][c];
-                const g1 = this.grid[r][c + 1];
-                const g2 = this.grid[r][c + 2];
+        // Scan a line, split it into maximal same-shape runs, and keep only the
+        // runs that are a valid cross-channel match (>=3, same shape, both eyes).
+        const scanLine = (
+            cells: { gem: GemData | null; row: number; col: number }[],
+        ) => {
+            let run: { gem: GemData; row: number; col: number }[] = [];
+            const flush = () => {
+                if (isValidMatchRun(run.map((c) => c.gem))) {
+                    for (const c of run) matched.add(`${c.row},${c.col}`);
+                }
+                run = [];
+            };
+            for (const cell of cells) {
                 if (
-                    g0 &&
-                    g1 &&
-                    g2 &&
-                    g0.typeIndex === g1.typeIndex &&
-                    g1.typeIndex === g2.typeIndex
+                    cell.gem &&
+                    (run.length === 0 || cell.gem.shape === run[0].gem.shape)
                 ) {
-                    // Extend run
-                    let end = c + 2;
-                    while (
-                        end + 1 < this.gridSize &&
-                        this.grid[r][end + 1] &&
-                        this.grid[r][end + 1].typeIndex === g0.typeIndex
-                    ) {
-                        end++;
-                    }
-                    for (let k = c; k <= end; k++) {
-                        matched.add(`${r},${k}`);
-                    }
-                    c = end; // skip ahead
+                    run.push(cell);
+                } else {
+                    flush();
+                    if (cell.gem) run.push(cell);
                 }
             }
+            flush();
+        };
+
+        // Horizontal lines
+        for (let r = 0; r < this.gridSize; r++) {
+            const line = [];
+            for (let c = 0; c < this.gridSize; c++) {
+                line.push({ gem: this.grid[r][c], row: r, col: c });
+            }
+            scanLine(line);
         }
 
-        // Vertical
+        // Vertical lines
         for (let c = 0; c < this.gridSize; c++) {
-            for (let r = 0; r <= this.gridSize - 3; r++) {
-                const g0 = this.grid[r][c];
-                const g1 = this.grid[r + 1][c];
-                const g2 = this.grid[r + 2][c];
-                if (
-                    g0 &&
-                    g1 &&
-                    g2 &&
-                    g0.typeIndex === g1.typeIndex &&
-                    g1.typeIndex === g2.typeIndex
-                ) {
-                    let end = r + 2;
-                    while (
-                        end + 1 < this.gridSize &&
-                        this.grid[end + 1][c] &&
-                        this.grid[end + 1][c].typeIndex === g0.typeIndex
-                    ) {
-                        end++;
-                    }
-                    for (let k = r; k <= end; k++) {
-                        matched.add(`${k},${c}`);
-                    }
-                    r = end;
-                }
+            const line = [];
+            for (let r = 0; r < this.gridSize; r++) {
+                line.push({ gem: this.grid[r][c], row: r, col: c });
             }
+            scanLine(line);
         }
 
         return Array.from(matched).map((key) => {

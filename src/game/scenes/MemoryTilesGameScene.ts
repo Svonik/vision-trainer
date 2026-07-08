@@ -14,6 +14,7 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import { isMemoryPair } from '../crossChannelMatch';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -458,7 +459,10 @@ export default class MemoryTilesGameScene extends Phaser.Scene {
         const dA = this.tileData[idxA];
         const dB = this.tileData[idxB];
 
-        if (dA.symbol === dB.symbol) {
+        // A pair requires the SAME symbol AND opposite anaglyph channels (one
+        // tile per eye) — two same-channel tiles never count as a pair, even at
+        // higher difficulties where a symbol may appear on more than one pair.
+        if (isMemoryPair(dA, dB)) {
             // Match!
             SynthSounds.score();
             this.pairsMatched++;

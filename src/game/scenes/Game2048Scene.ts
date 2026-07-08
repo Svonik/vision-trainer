@@ -14,6 +14,7 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import { canMergeTiles } from '../crossChannelMatch';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -54,16 +55,17 @@ const TILE_BG_ALPHA: Record<number, number> = {
     11: 0.7,
 };
 
-// Odd powers of 2 (2,8,32,128,512) → colorA (e.g. RED eye)
-// Even powers of 2 (4,16,64,256,1024,2048) → colorB (e.g. CYAN eye)
-function isOddPower(tileValue: number): boolean {
-    // tileValue 1=2^1, 2=2^2, 3=2^3, etc.
-    return tileValue % 2 === 1;
+// Each tile carries its OWN anaglyph channel (isColorA), independent of its
+// value. Two equal-value tiles only merge when they occupy different channels
+// (see canMergeTiles) — so the child must fuse both eyes to advance.
+function randomChannel(): boolean {
+    return Math.random() < 0.5;
 }
 
 interface CellData {
     readonly tileValue: number;
     readonly canUpgrade: boolean;
+    readonly isColorA: boolean;
 }
 
 interface TileSprite {
@@ -189,7 +191,11 @@ export default class Game2048Scene extends Phaser.Scene {
             this.grid[r] = [];
             this.tileSprites[r] = [];
             for (let c = 0; c < GRID_SIZE; c++) {
-                this.grid[r][c] = { tileValue: 0, canUpgrade: true };
+                this.grid[r][c] = {
+                    tileValue: 0,
+                    canUpgrade: true,
+                    isColorA: false,
+                };
                 this.tileSprites[r][c] = null;
             }
         }
@@ -248,16 +254,21 @@ export default class Game2048Scene extends Phaser.Scene {
         };
     }
 
-    getTileColor(tileValue: number): { color: number; alpha: number } {
-        if (isOddPower(tileValue)) {
+    getTileColor(isColorA: boolean): { color: number; alpha: number } {
+        if (isColorA) {
             return { color: this.colorA, alpha: this.alphaA };
         }
         return { color: this.colorB, alpha: this.alphaB };
     }
 
-    createTileSprite(row: number, col: number, tileValue: number): TileSprite {
+    createTileSprite(
+        row: number,
+        col: number,
+        tileValue: number,
+        isColorA: boolean,
+    ): TileSprite {
         const { x, y } = this.cellCenter(row, col);
-        const { color, alpha } = this.getTileColor(tileValue);
+        const { color, alpha } = this.getTileColor(isColorA);
         const bgAlpha = TILE_BG_ALPHA[tileValue] ?? 0.3;
 
         const bg = this.add
@@ -314,7 +325,9 @@ export default class Game2048Scene extends Phaser.Scene {
         const sprite = this.tileSprites[row][col];
         if (!sprite) return;
 
-        const { color, alpha } = this.getTileColor(tileValue);
+        const { color, alpha } = this.getTileColor(
+            this.grid[row][col].isColorA,
+        );
         const bgAlpha = TILE_BG_ALPHA[tileValue] ?? 0.3;
         const labelText = TILE_LABELS[tileValue] ?? String(2 ** tileValue);
         const fontSize =
@@ -346,14 +359,17 @@ export default class Game2048Scene extends Phaser.Scene {
         const chosen = Phaser.Utils.Array.GetRandom(emptyTiles);
         // 90% chance of 2 (value=1), 10% chance of 4 (value=2)
         const newValue = Math.random() < 0.9 ? 1 : 2;
+        const isColorA = randomChannel();
         this.grid[chosen.row][chosen.col] = {
             tileValue: newValue,
             canUpgrade: true,
+            isColorA,
         };
         this.tileSprites[chosen.row][chosen.col] = this.createTileSprite(
             chosen.row,
             chosen.col,
             newValue,
+            isColorA,
         );
     }
 
@@ -459,27 +475,37 @@ export default class Game2048Scene extends Phaser.Scene {
                     rowSteps += deltaRow;
                 }
 
-                // Check if we can merge
+                // Check if we can merge: equal value AND opposite anaglyph
+                // channels (cross-eye) — same-channel equal tiles never merge.
+                const src = this.grid[rowToWatch][colToWatch];
+                const destInside = this.isInsideBoard(
+                    rowToWatch + rowSteps,
+                    colToWatch + colSteps,
+                );
+                const dest = destInside
+                    ? this.grid[rowToWatch + rowSteps][colToWatch + colSteps]
+                    : null;
                 if (
-                    this.isInsideBoard(
-                        rowToWatch + rowSteps,
-                        colToWatch + colSteps,
-                    ) &&
-                    this.grid[rowToWatch + rowSteps][colToWatch + colSteps]
-                        .tileValue === tileValue &&
-                    this.grid[rowToWatch + rowSteps][colToWatch + colSteps]
-                        .canUpgrade &&
-                    this.grid[rowToWatch][colToWatch].canUpgrade
+                    dest &&
+                    dest.canUpgrade &&
+                    src.canUpgrade &&
+                    canMergeTiles(
+                        { value: src.tileValue, isColorA: src.isColorA },
+                        { value: dest.tileValue, isColorA: dest.isColorA },
+                    )
                 ) {
-                    // Merge
+                    // Merge — merged tile is assigned a fresh channel so both
+                    // channels stay available at every value level.
                     const newVal = tileValue + 1;
                     this.grid[rowToWatch + rowSteps][colToWatch + colSteps] = {
                         tileValue: newVal,
                         canUpgrade: false,
+                        isColorA: randomChannel(),
                     };
                     this.grid[rowToWatch][colToWatch] = {
                         tileValue: 0,
                         canUpgrade: true,
+                        isColorA: false,
                     };
                     moveScore += 2 ** newVal;
                     mergedThisMove = true;
@@ -505,10 +531,13 @@ export default class Game2048Scene extends Phaser.Scene {
                             tileValue,
                             canUpgrade:
                                 this.grid[rowToWatch][colToWatch].canUpgrade,
+                            isColorA:
+                                this.grid[rowToWatch][colToWatch].isColorA,
                         };
                         this.grid[rowToWatch][colToWatch] = {
                             tileValue: 0,
                             canUpgrade: true,
+                            isColorA: false,
                         };
 
                         this.animateTileMove(
@@ -601,6 +630,7 @@ export default class Game2048Scene extends Phaser.Scene {
                         toRow,
                         toCol,
                         newValue,
+                        this.grid[toRow][toCol].isColorA,
                     );
 
                     // Merge pop animation
@@ -687,14 +717,31 @@ export default class Game2048Scene extends Phaser.Scene {
                 if (this.grid[r][c].tileValue === 0) return true;
             }
         }
-        // Check for any adjacent same-value tiles
+        // Check for any adjacent MERGEABLE pair (equal value + opposite channel)
         for (let r = 0; r < GRID_SIZE; r++) {
             for (let c = 0; c < GRID_SIZE; c++) {
-                const val = this.grid[r][c].tileValue;
-                if (c < GRID_SIZE - 1 && this.grid[r][c + 1].tileValue === val)
-                    return true;
-                if (r < GRID_SIZE - 1 && this.grid[r + 1][c].tileValue === val)
-                    return true;
+                const cell = this.grid[r][c];
+                const a = { value: cell.tileValue, isColorA: cell.isColorA };
+                if (c < GRID_SIZE - 1) {
+                    const right = this.grid[r][c + 1];
+                    if (
+                        canMergeTiles(a, {
+                            value: right.tileValue,
+                            isColorA: right.isColorA,
+                        })
+                    )
+                        return true;
+                }
+                if (r < GRID_SIZE - 1) {
+                    const down = this.grid[r + 1][c];
+                    if (
+                        canMergeTiles(a, {
+                            value: down.tileValue,
+                            isColorA: down.isColorA,
+                        })
+                    )
+                        return true;
+                }
             }
         }
         return false;
