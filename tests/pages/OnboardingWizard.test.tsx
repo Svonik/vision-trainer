@@ -1,7 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initStorage, saveCalibration } from '../../src/modules/storage';
+import {
+    getDefaultSettings,
+    getSuppressionHistory,
+    initStorage,
+    saveCalibration,
+} from '../../src/modules/storage';
 import { OnboardingWizard } from '../../src/pages/OnboardingWizard';
 
 const mockNavigate = vi.fn();
@@ -228,6 +233,21 @@ describe('OnboardingWizard', () => {
                 suppression_passed: true,
             }),
         );
+        expect(getDefaultSettings().fellowEyeContrast).toBe(50);
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                suppression_result: expect.objectContaining({
+                    balancePoint: 100,
+                    suppressionDepth: 0,
+                }),
+            }),
+        );
+        expect(getSuppressionHistory()).toEqual([
+            expect.objectContaining({
+                balancePoint: 100,
+                suppressionDepth: 0,
+            }),
+        ]);
         // Navigation (therapy access) is not blocked — it's just deferred
         // until the user acknowledges the warning.
         expect(mockNavigate).not.toHaveBeenCalled();
@@ -247,15 +267,30 @@ describe('OnboardingWizard', () => {
         advanceToContrastStep();
 
         fireEvent.change(screen.getByRole('slider'), {
-            target: { value: '30' },
+            target: { value: '80' },
         });
         fireEvent.click(
             screen.getByRole('button', { name: /проверим ещё раз/i }),
         );
         fireEvent.change(screen.getByRole('slider'), {
-            target: { value: '30' },
+            target: { value: '80' },
         });
         fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+        expect(getDefaultSettings().fellowEyeContrast).toBe(50);
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                suppression_result: expect.objectContaining({
+                    balancePoint: 80,
+                    suppressionDepth: 20,
+                }),
+            }),
+        );
+        expect(getSuppressionHistory()).toEqual([
+            expect.objectContaining({
+                balancePoint: 80,
+                suppressionDepth: 20,
+            }),
+        ]);
 
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         expect(saveCalibration).toHaveBeenCalledWith(
