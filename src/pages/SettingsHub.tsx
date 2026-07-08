@@ -12,7 +12,7 @@ import { GlassesTypeStep } from '../components/calibration/GlassesTypeStep';
 import { SuppressionTestStep } from '../components/calibration/SuppressionTestStep';
 import { WeakEyeStep } from '../components/calibration/WeakEyeStep';
 import { useCalibration } from '../hooks/useCalibration';
-import { SPEED_KEYS, SPEEDS } from '../modules/constants';
+import { CLINICAL_CONTRAST, SPEED_KEYS, SPEEDS } from '../modules/constants';
 import type { GlassesType } from '../modules/glassesColors';
 import { deriveEyeConfig } from '../modules/glassesColors';
 import { t } from '../modules/i18n';
@@ -82,7 +82,10 @@ export function SettingsHub() {
         const settings = getDefaultSettings();
         saveDefaultSettings({
             ...settings,
-            fellowEyeContrast: balancePoint,
+            fellowEyeContrast: Math.min(
+                Math.max(balancePoint, CLINICAL_CONTRAST.FELLOW_FLOOR),
+                CLINICAL_CONTRAST.FELLOW_CEILING,
+            ),
         });
         if (deepSuppression) {
             setDeepSuppressionWarning(true);

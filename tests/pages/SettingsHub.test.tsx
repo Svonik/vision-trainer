@@ -1,7 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveCalibration } from '../../src/modules/storage';
+import {
+    appendSuppressionHistory,
+    saveCalibration,
+    saveDefaultSettings,
+} from '../../src/modules/storage';
 import { SettingsHub } from '../../src/pages/SettingsHub';
 
 vi.mock('../../src/modules/storage', () => ({
@@ -175,6 +179,25 @@ describe('SettingsHub', () => {
                 suppression_passed: true,
             }),
         );
+        expect(saveDefaultSettings).toHaveBeenCalledWith(
+            expect.objectContaining({
+                fellowEyeContrast: 50,
+            }),
+        );
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                suppression_result: expect.objectContaining({
+                    balancePoint: 100,
+                    suppressionDepth: 0,
+                }),
+            }),
+        );
+        expect(appendSuppressionHistory).toHaveBeenCalledWith(
+            expect.objectContaining({
+                balancePoint: 100,
+                suppressionDepth: 0,
+            }),
+        );
         // View section (with the recalibrate button) is not yet shown —
         // it appears once the warning is acknowledged.
         expect(
@@ -198,15 +221,28 @@ describe('SettingsHub', () => {
         advanceToSuppressionStep();
 
         fireEvent.change(screen.getByRole('slider'), {
-            target: { value: '30' },
+            target: { value: '80' },
         });
         fireEvent.click(
             screen.getByRole('button', { name: /проверим ещё раз/i }),
         );
         fireEvent.change(screen.getByRole('slider'), {
-            target: { value: '30' },
+            target: { value: '80' },
         });
         fireEvent.click(screen.getByRole('button', { name: /готово/i }));
+        expect(saveDefaultSettings).toHaveBeenCalledWith(
+            expect.objectContaining({
+                fellowEyeContrast: 50,
+            }),
+        );
+        expect(saveCalibration).toHaveBeenCalledWith(
+            expect.objectContaining({
+                suppression_result: expect.objectContaining({
+                    balancePoint: 80,
+                    suppressionDepth: 20,
+                }),
+            }),
+        );
 
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         expect(saveCalibration).toHaveBeenCalledWith(
