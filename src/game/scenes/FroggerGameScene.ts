@@ -14,6 +14,12 @@ import { createSafetyTimer } from '../../modules/safetyTimer';
 import { getCalibration } from '../../modules/storage';
 import { getProtocol } from '../../modules/therapyProtocol';
 import { SynthSounds } from '../audio/SynthSounds';
+import {
+    CONTRAST_TWEEN_MS,
+    FROGGER_CHANNELS,
+    roleAlpha,
+    roleColor,
+} from '../dichoptic/winChannels';
 import { EventBus } from '../EventBus';
 import { GameVFX } from '../vfx/GameVFX';
 import { GameVisuals } from '../vfx/GameVisuals';
@@ -93,6 +99,15 @@ export default class FroggerGameScene extends Phaser.Scene {
         // Fellow eye (player) uses clinical contrast; amblyopic eye (obstacles) always 100%
         this.platformAlpha = this.contrastState.fellowEyeContrast / 100;
         this.ballAlpha = 1.0; // Amblyopic eye always 100% per clinical protocol
+
+        // Dichoptic channel paint — the goal pad (and cars) resolve to the
+        // amblyopic eye, opposite the player (see FROGGER_CHANNELS).
+        this.channelPaint = {
+            fellowColor: this.platformColor,
+            amblyopicColor: this.ballColor,
+            fellowAlpha: this.platformAlpha,
+            amblyopicAlpha: this.ballAlpha,
+        };
 
         this.level = 1;
         this.baseSpeed = OBSTACLE_SPEEDS[this.settings.speed] || 100;
@@ -241,6 +256,17 @@ export default class FroggerGameScene extends Phaser.Scene {
             this.platformColor,
             0.8,
         );
+
+        // Keep the player above the goal pad when they overlap.
+        this.player.setDepth(10);
+        this.playerEyeL.setDepth(11);
+        this.playerEyeR.setDepth(11);
+
+        // Goal lily-pad (amblyopic eye — opposite the player). A crossing only
+        // counts when the player is aligned onto it, so the player's position
+        // must be perceived relative to the amblyopic-channel pad + cars.
+        this.goalPadObj = null;
+        this.spawnGoalPad();
 
         // Player grid position (col is discrete, row tracks which zone)
         this.playerGridCol = 5;
@@ -419,10 +445,10 @@ export default class FroggerGameScene extends Phaser.Scene {
             ) {
                 this.playerZone = this.playerZone - 1;
             } else if (this.playerZone === 0) {
-                // Reached goal!
+                // Entered the goal zone — but the crossing only counts once the
+                // player is aligned onto the amblyopic-eye lily-pad (checked
+                // below, so horizontal moves in the goal zone re-check it too).
                 this.playerZone = 'goal';
-                this.onPlayerReachedGoal();
-                return;
             }
         } else if (down) {
             if (this.playerZone === 'goal') {
@@ -449,6 +475,38 @@ export default class FroggerGameScene extends Phaser.Scene {
         this.playerEyeR.y = newY - 4;
 
         SynthSounds.tick();
+
+        // In the goal zone, a crossing only scores when aligned onto the pad.
+        if (this.playerZone === 'goal') {
+            this.checkGoalReached();
+        }
+    }
+
+    // Choose a fresh pad column each crossing and draw it on the amblyopic eye.
+    spawnGoalPad() {
+        if (this.goalPadObj) {
+            this.goalPadObj.destroy();
+            this.goalPadObj = null;
+        }
+        this.goalPadCol = Phaser.Math.Between(0, 9);
+        const px = this.field.x + (this.goalPadCol + 0.5) * (this.field.w / 10);
+        const padRadius = Math.min(this.field.w / 10, SAFE_ZONE_H) * 0.32;
+        this.goalPadObj = GameVisuals.glowCircle(
+            this,
+            px,
+            this.goalY,
+            padRadius,
+            roleColor(FROGGER_CHANNELS, 'goalPad', this.channelPaint),
+            roleAlpha(FROGGER_CHANNELS, 'goalPad', this.channelPaint),
+        );
+        this.goalPadObj.setDepth(1);
+    }
+
+    checkGoalReached() {
+        if (this.isInGoalAnimation || this.isDead) return;
+        if (this.playerGridCol === this.goalPadCol) {
+            this.onPlayerReachedGoal();
+        }
     }
 
     getPlayerY() {
@@ -559,6 +617,10 @@ export default class FroggerGameScene extends Phaser.Scene {
             return;
         }
 
+        // New pad column for the next crossing — forces re-perceiving the
+        // player's position relative to the amblyopic-eye pad each time.
+        this.spawnGoalPad();
+
         // Use isInGoalAnimation to freeze update without triggering collision logic
         this.isInGoalAnimation = true;
         this.time.delayedCall(300, () => {
@@ -568,7 +630,13 @@ export default class FroggerGameScene extends Phaser.Scene {
     }
 
     updateFellowEyeAlpha(alpha) {
-        if (this.player) this.player.setAlpha(alpha);
+        if (this.player) {
+            this.tweens.add({
+                targets: this.player,
+                alpha,
+                duration: CONTRAST_TWEEN_MS,
+            });
+        }
     }
 
     togglePause() {
@@ -684,6 +752,7 @@ export default class FroggerGameScene extends Phaser.Scene {
                 this.speedMultiplier *
                 this.laneSpeedFactors[lane.laneIndex];
         }
+        this.spawnGoalPad();
         this.respawnPlayer();
     }
 
